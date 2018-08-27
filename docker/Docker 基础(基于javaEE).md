@@ -680,3 +680,295 @@
 
 
 -------
+
+
+
+## 五.Docker容器数据卷
+
+### 1.是什么
+
+- Docker的理念: 
+  - 将运用与运行的环境打包形成容器运行，运行可以伴随着容器，但是我们对数据的要求希望是持久化的
+  - 容器之间希望有可能共享数据  
+- Docker容器产生的数据，如果不通过docker commit生成成新的镜像，使得数据做为镜像的一部分保存下来，那么当容器删除后，数据自然也就没有了。 为了能保存数据在docker中我们使用卷。  
+
+### 2.能做什么
+
+- 卷就是目录或文件，存在于一一个或多个容器中，由docker挂载到容器，但不属于联合文件系统，因此能够绕过Union File System提供些用于持续存储或共享数据的特性
+- 卷的设计目的就是数据的持久化，完全独立于容器的生存周期，因此Docker不会在容器删除时删除其挂载的数据卷
+- 特点: 
+  - 1.数据卷可在容器之间共享或重用数据
+  - 2.卷中的更改可以直接生效 
+  - 3.数据卷中的更改不会包含在镜像的更新中 
+  - 4.数据卷的生命周期一直持续到没有容器使用它为止
+
+- 容器的持久化
+- 容器间继承+共享数据
+
+### 3.数据卷
+
+- 容器内添加
+
+  - 直接命令添加
+
+    - 命令: docker run -it  -v /宿主机绝对路径目录:/容器内目录  镜像名
+
+      - 例子: docker run -it -v /myDataVolume:/dataVolumeContainer centos
+
+    - 查看数据卷是否挂载成功
+
+      - 使用 docker inspect 容器id  
+
+          ```json
+          
+           "Mounts": [
+                      {
+                          "Type": "bind",
+                          "Source": "/myDataVolume",
+                          "Destination": "/dataVolumeContainer",
+                          "Mode": "",
+                          "RW": true,
+                          "Propagation": "rprivate"
+                      }
+               	  ]
+           "HostConfig": {
+                      "Binds": [
+                          "/myDataVolume:/dataVolumeContainer"
+           			],
+                      "省略":[
+                          "....../省略"
+                       ]
+          		}
+          ```
+
+    - 容器和宿主机之间数据共享
+
+      - 在宿主机中创建文件,在容器中修改该文件,可以看到文件同步
+        - 命令: touch a.txt  vim a.txt
+
+    - 容器停止退出后，主机修改后数据是否同步
+
+      - 容器先停止-->主机修改文件-->容器重启进入-->查看主机修改过的文件-->内容同步
+
+    - 命令(带权限) 
+
+      -  docker run -it  -v /宿主机绝对路径目录:/容器内目录`:ro` 镜像名
+      - 容器中,文件是只读状态,不能添加修改
+
+  - DockerFile添加
+
+    -  根目录下新建mydocker文件夹并进入
+
+      - 命令 : mkdir /mydocker
+
+    -  可在Dockerfile中使用VOLUME指令来给镜像添加一个或多个数据卷
+
+      - VOLUME ["/dataVolumeContainer',"/dataVolumeContainer2","/dataVolumeContainer3"]
+      - 说明:
+        - 出于可移植和分享的考虑，用**-v 主机目录:容器目录**这种方法不能够直接在Dockerfile中实现。
+        - 由于宿主机目录是依赖于特定宿主机的，并不能够保证在所有的宿主机上都存在这样的特定目录。
+
+    - File构建
+
+      - 在/mydocker下创建Dockerfile
+
+      ```dockerfile
+      #volume test
+      FROM centos
+      VOLUME ["/dataVolumeContainer1","/dataVolumeContainer2"]
+      CMD echo "finished,------success"
+      CMD /bin/bash
+      ```
+
+      - 相当于: 
+        - docker run -it -v /host1:/dataVolumeContainer -v /host2:/dataVolumeContainer2 cnetos /bin/bash
+
+    - build后生成镜像
+
+      - 命令:  docker build -f /mydocker/DockerFile -t hanguixian/centos_u .
+
+        ```shell
+        [root@iZuf64yofkbhpt8m0ackshZ mydocker]# docker build -f /mydocker/DockerFile -t hanguixian/centos_u .
+        Sending build context to Docker daemon  3.072kB
+        Step 1/4 : FROM centos
+         ---> 5182e96772bf
+        Step 2/4 : VOLUME ["/dataVolumeContainer1","/dataVolumeContainer2"]
+         ---> Using cache
+         ---> be7f6ccf6f5e
+        Step 3/4 : CMD echo "finished,------success"
+         ---> Running in 92492c960ec4
+        Removing intermediate container 92492c960ec4
+         ---> 6c3c0ea2b54c
+        Step 4/4 : CMD /bin/bash
+         ---> Running in 053f5f238bf9
+        Removing intermediate container 053f5f238bf9
+         ---> ca21681a1ecb
+        Successfully built ca21681a1ecb
+        Successfully tagged hanguixian/centos_u:latest
+        ```
+
+      -  获得一个新镜像hanguixian/centos_u , run容器
+
+        - docker images
+
+          ```powershell
+          [root@iZuf64yofkbhpt8m0ackshZ mydocker]# docker images 
+          REPOSITORY           TAG       IMAGE ID            CREATED             SIZE
+          hanguixian/centos_u  latest   ca21681a1ecb        2 minutes ago       200MB
+          
+          ```
+
+        - `docker run -it hanguixian/centos_u`
+
+          ```sh
+          [root@iZuf64yofkbhpt8m0ackshZ mydocker]# docker run -it hanguixian/centos_u
+          [root@26cf1a5a8757 /]# ll
+          total 64
+          -rw-r--r--   1 root root 12005 Aug  4 22:05 anaconda-post.log
+          lrwxrwxrwx   1 root root     7 Aug  4 22:04 bin -> usr/bin
+          drwxr-xr-x   2 root root  4096 Aug 27 07:44 dataVolumeContainer1
+          drwxr-xr-x   2 root root  4096 Aug 27 07:44 dataVolumeContainer2
+          drwxr-xr-x   5 root root   360 Aug 27 07:44 dev
+          drwxr-xr-x   1 root root  4096 Aug 27 07:44 etc
+          drwxr-xr-x   2 root root  4096 Apr 11 04:59 home
+          lrwxrwxrwx   1 root root     7 Aug  4 22:04 lib -> usr/lib
+          lrwxrwxrwx   1 root root     9 Aug  4 22:04 lib64 -> usr/lib64
+          drwxr-xr-x   2 root root  4096 Apr 11 04:59 media
+          drwxr-xr-x   2 root root  4096 Apr 11 04:59 mnt
+          drwxr-xr-x   2 root root  4096 Apr 11 04:59 opt
+          dr-xr-xr-x 148 root root     0 Aug 27 07:44 proc
+          dr-xr-x---   2 root root  4096 Aug  4 22:05 root
+          drwxr-xr-x  10 root root  4096 Aug  4 22:05 run
+          lrwxrwxrwx   1 root root     8 Aug  4 22:04 sbin -> usr/sbin
+          drwxr-xr-x   2 root root  4096 Apr 11 04:59 srv
+          dr-xr-xr-x  13 root root     0 Aug 27 07:44 sys
+          drwxrwxrwt   7 root root  4096 Aug  4 22:05 tmp
+          drwxr-xr-x  13 root root  4096 Aug  4 22:04 usr
+          drwxr-xr-x  18 root root  4096 Aug  4 22:04 var
+          
+          ```
+
+          
+
+    - 通过上述步骤，容器内的卷目录地址已经知道对应的主机目录地址哪?
+
+      - docker inspect 26cf1a5a8757
+
+        ```json
+         },
+                "Mounts": [
+                    {
+                        "Type": "volume",
+                        "Name": "9a33a9f028e45e7410d0c908ccbcc496e1a321fa96d0781c3c61dac3c5c11f35",
+                        "Source": "/var/lib/docker/volumes/9a33a9f028e45e7410d0c908ccbcc496e1a321fa96d0781c3c61dac3c5c11f35/_data",
+                        "Destination": "/dataVolumeContainer1",
+                        "Driver": "local",
+                        "Mode": "",
+                        "RW": true,
+                        "Propagation": ""
+                    },
+                    {
+                        "Type": "volume",
+                        "Name": "0a98062cdb70ecfb32e040c668ed0e1528f0b409173275da4ad6f0c5e0322ac2",
+                        "Source": "/var/lib/docker/volumes/0a98062cdb70ecfb32e040c668ed0e1528f0b409173275da4ad6f0c5e0322ac2/_data",
+                        "Destination": "/dataVolumeContainer2",
+                        "Driver": "local",
+                        "Mode": "",
+                        "RW": true,
+                        "Propagation": ""
+                    }
+        
+        ```
+
+    - 主机对应默认地址
+
+      - /var/lib/docker/volumes/9a33a9f028e45e7410d0c908ccbcc496e1a321fa96d0781c3c61dac3c5c11f35/_data
+
+  - 备注
+    -  Docker挂载主机目录Docker访问出现cannot open directory : Permission denied
+    - 解决办法:在挂载目录后多加一个--privileged=true参数即可
+    - 例如: docker run -it -v /myDataVolume:/dataVolumeContainer  --privileged=true centos
+
+### 4.数据卷容器
+
+- 是什么
+
+  - 命名的容器挂载数据卷,其他容器通过挂载这个(父容器)实现数据共享,挂载数据卷的容器,称之为数据卷容器
+
+- 简介
+
+  -  以上一步新建的镜像hanguixian/centos_u为模板并运行容器dc01/dc02/dc03   
+  - 它们已经具有容器卷
+    - /dataVolumeContainer1   
+    - /dataVolumeContainer2  
+
+- 容器间传递共享(--volume-from)
+
+  -  先启动一个父容器dc01
+
+    - 命令: docker run -it --name doc1 hanguixian/centos_u
+    - 在dataVolumeContainer2新增内容
+      - cd dataVolumeContainer2
+      - vi a.txt
+
+  - dc02/dc03继承自dc01
+
+    -  --volumes-from
+
+    -   命令 
+
+      - `docker run -it --name doc2 --volumes-from doc1 hanguixian/centos_u`
+
+        ```shell
+        [root@iZuf64yofkbhpt8m0ackshZ /]# docker run -it --name doc2 --volumes-from doc1 hanguixian/centos_u
+        [root@ac3acc6567f3 /]# cd dataVolumeContainer2
+        [root@ac3acc6567f3 dataVolumeContainer2]# ll
+        total 4
+        -rw-r--r-- 1 root root 7 Aug 27 08:19 a.txt
+        ```
+
+        - 可以看dataVolumeContainer2中有我们在doc1中创建的a.txt
+
+      -  dc02/dc03分别在dataVolumeContainer2各自新增内容
+
+  - 回到dc01可以看到02/03各自添加的都能共享
+
+  - 删除dc01，dc02修改后dc03可否访问
+
+    - 可以
+
+  - 删除dc02后dc03可否访问
+
+    - 可以
+
+  - 新建dc04继承dc03后再删除dc03
+
+    - 可以
+
+  - 结论:容器之间配置信息的传递，数据卷的生命周期一直持续到没有容器使用它为止
+
+-------------
+
+
+
+## 六.DockerFile解析
+
+
+
+---------
+
+
+
+## 七.Docker常用安装
+
+
+
+---------
+
+
+
+## 八.本地镜像发布到阿里云
+
+
+
+---------
