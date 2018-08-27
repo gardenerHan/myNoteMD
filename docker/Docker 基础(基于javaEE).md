@@ -618,7 +618,20 @@
 
   - `tomcat为什么那么大 ?`   一层又一层
 
-    ​	![TOMCAT](https://img-blog.csdn.net/2018082415465826?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2hneF9zdWl5dWVzdXN1/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
+    ```mermaid
+    graph TB
+    classDef de1 fill:#9f2,stroke:#333,stroke-width:4px;
+    subgraph Docker
+    	subgraph tomcat
+    		subgraph jdk8
+    			subgraph centos
+    				a[kernel]
+    			end
+    		end
+    	end	
+    end
+    class a de1
+    ```
 
 
 - 分层的镜像
