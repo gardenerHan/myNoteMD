@@ -592,3 +592,78 @@
 
 
 -------
+
+
+
+
+
+## 四.Docker镜像
+
+### 1.是什么?
+
+<font color="#00ff">**镜像是一种轻量级、可执行的独立软件包，用来打包软件运行环境和基于运行环境开发的软件，它包含运行某个软件所需的所有内容,包括代码、运行时、库、环境变量和配置文件。**</font>
+
+- UnionFS (联合文件系统) 
+  - UnionFS (联合文件系统) : Union文件系统(UnionFS) 是一种分层、轻量级并且高性能的文件系统，它支持对文件系统的修改作为一次提交来一层层的叠加，同时可以将不同目录挂载到同一个虚拟文件系统下(unite several directories into a single virtualfilesystem)。Union 文件系统是Docker镜像的基础。镜像可以通过分层来进行继承，基于基础镜像(没有父镜像)，可以制作各种具体的应用镜像。
+  - 特性:一次同时加载多个文件系统，但从外面看起来，只能看到一个文件系统，联合加载会把各层文件系统叠加起来，这样最终的文件系统会包含所有底层的文件和目录
+- Docker镜像加载原理: 
+  - docker的镜像实际上由一层一层的文件系统组成，这种层级的文件系统UnionFS。
+
+  - bootfs(boot file system)主要包含bootloader和kernel, bootloader主要是引导加载kernel, Linux刚启动时会加载bofs文件系统，在Docker镜像的最底层是bootfs。 这一层与我们典型的Linux/Unix系统是一样的，包含boot加载器和内核。当boot加载完成之后整个内核就都在内存中了，此时内存的使用权已由bootfs转交给内核， 此时系统也会卸载bootfs。
+
+  - rootfs (root file system)，在bootfs之上。包含的就是典型Linux系统中的/dev, /proc, /bin, /etc等标准目录和文件。rootfs就是各种不同的操作系统发行版，比如Ubuntu, Centos等等。
+
+  - `平时我们安装进虚拟机的CentOS都是好几个G，为什么docker这 里才200M?`
+    - 对于一个精简的OS，rootfs可以很小，只需要包括最基本的命令、工具和程序库就可以了，因为底层直接用Host的kernel,自己只需要提供rootfs就行了。由此可见对于不同的linux发行版，bootfs基本是一致的，rootfs会有差别,因此不同的发行版可以公用bootfs。   
+
+  - `tomcat为什么那么大 ?`   一层又一层
+
+    ​	![TOMCAT](https://img-blog.csdn.net/2018082415465826?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2hneF9zdWl5dWVzdXN1/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
+
+
+- 分层的镜像
+  - 在下载的过程中我们可以看到一层层的在下载
+- 为什么Docker镜像要采用这种分层结构
+  - 最大的一个好处就是一共享资源 
+    - 比如:有多个镜像都从相同的base镜像构建而来，那么宿主机只需在磁盘上保存一份base镜像， 同时内存中也只需加载一份base镜像，就可以为所有容器服务了。而且镜像的每一层都可以被共享。   
+
+### 2.特点
+
+<font color="#00ff">**Docker镜像都是只读的当容器启动时，一个新的可写层被加载到镜像的顶部。 这一层通常被称作“容器层”，“容器层”之下的都叫"镜像层”。**   </font>
+
+### 3.docker镜像commit操作
+
+- docker commit提交容器副本使之成为一个新的镜像   
+
+- docker commit  -m=“提交的描述信息” -a=“作者” 容器ID 要创建的目标镜像名:[标签名]   
+
+- 案例
+
+  - 1.从Hub上下载tomcat镜像到本地并成功运行
+
+  - 2.故意删除上一步镜像生产tomcat容器的文档
+
+    - 命令: 
+      -  进入到容器中: docker exec -it  容器id  /bin/bash 
+      -  进入到目录中: cd webapps/
+      -  删除docs : rm -rf docs
+
+  - 3.即当前的tomcat运行实例是一个没有文档内容的容器,   以它为模板commit一 个没有doc的tomcat新镜像hanguixian/tomcat001 ----> 命名空间
+
+    - 命令:  docker commit -a="mmhh" -m="tomcat without docs" 200e52fdf06d hanguixian/tomcat001:0.1
+
+    - 效果:产生一个镜像: docker images 
+
+        | REPOSITORY           | TAG  | IMAGE ID     | CREATED        | SIZE  |
+        | -------------------- | ---- | ------------ | -------------- | ----- |
+        | hanguixian/tomcat001 | 0.1  | d5738d710d02 | 14 seconds ago | 463MB |
+
+    
+
+  - 启动我们的新镜像并和原来的对比
+
+    - 很明显我们修改后的没有docs,而原来的是存在的
+
+
+
+-------
