@@ -4,4 +4,4 @@
 我的笔记
 
 ### 阅读说明
-因为很多不知markdown画的图,推荐使用Typora打开
+因为很多软件和阅读器不支持markdown画的图,推荐使用Typora打开
