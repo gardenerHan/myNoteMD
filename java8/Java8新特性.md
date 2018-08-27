@@ -835,7 +835,7 @@ public class TestStreamAPI3 {
 
     
 
-    ![fork/join](/img/ForkAndJoin.png)
+    ![fork/join](img/ForkAndJoin.png)
 
   
 
@@ -1434,4 +1434,4 @@ public void test6(){
 
 - Java 8对注解处理提供了两点改进：可重复的注解及可用于类 型的注解
 
-  ​         ![annotaion](F:\myNoteMD\java8\img\annotation.png)
+  ​         ![annotaion](img/annotation.png)
