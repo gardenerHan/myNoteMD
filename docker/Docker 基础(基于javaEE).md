@@ -85,7 +85,7 @@
 - Linux容器技术的出现就解决了这样一个问题，而Docker就是在它的基础上发展过来的。将应用运行在Docker容器上面，而Docker容器在任何操作系统上都是一致的，这就实现了跨平台、跨服务器。只需要一次配置好环境，换到别的机子上就可以一键部署好，大大简化了操作.
 
 #### 1.4 logo解读
-![logo](./img/logo.jpg)
+![logo](/img/logo.jpg)
 
 - 鲸鱼背上有集装箱
 
@@ -182,9 +182,10 @@
     ![微博1](img/weibo1.png)
     ![微博2](img/weibo2.png)
 
-- 美团
 
-    ![美团](F:\myNoteMD\docker\img\meituan1.png)
+  - 美团
+
+    ![美团](img/meituan1.png)
 
 
 
@@ -386,9 +387,208 @@
 
 - 虚拟机
 
-    ![虚拟机](/img/xuniji.png)
+    ![虚拟机](img/xuniji.png)
 
 
 
 -----------------
 
+
+
+
+
+## 三.Docker常用命令
+
+### 1.帮助命令
+
+- docker version [查看版本]
+- docker info   [查看详情]
+- docker --help [查看相关命令使用]
+
+### 2.镜像命令
+
+- 列出主机上的镜像:`docker images [options]` 
+    - 各个选项说明:
+        - REPOSITORY:   表示镜像的仓库源
+        - TAG: 镜像的标签
+        - IMAGE ID:镜像ID
+        - CREATED:镜像创建时间
+        - SIZE: 镜像大小
+      - 同一仓库源可以有多个TAG，代表这个仓库源的不同个版本，我们使用REPOSITORY:TAG来定义不同的镜像。如果你不指定一个镜像的版本标签，例如你只使用ubuntu, docker将默认使用ubuntu:latest镜像
+
+    - options说明:
+
+      - -a :列出本地所有的镜像(含中间映像层) 
+      - -q:只显示镜像ID
+      - --digests:显示镜像的摘要船息
+      - --no-trunc :显示完整的镜像信息
+
+      
+
+- 搜索镜像: `docker search xxx镜像的名字` 
+    - 网站 https://hub.docker.com 
+
+    - 命令:
+      - docker search [OPTIONS] 镜像名字 
+      - OPTIONS说明:
+        - --no-trunc : 显示完整的镜像描述 命令   
+
+        - -s:列出收藏数不小于指定值的镜像。 
+
+        - -- automated:只列出automated build类型的镜像
+
+- 下载镜像:`docker pull xxx` 
+  - docker pull 镜像名字[:TAG]
+
+
+- 删除镜像: `docker rmi  xxx镜像名字ID` 
+  - 删除单个 docker rmi  -f 镜像ID 
+  - 删除多个 docker rmi -f 镜像名1:TAG 镜像名2:TAG [例子: docker rmi -f hello-world nginx]
+  - 删除全部 docker rmi -f $(docker images -qa)   
+
+
+### 3.容器命令
+
+- 新建并启动容器: `docker run [OPTIONS] IMAGE [COMMAND][ ARG...]`
+
+  - 例如: docker run -it asdaswew
+
+  - OPTIONS说明(常用) :有些是一个减号，有些是两个减号   
+      - --name="容器新名字":为容器指定一一个名称;   
+      - -d:后台运行容器，并返回容器ID，也即启动守护式容器;
+      - -i: 以交互模式运行容器，通常与-t同时使用;   
+      - -t:为容器重新分配一个伪输入终端，通常与-i同时使用;
+      - -P:随机端口映射;  
+      - -p:指定端口映射，有以下四种格式   
+        - ip:hostPort:containerPort
+        - ip::containerPort    
+        - hostPort:containerPort
+        - containerPort   
+
+- 列出当前所有正在运行的容器:`docker ps [OPTIONS]`
+
+  -  OPTIONS说明(常用) 
+       - -a :列出当前所有正在运行的容器+历史上运行过的
+       - -l:显示最近创建的容器。
+       - -n:  显示最近n个创建的容器。
+       - -q :静默模式，只显示容器编号。 
+       - --no-trunc :不截断输出  
+
+- 退出容器
+
+  - exit:容器停止退出
+  - ctrl+P+Q:容器不停止退出
+
+- 启动
+
+  - docker start 容器id 或 容器名
+
+- 重启
+
+  - docker restart 容器id 或 容器名
+
+- 停止
+
+  - docker stop  容器id 或 容器名
+
+- 强制停止
+
+  - docker kill 容器id 或 容器名
+
+- 删除已停止的
+
+  - docker rm 容器id
+  - 一次性删除多个容器
+      - docker rm -f $(docker ps -a -q) 
+      - docker ps -a -q | xargs docker rm   
+
+
+- **重点**
+
+  - 启动守护式容器  docker run -d 容器名
+       -  使用镜像centos:latest 以后台模式启动一个容器 docker run -d centos   问题:然后docker ps -a进行查看，会发现容器已经退出
+       -  很重要的要说明的一点: Docker容器后台运行,就必须有一个前台进程.   容器运行的命令如果不是那些一直挂起的命令 (比如运行top, tail) ，就是会自动退出的。   
+       -  这个是docker的机制问题,比如你的web容器，我们以nginx为例，正常情况下，我们配置启动服务只需要启动响应的service即可。例如service nginx start   但是,这样故,nginx为后台进程模式运行,就导致docker前台没有运行的应用，这样的容器后台启动后，会立即自杀因为他觉得他没事可做了.所以，最佳的解决方案是，将你要运行的程序以前台进程的形式运行    
+
+  - 查看容器日志
+     -  docker logs -f -t --tail 容器ID 或 容器名
+     -  例子: docker logs -f -t --tail 3   e4
+          -  -t:加入时间戳
+          -  -f:更随最新的的日志打印
+          -  --tail:数字 显示最后多少条
+
+  - 查看容器内运行的进程
+     -  docker top 容器id 或 容器名字
+
+  - 查看容器内部细节
+     -  docker inspect 容器id
+
+  - 进入正在运行的容器并以命令行交互
+
+       - ①docker exec -it 容器id bashshell
+
+            - 例子: docker exec -it e49bfba4816f /bin/bash
+
+                 ​	  docker exec -t e49bfba4816f ls -l /tmp      
+
+       - ②重新进入docker attach 容器id
+
+       - 两者区别:
+
+            -  attach 直接进入容器启动命令的终端,不会启动新的进程
+            -  exec 实在容器中打开新的终端,并且可以启动新的进程
+
+  - 从容器内拷贝文件到主机上
+
+       -  docker cp 容器id:容器内路径   目的主机路径
+            -  例子: docker cp e49bfba4816f :/tmp/yum.log  /root
+
+- 4.总结------常用命令
+
+  ![常用命令](img/docker常用命令.png)
+
+
+
+| 命令    | 描述                                                         | 中文描述                                                     |
+| ------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| attach  | Attach to a running container                                | 当前shell下attach连接指定运行镜像                            |
+| build   | Build an image from a Dockerfile                             | 通过Dockerfile定制镜像                                       |
+| commit  | Create a new image from a container changes                  | 提交当前容器为新的镜像                                       |
+| cp      | Copy files/folders from the containers filesystem to the host path | 从容器中拷贝指定文件或者目录到宿主机中                       |
+| create  | Create a new container                                       | 创建一个新的容器，同run，但不启动容器                        |
+| diff    | nspect changes on a container's filesystem                   | 查看docker容器变化                                           |
+| events  | Get real time events from the server                         | 从docker服务获取容器实时事件                                 |
+| exec    | Run a command in an existing container                       | 在已存在的容器上运行命令                                     |
+| export  | Stream the contents of a container as a tar archive          | 导出容器的内容流作为一个 tar归档文件[对应import]             |
+| history | Show the history of an image                                 | 展示一个镜像形成历史                                         |
+| images  | List images                                                  | 列出系统当前镜像                                             |
+| import  | Create a new filesystem image from the contents of a tarball | 从tar包中的内容创建一个新的文件系统映像[对应export]          |
+| info    | Display system-wide information                              | 显示系统相关信息                                             |
+| inspect | Return low-level information on a container                  | 查看容器详细信息                                             |
+| kill    | Kill a running container                                     | kill指定docker容器                                           |
+| load    | Load an image from a tar archive                             | 从一个tar包中加载一一个镜像[对应save]                        |
+| login   | Register or Login to the docker registry server              | 注册或者登陆一个docker源服务器                               |
+| logout  | Log out from a Docker registry server                        | 从当前Docker registry退出                                    |
+| logs    | Fetch the logs of a container                                | 输出当前容器日志信息                                         |
+| port    | Lookup the public-facing port which is NAT-ed to PRIVATE_ PORT | 查看映射端口对应的容器内部源端口                             |
+| pause   | Pause all processes within a container                       | 暂停容器                                                     |
+| ps      | List containers                                              | 列出容器列表                                                 |
+| pull    | Pull an image or a repository from the docker registry server | 从docker镜像源服务器拉取指定镜像或者库镜像                   |
+| push    | Push an image or a repository to the docker registry server  | 推送指定镜像或者库镜像至docker源服务器                       |
+| restart | Restart a running container                                  | 重启运行的容器                                               |
+| rm      | Remove one or more containers                                | 移除一个或者多个容器                                         |
+| rmi     | Remove one or more images                                    | 移除一个或多个镜像[无容器使用该镜像才可删除，否则需删除相关容器才可继续或 -f 强制删除] |
+| run     | Run a command in a new container                             | 创建一个新的容器并运行一个命令                               |
+| save    | Save an image to a tar archive                               | 保存一个镜像为一个tar包[对应load]                            |
+| search  | Search for an image on the Docker Hub                        | 在dockerhub中搜索镜像                                        |
+| start   | Start a stopped containers                                   | 启动容器                                                     |
+| stop    | Stop a running containers                                    | 停止容器                                                     |
+| tag     | Tag an image into a repository                               | 给源中镜像打标签                                             |
+| top     | Lookup the running processes of a container                  | 查看容器中运行的进程信息                                     |
+| unpause | Unpause a paused container                                   | 取消暂停容器                                                 |
+| version | Show the docker version information                          | 查看docker版本号                                             |
+| wait    | Block until a container stops, then print its exit code      | 截取容器停止时的退出状态值                                   |
+
+
+
+-------
