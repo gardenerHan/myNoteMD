@@ -813,7 +813,7 @@
         - docker images
 
           ```powershell
-          [root@iZuf64yofkbhpt8m0ackshZ mydocker]# docker images 
+          [root@iZuf64yofkbhp8tm0ackshZ mydocker]# docker images 
           REPOSITORY           TAG       IMAGE ID            CREATED             SIZE
           hanguixian/centos_u  latest   ca21681a1ecb        2 minutes ago       200MB
           
@@ -822,7 +822,7 @@
         - `docker run -it hanguixian/centos_u`
 
           ```sh
-          [root@iZuf64yofkbhpt8m0ackshZ mydocker]# docker run -it hanguixian/centos_u
+          [root@iZuf64yofkbhp8tm0ackshZ mydocker]# docker run -it hanguixian/centos_u
           [root@26cf1a5a8757 /]# ll
           total 64
           -rw-r--r--   1 root root 12005 Aug  4 22:05 anaconda-post.log
@@ -921,7 +921,7 @@
       - `docker run -it --name doc2 --volumes-from doc1 hanguixian/centos_u`
 
         ```shell
-        [root@iZuf64yofkbhpt8m0ackshZ /]# docker run -it --name doc2 --volumes-from doc1 hanguixian/centos_u
+        [root@iZuf64yofkbhp8tm0ackshZ /]# docker run -it --name doc2 --volumes-from doc1 hanguixian/centos_u
         [root@ac3acc6567f3 /]# cd dataVolumeContainer2
         [root@ac3acc6567f3 dataVolumeContainer2]# ll
         total 4
@@ -946,7 +946,7 @@
 
     - 可以
 
-  - 结论:容器之间配置信息的传递，数据卷的生命周期一直持续到没有容器使用它为止
+  - **结论:容器之间配置信息的传递，数据卷的生命周期一直持续到没有容器使用它为止**
 
 -------------
 
@@ -1013,7 +1013,7 @@
 
     
 
-### 3.DockerFile体系结构
+### 3.DockerFile体系结构(保留字指令)
 
 - `FROM`  基础镜像，当前新镜像是基于哪个镜像的   
 
@@ -1031,12 +1031,12 @@
 
 - `ADD`  将宿主机目录下的文件拷贝进镜像且ADD命令会自动处理URL和解压tar压缩包   
 
--   `COPY`
+- `COPY`
 
-  - 类似ADD，拷贝文件和目录到镜像中。  
-  - 将从构建上下文目录中<源路径>的文件/目录复制到新的一层的镜像内的<目标路径>位置
-    - COPY src dest   COPY     
-    - COPY ["sre", "dest"]   
+    - 类似ADD，拷贝文件和目录到镜像中。  
+    - 将从构建上下文目录中<源路径>的文件/目录复制到新的一层的镜像内的<目标路径>位置
+      - COPY src dest   COPY     
+      - COPY ["sre", "dest"]   
 
 - `VOLUME`  容器数据卷，用于数据保存和持久化工作   
 
@@ -1054,18 +1054,387 @@
   - 指定一个容器启动时要运行的命令   
   - ENTRYPOINT的目的和CMD一样，都是在指定容器启动程序及参数   
 
-- `ONBULD` 当构建一个被继承的Dockerfle时运行命令，父镜像在被子继承后父镜像的onbuild被触发了
+- `ONBUILD` 当构建一个被继承的Dockerfle时运行命令，父镜像在被子继承后父镜像的onbuild被触发
 
 - 总结
 
   ![dockerfile保留字](img/dockerfile保留字.png)
 
-
 ### 4.案例
+
+#### 4.1Base镜像scratch
+
+- Dokcer hub中99%的镜像都是在base镜像中安装和配置需要的软件构建出来的
+
+#### 4.2自定义镜像mycentos
+
+- 编写
+
+  - Hub默认Centos镜像什么情况
+
+    - 初始化centos运行该镜像进入是默认路径是/
+    - 默认不支持vim
+    - 默认不支持ifconfig
+
+  - 准备编写DokcerFile文件
+
+    - 自定义mycentos目的,使我们的自己的镜像具备如下:
+      - 登陆后的默认路径
+      - vim编辑器
+      - ifconfig查询网络配置
+    - 创建文件并编辑: `vim DockerFile2`
+
+  - myCentOS内容DokcerFile
+
+    ```dockerfile
+    FROM centos
+    MAINTAINER hanguixian<hn_hanguixain@163.com>
+    ENV MYPATH /usr/local
+    WORKDIR $MYPATH
+    RUN yum -y install vim
+    RUN yum -y install net-tools
+    EXPOSE 80
+    CMD echo $MYPATH
+    CMD echo "success--------------ok"
+    CMD /bin/bash
+    
+    ```
+
+    
+
+- 构建
+
+  - 命令: `docker build -f /mydocker/DockerFile2  -t mycentos:1.3 .`
+
+  - 查看: `docker images`
+
+    ```shell
+    [root@iZuf64yofkbhp8tm0ackshZ mydocker]# docker images
+    REPOSITORY          TAG                 IMAGE ID            CREATED              SIZE
+    mycentos            1.3                 d70dd7d1c9d0        About a minute ago   371MB
+    centos              latest              5182e96772bf        3 weeks ago          200MB
+    
+    ```
+
+    - 可以看到有了mycentos镜像,同时和原来的centos镜像大小有了明显的区别
+
+- 运行
+
+  - 命令: dcoker run -it mycnetos:1.3
+
+    ```bash
+    [root@iZuf64yofkbhp8tm0ackshZ mydocker]# docker run -it mycentos:1.3
+    [root@9f936361751f local]# pwd
+    /usr/local
+    
+    ```
+
+  - 可以看到默认的路径是:/usr/local
+
+  - 验证vim,ifconfig,可以看到我们修改的镜像
+
+- 列出镜像的变更历史
+
+  - 命令 : docker history 镜像名或镜像IMAGE ID
+
+    - 例子:docker history d70dd7d1c9d0 或 docker history mycentos:1.3
+
+```bash
+[root@iZuf64yofkbhp8tm0ackshZ mydocker]# docker history mycentos:1.3
+IMAGE               CREATED             CREATED BY                                      SIZE
+d70dd7d1c9d0        25 minutes ago      /bin/sh -c #(nop)  CMD ["/bin/sh" "-c" "/bin…   0B         
+fa82ffb7c68b        25 minutes ago      /bin/sh -c #(nop)  CMD ["/bin/sh" "-c" "echo…   0B         
+353215faa466        25 minutes ago      /bin/sh -c #(nop)  CMD ["/bin/sh" "-c" "echo…   0B         
+34a9a9b7c41d        25 minutes ago      /bin/sh -c #(nop)  EXPOSE 80                    0B         
+8803a34e02ea        25 minutes ago      /bin/sh -c yum -y install net-tools             22.4MB     
+0effdb62c656        25 minutes ago      /bin/sh -c yum -y install vim                   149MB       
+5a83aca44197        25 minutes ago      /bin/sh -c #(nop) WORKDIR /usr/local            0B         
+e8b15471d355        26 minutes ago      /bin/sh -c #(nop)  ENV MYPATH=/usr/local        0B         
+d99ee0589704        26 minutes ago      /bin/sh -c #(nop)  MAINTAINER hanguixian<hn_…   0B         
+5182e96772bf        3 weeks ago         /bin/sh -c #(nop)  CMD ["/bin/bash"]            0B         
+<missing>           3 weeks ago         /bin/sh -c #(nop)  LABEL org.label-schema.sc…   0B         
+<missing>           3 weeks ago         /bin/sh -c #(nop) ADD file:6340c690b08865d7e…   200MB
+```
+
+
+
+#### 4.3CMD/ENTRYPOINT 镜像案例
+
+- 都是指定一个容器启动时要运行的命令
+
+- CMD
+  - Dockerfile中可以有多个CMD指令,但只有最后一个生效，CMD会被`docker run`之后的参数替换
+
+  - 如tomcat:dockerfile最后有: `CMD ["catalina.sh", "run"]` 
+
+    - 我们用: `docker run -it -p 7777:80 tomcat` 能启动tomcat,可以看到打印的日志
+
+    - 如果使用: `docker run -it -p 7777:80 tomcat ls -l` tomcat没有启动起来
+
+      ```bash
+      [root@iZuf64yofkbhpt8m0ackshZ mydocker]# docker run -it -p 7777:80 tomcat ls -l
+      total 152
+      -rw-r----- 1 root root  19533 Aug 12 08:23 BUILDING.txt
+      -rw-r----- 1 root root   6090 Aug 12 08:23 CONTRIBUTING.md
+      -rw-r----- 1 root root  57092 Aug 12 08:23 LICENSE
+      -rw-r----- 1 root root   1726 Aug 12 08:23 NOTICE
+      -rw-r----- 1 root root   3255 Aug 12 08:23 README.md
+      -rw-r----- 1 root root   7140 Aug 12 08:23 RELEASE-NOTES
+      -rw-r----- 1 root root  16262 Aug 12 08:23 RUNNING.txt
+      drwxr-x--- 2 root root   4096 Aug 23 00:47 bin
+      drwx--S--- 2 root root   4096 Aug 12 08:23 conf
+      drwxr-sr-x 3 root staff  4096 Aug 23 00:47 include
+      drwxr-x--- 2 root root   4096 Aug 23 00:47 lib
+      drwxr-x--- 2 root root   4096 Aug 12 08:20 logs
+      drwxr-sr-x 3 root staff  4096 Aug 23 00:47 native-jni-lib
+      drwxr-x--- 2 root root   4096 Aug 23 00:47 temp
+      drwxr-x--- 7 root root   4096 Aug 12 08:21 webapps
+      drwxr-x--- 2 root root   4096 Aug 12 08:20 work
+      [root@iZuf64yofkbhpt8m0ackshZ mydocker]# docker ps
+      CONTAINER ID  IMAGE  COMMAND  CREATED  STATUS  PORTS  NAMES
+      
+      ```
+
+      - 相当于: `CMD ["catalina.sh", "run"]`被 `ls -l`替换掉了
+
+        ```dockerfile
+        CMD ["catalina.sh", "run"]
+        CMD ls -l
+        ```
+
+        
+
+- ENTRYPOINT
+
+  - `docker run` 之后的参数会被稻作参数传递给ENTRYPOINT,之后形成新的命令组合
+  - Case
+    - crul命令解释:
+      - curl命令可以用来执行下载、发送各种HTTP请求，指定HTTP头部等操作。
+      - 如果系统没有curl可以使用yum install curl安装，也可以下载安装。
+      - curl是将下载文件输出到stdout 
+      - 使用命令: curl http://www.baidu.com 执行后，www.baidu.com的html就会显示在屏幕上了.这是最简单的使用方法。用这个命令获得了http://curl.haxx.se指向的页面.
+      - 如果这里的URL指向的是一个文件或者一幅图都可以直接下载到本地。如果下载的是HTML文档，那么缺省的将只显示文件头部，即HTML文档的header。要全部显示，请加参数-i   
+
+    - 制作CMD版可以查询ip信息的容器
+
+      - vim DockerFile3
+
+      ```dockerfile
+      FROM centos
+      RUN yum install -y curl
+      CMD ["curl","-s","http://ip.cn"]
+      ```
+
+      - 构建 `docker build -f /mydocker/DockerFile3 -t myip .`
+
+      ```bash
+      root@iZuf64yofkbhp8tm0ackshZ mydocker]# docker build -f /mydocker/DockerFile3 -t myip .
+      Sending build context to Docker daemon  4.096kB
+      Step 1/3 : FROM centos
+       ---> 5182e96772bf
+      Step 2/3 : RUN yum install -y curl
+       ---> Running in c50d2b39b009
+      Loaded plugins: fastestmirror, ovl
+      Determining fastest mirrors
+       * base: ftp.sjtu.edu.cn
+       * extras: ftp.sjtu.edu.cn
+       * updates: ftp.sjtu.edu.cn
+      Package curl-7.29.0-46.el7.x86_64 already installed and latest version
+      Nothing to do
+      Removing intermediate container c50d2b39b009
+       ---> bcb77c235890
+      Step 3/3 : CMD ["curl","-s","http://ip.cn"]
+       ---> Running in 9a8447179feb
+      Removing intermediate container 9a8447179feb
+       ---> 4780e697e548
+      Successfully built 4780e697e548
+      Successfully tagged myip:latest
+      ```
+
+      - 运行: `docker run myip`
+        - 输出: 当前 IP：xxxx 来自：xxxxx
+
+    - 问题
+
+      - 如果要显示Http头信息,就需要加上参数 -i 
+
+    - WHY
+
+      - 执行docker run myip -i ,相当于在 `CMD ["curl","-s","http://ip.cn"]`后面,加上 `CMD -i`
+      - 我们可以看到可执行文件找不到的报错，executable file not found。跟在镜像名后面的是command,运行时会替换CMD的默认值。   
+      - 因此这里的**-i**替换了原来的CMD，而不是添加在原来的`curl -s http://ip.cn`后面。而-i根本不是命令，所以自然找不到。   
+      - 那么如果我们希望加入-i这参数，我们就必须重新完整的输入这个命令:    
+        - `docker run myip curl -s http://ip.cn -i`
+
+    - 制作ENTRYPOINT版可以查询ip信息的容器
+
+      - vim DockerFile4
+
+      ```dockerfile
+      FROM centos
+      RUN yum install -y curl
+      ENTRYPOINT ["curl","-s","http://ip.cn"]
+      ```
+
+      - 构建 `docker  build -f /mydocker/DockerFile4 -t myip2`
+      - 运行 `dokcer run myip2  -i`
+
+      ```bash
+      [root@izuf64yofkbhp8tm0ackshz mydocker]# docker run myip2 -i
+      HTTP/1.1 200 OK
+      Date: Tue, 28 Aug 2018 04:28:37 GMT
+      Content-Type: text/html; charset=UTF-8
+      Transfer-Encoding: chunked
+      Connection: keep-alive
+      Set-Cookie: __cfduid=d762232cds1acd1cd4328e662d6dbb13990ede35430517; expires=Wed, 28-Aug-19 04:28:37 GMT; path=/; domain=.ip.cn; HttpOnly
+      Server: cloudflare
+      CF-RAY: 4we9e87vv8b63c5426-LAX
+      
+      当前 IP：xxxxx 来自：xxxx
+      
+      ```
+
+      
+
+#### 4.4 ONBUILD
+
+- 当构建一个被继承的Dockerfle时运行命令，父镜像在被子继承后父镜像的onbuild被触发了
+
+- 例子:
+
+  - vim Dockerfile_father
+
+    ```dockerfile
+    FROM centos
+    RUN yum install -y curl
+    ENTRYPOINT ["curl","-s","http://ip.cn"]
+    ONBUILD RUN echo "father  onbuild ....."
+    ```
+
+  - docker build -f /mydocker/Dockerfile_father -t myip_father .
+
+  - vim Dockerfile_son
+
+      ```dockerfile
+      FROM myip_father
+      RUN yum install -y curl
+      ENTRYPOINT ["curl","-s","http://ip.cn"]
+      ```
+
+  - docker build -f /mydocker/Dockerfile_son -t myip_son .
+
+      - 会有下面这句话,可以看到ONBUILD被触发
+
+      ```bash
+      # Executing 1 build trigger
+       ---> Running in f3e46b30c6fa
+      father  onbuild .....
+      
+      ```
+
+      
+
+#### 4.5自定义镜像Tomcat9
+
+- 准备
+  - 在 /mydocker:  ` touch hgxDockerFile`
+  - vim c.txt
+  - 下载java8和tomcat8.5到/mydocker下:
+
+```bash
+[root@izuf64yofkbhp8tm0ackshz mydocker]# ll
+total 190728
+-rw-r--r-- 1 root root   9621331 Aug 28 17:28 apache-tomcat-8.5.33.tar.gz
+-rw-r--r-- 1 root root        17 Aug 28 17:49 c.txt
+-rw-r--r-- 1 root root      1048 Aug 28 18:01 hgxDockerFile
+-rw-r--r-- 1 root root 185646832 Aug 28 17:30 jdk-8u181-linux-x64.tar.gz
+
+```
+
+
+- dockerfile编写:
+
+```dockerfile
+FROM centos
+MAINTAINER  hanguixian<hn_hanguixian@163.com>
+#把宿主机当前上下文的c.txt拷贝到容器/usr/local/路径下
+COPY c.txt /usr/local/cincontainer.txt
+#把java与tomcat添加到容器中
+ADD jdk-8u181-linux-x64.tar.gz /usr/local/
+ADD apache-tomcat-8.5.33.tar.gz /usr/local/
+#安装vim编辑器
+RUN yum -y install vim
+#设置工作访问时候的WORKDIR路径，登录落脚点
+ENV MYPATH /usr/local
+WORKDIR $MYPATH
+#配置java与tomcat环境境变量
+ENV JAVA_HOME /usr/local/jdk1.8.0_181
+ENV CLASSPATH $JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar
+ENV CATALINA_HOME /usr/local/apache-tomcat-8.5.33
+ENV CATALINA_BASE /usr/local/apache-tomcat-8.5.33
+ENV PATH $PATH:$JAVA_HOME/bin:$CATALINA_HOME/lib:$CATALINA_HOME/bin
+#容器运行时监听的端口
+EXPOSE 8080
+#启动时运行tomcat
+#ENTRYPOINT「"/usr/local/apache-tomcat-8.5.33/bin/startup.sh"]
+#CMD["/usr/local/apache-tomcat-8.5.33/bin/catalina.sh","run"l
+CMD /usr/local/apache-tomcat-8.5.33/bin/startup.sh && tail -F /usr/local/apache-tomcat-8.5.33/logs
+catalina.out
+```
+
+- 构建 : `docker build -f  hgxDockerFile -t hgxtomcat8 .`
+- 运行:
+
+```bash
+docker run -d -p 8888:8080 --name myt8 -v /hanguixian/mydockerfile/tomcat8/test:/usr/local/apache-tomcat-8.5.33/webapps/test -v /hanguixian/mydockerfile/tomcat8/tomcat8logs/:/usr/local/apache-tomcat-8.5.33/logs --privileged=true hgxtomcat8 
+
+```
+
+- 可以看到有tomcat启动:
+
+  ![tomcatUI](img/tomcatUI.png)
+
+- 结合前面的容器卷将测试web服务test发布
+
+  - 在 /hanguixian/mydockerfile/tomcat8/test下:
+
+    - vim index.jsp
+
+    ```jsp
+    <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+    <html>
+      <head>
+        <title>docker test</title>
+      </head>
+      <body>
+       <%= "I am docker tomcat self" %>
+       <h2>发布一个docker jsp</h2>
+       <% System.out.println("docker tomcat self"); %>
+      </body>
+    </html>
+    
+    ```
+
+    - mkdir WEB-INF 
+
+      - cd WEB-INF
+      - vim web.xml
+
+      ```xml
+      <?xml version="1.0" encoding="UTF-8"?>
+      <web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
+               version="4.0">
+      </web-app>
+      
+      ```
+
+  - 访问 : xxxx:8888/test/index.jsp
 
 ### 5.总结
 
-
+![dockerFile解析](img/dockerFile解析.png)
 
 
 
