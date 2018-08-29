@@ -297,7 +297,9 @@
   - 2.使用以下命令设置**稳定**存储库。即使您还想从**边缘**或**测试**存储库安装构建，您始终需要**稳定的**存储 库。(<font color="red">大坑:改成阿里云或网易云</font>)
 
     ```shell
-     sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo 
+    sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+    # 不用上面那个,用下面的阿里云
+    sudo yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
     ```
 
   - 3.安装*最新版本*的Docker CE 
@@ -326,6 +328,22 @@
   - run:  docker run xxx
 - 优化
   - 阿里云加速:
+
+    - mkdir -p /etc/docker
+
+    - vim /etc/docker/daemon.json
+
+      ```json
+      ## 阿里云
+      {
+        "registry-mirrors": ["https://6tb1s4ez.mirror.aliyuncs.com"]
+      }
+      ```
+
+    - systemctl daemon-reload
+
+    - systemctl restart docker
+
   - 网易云加速:
 
 ### 5.底层原理
