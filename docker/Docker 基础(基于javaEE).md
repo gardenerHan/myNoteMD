@@ -1444,7 +1444,41 @@ docker run -d -p 8888:8080 --name myt8 -v /hanguixian/mydockerfile/tomcat8/test:
 
 ## 七.Docker常用安装
 
+### mysql
 
+- 搜索: `docker search mysql`
+
+- 拉取: `docker pull mysql:5.7`
+
+- 运行
+
+  - 命令
+
+  ```shell
+  docker run -p 3306:3306 --name mysql -v /hanguixian/mysql/conf:/etc/mysql/conf.d -v /hanguixian/mysql/logs:/logs -v /hanguixian/mysql/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=123456 -d mysql:5.7
+  
+  ```
+
+  - 命令解释
+    -  `-p 3306:3306` : 将主机的3306端口映射到docker容器的3306端口。
+    - `--name mysql` : 运行服务名字
+    - `-v /hanguixian/mysql/conf:/etc/mysql/conf.d` :将主机/hanguixian/mysql目录下的conf/my.conf挂载到容器的/etc/mysql/conf.d
+    - `-v /hanguixian/mysqlogs:/logs` : 将主机Izzyyuse/mysqI目录下的logs目录挂载到容器的/logs。
+    - `-v /hanguixian/mysql/data:/var/lib/mysql`  :将主机/hanguixian/mysql目录下的data目录挂我到容器的/var/lib/mysql
+    - `-e MYSQL_ROOT_PASSWORD=123456` :  初始化root用户的密码。
+    - `-d mysql:5.7 `:后台程序运行mysql5.7
+
+- 进入容器
+
+  - 命令 : docker exec -it MySQL运行成功后的容器ID /bin/bash 
+    - `docker exec -it  c71b4611c818  /bin/bash`
+
+- 数据备份
+
+  - 命令: `docker exec some-mysql sh -c 'exec mysqldump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' > /some/path/on/your/host/all-databases.sql`
+    - 例子: `docker exec c71b4611c818  sh -c 'exec mysqldump --all-databases -uroot -p"123456"' > /a.sql`
+
+- docker hub : https://hub.docker.com/r/library/mysql/
 
 ---------
 
@@ -1452,6 +1486,55 @@ docker run -d -p 8888:8080 --name myt8 -v /hanguixian/mydockerfile/tomcat8/test:
 
 ## 八.本地镜像发布到阿里云
 
+### 操作指南
+
+#### 1. 登录阿里云Docker Registry
+
+```bash
+$ sudo docker login --username=xxxx registry.cn-qingdao.aliyuncs.com
+```
+
+用于登录的用户名为阿里云账号全名，密码为开通服务时设置的密码。
+
+您可以在产品控制台首页修改登录密码。
+
+#### 2. 从Registry中拉取镜像
+
+```bash
+$ sudo docker pull registry.cn-qingdao.aliyuncs.com/hanguixian/mycentos:[镜像版本号]
+```
+
+#### 3. 将镜像推送到Registry
+
+```bash
+$ sudo docker login --username=xxxxx registry.cn-qingdao.aliyuncs.com$ sudo docker tag [ImageId] registry.cn-qingdao.aliyuncs.com/hanguixian/mycentos:[镜像版本号]$ sudo docker push registry.cn-qingdao.aliyuncs.com/hanguixian/mycentos:[镜像版本号]
+```
+
+请根据实际镜像信息替换示例中的[ImageId]和[镜像版本号]参数。
+
+#### 4. 选择合适的镜像仓库地址
+
+从ECS推送镜像时，可以选择使用镜像仓库内网地址。推送速度将得到提升并且将不会损耗您的公网流量。
+
+如果您使用的机器位于经典网络，请使用 registry-internal.cn-qingdao.aliyuncs.com 作为Registry的域名登录，并作为镜像命名空间前缀。
+
+如果您使用的机器位于VPC网络，请使用 registry-vpc.cn-qingdao.aliyuncs.com 作为Registry的域名登录，并作为镜像命名空间前缀。
+
+#### 5. 示例
+
+使用"docker tag"命令重命名镜像，并将它通过专有网络地址推送至Registry。
+
+```bash
+$ sudo docker imagesREPOSITORY                                                         TAG                 IMAGE ID            CREATED             VIRTUAL SIZEregistry.aliyuncs.com/acs/agent                                    0.7-dfb6816         37bb9c63c8b2        7 days ago          37.89 MB$ sudo docker tag 37bb9c63c8b2 registry-vpc.cn-qingdao.aliyuncs.com/acs/agent:0.7-dfb6816
+```
+
+使用"docker images"命令找到镜像，将该镜像名称中的域名部分变更为Registry专有网络地址。
+
+```bash
+$ sudo docker push registry-vpc.cn-qingdao.aliyuncs.com/acs/agent:0.7-dfb6816
+```
+
 
 
 ---------
+
