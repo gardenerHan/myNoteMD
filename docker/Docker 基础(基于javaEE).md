@@ -1486,6 +1486,8 @@ docker run -d -p 8888:8080 --name myt8 -v /hanguixian/mydockerfile/tomcat8/test:
 
 ## 八.本地镜像发布到阿里云
 
+![本地镜像发布到阿里云](img/发布阿里云.png)
+
 ### 操作指南
 
 #### 1. 登录阿里云Docker Registry
