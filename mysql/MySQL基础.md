@@ -624,7 +624,7 @@ SELECT RAND() * 10 ;
 - `str_to_date`:将字符转换成日期
 - `date_format`:将日期转换成字符
 
-```mysql
+```sql
 #now 返回当前系统日期+时间
 SELECT NOW();
 
