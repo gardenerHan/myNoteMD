@@ -494,7 +494,193 @@ SELECT  DISTINCT department_id FROM employees ;
       `IS NULL`:仅仅可以判断NULL值，可读性较高，建议使用
       `<=> ` :既可以判断NULL值，又可以判断普通的数值，可读性较低
 
-### 7.
+### 7.排序查询(order by)
+
+- 语法 
+
+  ```sql
+  语法：
+  select 要查询的东西 from 表 where 条件 order by 排序的字段|表达式|函数|别名 【asc|desc】
+  ```
+
+- 使用 ORDER BY 子句排序 
+
+  - ASC（ascend）: 升序 
+  - DESC（descend）: 降序 
+
+- **ORDER BY 子句在SELECT语句的结尾,limit除外。**
+
+- 例子
+
+  ```sql
+  SELECT * FROM employees WHERE employee_id >= 90 ORDER BY hiredate ASC  ;
+  
+  SELECT *, employees.salary*12*(1 + IFNULL(commission_pct,0)) 年薪 FROM employees ORDER BY 年薪 ASC ;
+  
+  SELECT LENGTH(last_name) 字节长度, last_name ,salary FROM employees ORDER BY 字节长度 DESC ;
+  
+  SELECT * FROM employees ORDER BY salary ASC , employee_id DESC ;
+  ```
 
 
+
+### 8.常见函数
+
+- 概念：类似于java的方法，将一组逻辑语句封装在方法体中，对外暴露方法名
+- 好处：1、隐藏了实现细节  2、提高代码的重用性
+
+#### 8.1单行函数
+
+##### 8.1.1 字符函数
+
+- 大小写控制函数 : 改变字符的大小写
+
+  | 函数名 | 函数         | 结果 |
+  | ------ | ------------ | ---- |
+  | LOWER  | LOWER('Sql') | sql  |
+  | UPPER  | UPPER('Sql') | SQL  |
+
+
+  - 字符控制函数
+
+    | 函数名  | 作用                                   | 函数示例                    | 结果         |
+    | ------- | -------------------------------------- | --------------------------- | ------------ |
+    | concat  | 拼接                                   | CONCAT('Hello', 'World')    | HelloWorld   |
+    | substr  | 截取子串                               | SUBSTR('HelloWorld',1,5)    | Hello        |
+    | trim    | 去前后指定的空格和字符                 | TRIM('H' FROM 'HelloWorld') | elloWorld    |
+    | ltrim   | 去左边空格                             | ....                        | ...          |
+    | rtrim   | 去右边空格                             | ....                        | ...          |
+    | replace | 替换                                   | REPLACE('abcd','b','m')     | amcd         |
+    | lpad    | 左填充                                 | LPAD(salary,10,'*')         | `*****24000` |
+    | rpad    | 右填充                                 | RPAD(salary, 10, '*')       | `24000*****` |
+    | instr   | 返回子串第一次出现的索引(找不到,返回0) | INSTR('HelloWorld', 'W')    | 6            |
+    | length  | 获取字节个数                           | LENGTH('HelloWorld')        | 10           |
+
+- 注意:
+
+  ```mysql
+  # sql中,索引从1开始
+  
+  # 截取从指定索引处后面的所有字符
+  
+  SELECT SUBSTR('AAAHHH',2) ;
+  SELECT SUBSTR('AAAHHH' FROM 2) ;
+  
+  # 截取从指定索引开始,指定的字符长度
+  
+  SELECT SUBSTR('AAAHHH',2,3) ;
+  
+  SELECT SUBSTR('AAAHHH' FROM 2 FOR 3) AS out_put  ;
+  
+  ```
+
+
+##### 8.1.2 数学函数
+
+- round 四舍五入
+- ceil 向上取整,返回>=该参数的最小整数
+- floor 向下取整，返回<=该参数的最大整数
+- truncate 截断
+- mod取余
+- rand 随机数
+
+```mysql
+#round 四舍五入
+SELECT ROUND(-1.55);
+SELECT ROUND(1.567,2);
+
+
+#ceil 向上取整,返回>=该参数的最小整数
+
+SELECT CEIL(-1.02);
+
+#floor 向下取整，返回<=该参数的最大整数
+SELECT FLOOR(-9.99);
+
+#truncate 截断
+
+SELECT TRUNCATE(1.69999,1);
+
+#mod取余
+/*
+mod(a,b) ：  a-a/b*b
+
+mod(-10,-3):-10- (-10)/(-3)*（-3）=-1
+*/
+SELECT MOD(10,-3);
+SELECT 10%3;
+
+# 随机数 RAND
+SELECT RAND() * 10 ;
+```
+
+
+
+##### 8.1.3 日期函数
+
+- `now`:当前系统日期+时间
+	 `curdate`:当前系统日期	
+- `curtime`:当前系统时间
+- `str_to_date`:将字符转换成日期
+- `date_format`:将日期转换成字符
+
+```mysql
+#now 返回当前系统日期+时间
+SELECT NOW();
+
+#curdate 返回当前系统日期，不包含时间
+SELECT CURDATE();
+
+#curtime 返回当前时间，不包含日期
+SELECT CURTIME();
+
+#可以获取指定的部分，年、月、日、小时、分钟、秒
+SELECT YEAR(NOW()) 年;
+SELECT YEAR('1998-1-1') 年;
+SELECT  YEAR(hiredate) 年 FROM employees;
+SELECT MONTH(NOW()) 月;
+SELECT MONTHNAME(NOW()) 月;
+
+#str_to_date 将字符通过指定的格式转换成日期
+SELECT STR_TO_DATE('1998-3-2','%Y-%c-%d') AS out_put;
+
+#查询入职日期为1992--4-3的员工信息
+SELECT * FROM employees WHERE hiredate = '1992-4-3';
+SELECT * FROM employees WHERE hiredate = STR_TO_DATE('4-3 1992','%c-%d %Y');
+
+#date_format 将日期转换成字符
+SELECT DATE_FORMAT(NOW(),'%y年%m月%d日') AS out_put;
+
+#查询有奖金的员工名和入职日期(xx月/xx日 xx年)
+SELECT last_name,DATE_FORMAT(hiredate,'%m月/%d日 %y年') 入职日期
+FROM employees
+WHERE commission_pct IS NOT NULL;
+```
+
+- 格式符
+
+| 序号 | 格式符 | 功能                |
+| ---- | ------ | ------------------- |
+| 1    | %Y     | 四位的年份          |
+| 2    | %y     | 2位的年份           |
+| 3    | %m     | 月份 (01,02…11,12） |
+| 4    | %c     | 月（1,2,…11,12）    |
+| 5    | %d     | 日（01,02,…）       |
+| 6    | %H     | 小时(24小时制）     |
+| 7    | %h     | 小时（12小时制）    |
+| 8    | %i     | 分钟（00,01…59）    |
+| 9    | %s     | 秒（00,01,…59）     |
+
+
+
+##### 8.1.4 其他函数
+
+- SELECT VERSION();//查询mysql版本
+- SELECT DATABASE();//查询当前数据库
+- SELECT USER();//查询用户
+
+
+
+
+#### 8.2 分组函数(统计函数,聚合函数,组函数)
 
