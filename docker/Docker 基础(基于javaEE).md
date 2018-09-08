@@ -1508,6 +1508,8 @@ docker run -d -p 8888:8080 --name myt8 -v /hanguixian/mydockerfile/tomcat8/test:
 
 ### 操作指南
 
+- 创建一个centos的仓库
+
 #### 1. 登录阿里云Docker Registry
 
 ```bash
@@ -1527,7 +1529,9 @@ $ sudo docker pull registry.cn-qingdao.aliyuncs.com/hanguixian/mycentos:[镜像�
 #### 3. 将镜像推送到Registry
 
 ```bash
-$ sudo docker login --username=xxxxx registry.cn-qingdao.aliyuncs.com$ sudo docker tag [ImageId] registry.cn-qingdao.aliyuncs.com/hanguixian/mycentos:[镜像版本号]$ sudo docker push registry.cn-qingdao.aliyuncs.com/hanguixian/mycentos:[镜像版本号]
+$ sudo docker login --username=xxxxx registry.cn-qingdao.aliyuncs.com
+$ sudo docker tag [ImageId] registry.cn-qingdao.aliyuncs.com/hanguixian/mycentos:[镜像版本号]
+$ sudo docker push registry.cn-qingdao.aliyuncs.com/hanguixian/mycentos:[镜像版本号]
 ```
 
 请根据实际镜像信息替换示例中的[ImageId]和[镜像版本号]参数。
@@ -1545,7 +1549,10 @@ $ sudo docker login --username=xxxxx registry.cn-qingdao.aliyuncs.com$ sudo dock
 使用"docker tag"命令重命名镜像，并将它通过专有网络地址推送至Registry。
 
 ```bash
-$ sudo docker imagesREPOSITORY                                                         TAG                 IMAGE ID            CREATED             VIRTUAL SIZEregistry.aliyuncs.com/acs/agent                                    0.7-dfb6816         37bb9c63c8b2        7 days ago          37.89 MB$ sudo docker tag 37bb9c63c8b2 registry-vpc.cn-qingdao.aliyuncs.com/acs/agent:0.7-dfb6816
+$ sudo docker images
+REPOSITORY                            TAG      IMAGE ID            CREATED             VIRTUAL SIZE
+registry.aliyuncs.com/acs/agent    0.7-dfb6816    37bb9c63c8b2        7 days ago          37.89 MB
+$ sudo docker tag 37bb9c63c8b2 registry-vpc.cn-shanghai.aliyuncs.com/acs/agent:0.7-dfb6816
 ```
 
 使用"docker images"命令找到镜像，将该镜像名称中的域名部分变更为Registry专有网络地址。
