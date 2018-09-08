@@ -397,10 +397,11 @@ SELECT  DISTINCT department_id FROM employees ;
   - 关键字详细
 
     - 一般和通配符搭配使用
+
     - 通配符：
 
-    ​	% 任意多个字符,包含0个字符
-    	_  任意单个字符
+       % 任意多个字符,包含0个字符
+       _  任意单个字符
 
     - **like**
       - 案例1：查询员工名中包含字符a的员工信息
@@ -492,3 +493,8 @@ SELECT  DISTINCT department_id FROM employees ;
 
       `IS NULL`:仅仅可以判断NULL值，可读性较高，建议使用
       `<=> ` :既可以判断NULL值，又可以判断普通的数值，可读性较低
+
+### 7.
+
+
+
