@@ -558,7 +558,7 @@ SELECT  DISTINCT department_id FROM employees ;
 
 - 注意:
 
-  ```mysql
+  ```sql
   # sql中,索引从1开始
   
   # 截取从指定索引处后面的所有字符
@@ -584,7 +584,7 @@ SELECT  DISTINCT department_id FROM employees ;
 - mod取余
 - rand 随机数
 
-```mysql
+```sql
 #round 四舍五入
 SELECT ROUND(-1.55);
 SELECT ROUND(1.567,2);
