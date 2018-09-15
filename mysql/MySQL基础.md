@@ -1031,7 +1031,7 @@ select 查询列表 from 表1 别名 【连接类型】join 表2 别名 on 连�
     - 全外：full【outer】
   - 交叉连接：cross 
 
-#### 10.2.1内连接
+##### 10.2.1内连接
 
 - 语法：
 
@@ -1082,73 +1082,40 @@ SELECT e.last_name,m.last_name FROM employees e JOIN employees m ON e.manager_id
 
 
 
+ ##### 10.2.2 外连接
 
- #二、外连接
+-  应用场景：用于查询一个表中有，另一个表没有的记录
+- 特点：
+  - 1、外连接的查询结果为主表中的所有记录
+    - 如果从表中有和它匹配的，则显示匹配的值
+    - 如果从表中没有和它匹配的，则显示null
+    - 外连接查询结果=内连接结果+主表中有而从表没有的记录
+  - 2、左外连接，left join左边的是主表[右外连接，right join右边的是主表]
+  - 3、左外和右外交换两个表的顺序，可以实现同样的效果 
+  - 4、全外连接=内连接的结果+表1中有但表2没有的+表2中有但表1没有的
 
- /*
- 应用场景：用于查询一个表中有，另一个表没有的记录
-
- 特点：
- 1、外连接的查询结果为主表中的所有记录
-	如果从表中有和它匹配的，则显示匹配的值
-	如果从表中没有和它匹配的，则显示null
-	外连接查询结果=内连接结果+主表中有而从表没有的记录
- 2、左外连接，left join左边的是主表
-    右外连接，right join右边的是主表
- 3、左外和右外交换两个表的顺序，可以实现同样的效果 
- 4、全外连接=内连接的结果+表1中有但表2没有的+表2中有但表1没有的
- */
- #引入：查询男朋友 不在男神表的的女神名
-
- SELECT * FROM beauty;
- SELECT * FROM boys;
-
- #左外连接
- SELECT b.*,bo.*
- FROM boys bo
- LEFT OUTER JOIN beauty b
- ON b.`boyfriend_id` = bo.`id`
- WHERE b.`id` IS NULL;
-
-
- #案例1：查询哪个部门没有员工
- #左外
- SELECT d.*,e.employee_id
- FROM departments d
- LEFT OUTER JOIN employees e
- ON d.`department_id` = e.`department_id`
- WHERE e.`employee_id` IS NULL;
-
-
- #右外
-
-  SELECT d.*,e.employee_id
- FROM employees e
- RIGHT OUTER JOIN departments d
- ON d.`department_id` = e.`department_id`
- WHERE e.`employee_id` IS NULL;
-
-
- #全外
-
-
- USE girls;
- SELECT b.*,bo.*
- FROM beauty b
- FULL OUTER JOIN boys bo
- ON b.`boyfriend_id` = bo.id;
-
-
- #交叉连接
-
- SELECT b.*,bo.*
- FROM beauty b
- CROSS JOIN boys bo;
+```sql
+#引入：查询男朋友 不在男神表的的女神名
+SELECT * FROM beauty;
+SELECT * FROM boys;
+#左外连接
+SELECT b.*,bo.* FROM boys bo LEFT OUTER JOIN beauty b ON b.boyfriend_id = bo.id WHERE b.id IS NULL;
+#案例1：查询哪个部门没有员工
+#左外
+SELECT d.*,e.employee_id FROM departments d LEFT OUTER JOIN employees e ON d.department_id = e.department_id WHERE e.employee_id IS NULL;
+#右外
+SELECT d.*,e.employee_id FROM employees e RIGHT OUTER JOIN departments d ON d.department_id = e.department_id WHERE e.employee_id IS NULL;
+#全外
+USE girls;
+SELECT b.* ,bo.* FROM beauty b FULL OUTER JOIN boys bo ON b.boyfriend_id = bo.id;
+#交叉连接
+SELECT b.,bo. FROM beauty b CROSS JOIN boys bo;
+```
 
  
 
- #sql92和 sql99pk
- /*
- 功能：sql99支持的较多
- 可读性：sql99实现连接条件和筛选条件的分离，可读性较高
- */
+ ####  10.3 sql92和 sql99pk
+
+- 功能：sql99支持的较多
+- 可读性：sql99实现连接条件和筛选条件的分离，可读性较高
+
