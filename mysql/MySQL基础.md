@@ -1223,8 +1223,7 @@ SELECT MIN(salary),department_id FROM employees GROUP BY department_id HAVING MI
 #①查询location_id是1400或1700的部门编号
 SELECT DISTINCT department_id FROM departments WHERE location_id IN(1400,1700)
 #②查询员工姓名，要求部门号是①列表中的某一个
-SELECT last_name FROM employees WHERE department_id  <>
-ALL(SELECT DISTINCT department_id FROM departments WHERE location_id IN(1400,1700));
+SELECT last_name FROM employees WHERE department_id IN(SELECT DISTINCT department_id FROM departments WHERE location_id IN(1400,1700));
 
 #案例2：返回其它工种中比job_id为‘IT_PROG’工种任一工资低的员工的员工号、姓名、job_id 以及salary
 #①查询job_id为‘IT_PROG’部门任一工资
@@ -1262,6 +1261,96 @@ SELECT * FROM employees WHERE employee_id=(SELECT MIN(employee_id) FROM employee
 ```
 
 
+
+#### 11.2 select后面
+
+- 仅仅支持标量子查询
+
+```sql
+#案例1：查询每个部门的员工个数
+SELECT d.*,(SELECT COUNT(*) FROM employees e WHERE e.department_id = d.department_id) 个数 FROM departments d;
+
+#案例2：查询员工号=102的部门名
+SELECT (SELECT department_name,e.department_id FROM departments d INNER JOIN employees e ON d.department_id=e.department_id WHERE e.employee_id=102) 部门名;
+```
+
+
+
+#### 11.3 from后面
+
+- 将子查询结果充当一张表，要求必须起别名
+
+```sql
+#案例：查询每个部门的平均工资的工资等级
+
+#①查询每个部门的平均工资
+SELECT AVG(salary),department_id FROM employees GROUP BY department_id ;
+#②连接①的结果集和job_grades表，筛选条件平均工资 between lowest_sal and highest_sal 
+SELECT  ag_dep.*,g.grade_level FROM (SELECT AVG(salary) ag,department_id FROM employees GROUP BY department_id) ag_dep INNER JOIN job_grades g ON ag_dep.ag BETWEEN lowest_sal AND highest_sal;
+```
+
+
+
+#### 11.4 exists后面（相关子查询）
+
+- 语法：exists(完整的查询语句)
+
+- 结果：1或0
+
+- 例子:
+
+  ```sql
+  SELECT EXISTS(SELECT employee_id FROM employees WHERE salary=300000);
+  ```
+
+
+
+```sql
+#案例1：查询有员工的部门名
+#in
+SELECT department_name FROM departments d  WHERE d.department_id IN( SELECT department_id FROM employees)
+#exists
+SELECT department_name FROM departments d WHERE EXISTS( SELECT * FROM employees e WHERE d.department_id=e.department_id);
+
+#案例2：查询没有女朋友的男神信息
+#in
+SELECT bo.* FROM boys bo WHERE bo.id NOT IN( SELECT boyfriend_id FROM beauty)
+#exists
+SELECT bo.* FROM boys bo WHERE NOT EXISTS( SELECT boyfriend_id FROM beauty b WHERE bo.id=b.boyfriend_id);
+```
+
+
+
+### 12 分页查询
+
+- 应用场景：当要显示的数据，一页显示不全，需要分页提交sql请求
+- 语法：
+
+```sql
+select 查询列表 from 表 [join type] join 表2 on 连接条件 where 筛选条件 group by 分组字段 having 分组后的筛选 order by 排序的字段】 limit 【offset,】size;
+
+#注意--> offset:要显示条目的起始索引（起始索引从0开始）size:要显示的条目个数
+```
+
+- 特点：
+  - ①limit语句放在查询语句的最后
+  - ②公式: 要显示的页数 page，每页的条目数size
+
+  ```sql
+  select 查询列表 from 表 limit (page-1)*size,size;
+  ```
+
+
+
+```sql
+#案例1：查询前五条员工信息
+SELECT * FROM  employees LIMIT 0,5;
+SELECT * FROM  employees LIMIT 5;
+#案例2：查询第11条——第25条
+SELECT * FROM  employees LIMIT 10,15;
+#案例3：有奖金的员工信息，并且工资较高的前10名显示出来
+SELECT *  FROM employees WHERE commission_pct IS NOT NULL ORDER BY salary DESC LIMIT 10 ;
+```
 
 
 
