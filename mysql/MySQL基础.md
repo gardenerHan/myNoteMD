@@ -1119,3 +1119,11 @@ SELECT b.,bo. FROM beauty b CROSS JOIN boys bo;
 - 功能：sql99支持的较多
 - 可读性：sql99实现连接条件和筛选条件的分离，可读性较高
 
+#### 10.4 连接查询总结
+
+![连接查询1](img/连接查询1.png)
+
+![连接查询2](img/连接查询2.png)
+
+
+
