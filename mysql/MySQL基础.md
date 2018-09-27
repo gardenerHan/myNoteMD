@@ -126,7 +126,7 @@
 
 #### 3.2 MySQL的常见命令 
 
-```mysql
+```sql
 #1.查看当前所有的数据库
 show databases;
 
@@ -1176,6 +1176,9 @@ SELECT b.,bo. FROM beauty b CROSS JOIN boys bo;
 
 ##### 11.1.1 标量子查询★
 
+- 只返回一行。
+- 使用单行比较操作符。[`= > >=  < <= <>`]
+
 ```sql
 #案例1：谁的工资比 Abel 高?
 #①查询Abel的工资
@@ -1217,6 +1220,17 @@ SELECT MIN(salary),department_id FROM employees GROUP BY department_id HAVING MI
 
 
 ##### 11.1.2 列子查询（多行子查询）★
+
+- 返回多行。
+- 使用多行比较操作符。
+
+| 操作符    | 含义                       |
+| --------- | -------------------------- |
+| IN/NOT IN | 等于列表中的任意一个       |
+| ANY\|SOME | 和子查询返回的某一个值比较 |
+| ALL       | 和子查询返回的所有值比较   |
+
+
 
 ```sql
 #案例1：返回location_id是1400或1700的部门中的所有员工姓名
@@ -1334,7 +1348,7 @@ select 查询列表 from 表 [join type] join 表2 on 连接条件 where 筛选�
 
 - 特点：
   - ①limit语句放在查询语句的最后
-  - ②公式: 要显示的页数 page，每页的条目数size
+  - ②公式: 要显示的页数 page，每页的条目数size.[**（当前页数-1）*每页条数，每页条数** ]
 
   ```sql
   select 查询列表 from 表 limit (page-1)*size,size;
@@ -1351,6 +1365,31 @@ SELECT * FROM  employees LIMIT 10,15;
 #案例3：有奖金的员工信息，并且工资较高的前10名显示出来
 SELECT *  FROM employees WHERE commission_pct IS NOT NULL ORDER BY salary DESC LIMIT 10 ;
 ```
+
+
+
+### 13 联合查询
+
+- union 联合 合并：将多条查询语句的结果合并成一个结果
+- 语法：`查询语句1 union 查询语句2 union ...`
+- 应用场景：要查询的结果来自于多个表，且多个表没有直接的连接关系，但查询的信息一致时
+- 特点：★
+  - 1、要求多条查询语句的查询列数是一致的！
+  - 2、要求多条查询语句的查询的每一列的类型和顺序最好一致
+  - 3、union关键字默认去重，如果使用union all 可以包含重复项
+
+```sql
+#引入的案例：查询部门编号>90或邮箱包含a的员工信息
+SELECT * FROM employees WHERE email LIKE '%a%' OR department_id>90;
+SELECT * FROM employees  WHERE email LIKE '%a%' UNION SELECT * FROM employees  WHERE department_id>90;
+
+#案例：查询中国用户中男性的信息以及外国用户中年男性的用户信息
+SELECT id,cname FROM t_ca WHERE csex='男' UNION ALL SELECT t_id,tname FROM t_ua WHERE tGender='male';
+```
+
+
+
+## 四 DML
 
 
 
