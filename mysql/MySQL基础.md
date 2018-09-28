@@ -1569,3 +1569,174 @@ TRUNCATE TABLE boys;
 INSERT INTO boys (boyname,usercp) VALUES('张飞',100),('刘备',100),('关云长',100);
 ```
 
+
+
+## 五 DDL(数据定义语言)
+
+
+
+### 5.1 库的管理
+
+**创建、修改、删除**
+
+```sql
+#库的管理
+#1、库的创建
+/*
+语法：
+create database  [if not exists]库名;
+*/
+#案例：创建库Books
+CREATE DATABASE IF NOT EXISTS books ;
+
+#2、库的修改
+RENAME DATABASE books TO 新库名;
+
+#更改库的字符集
+ALTER DATABASE books CHARACTER SET gbk;
+
+#3、库的删除
+DROP DATABASE IF EXISTS books;
+```
+
+
+
+### 5.2 表的管理
+
+**创建、修改、删除**
+
+- 创建： create
+- 修改： alter
+- 删除： drop
+
+**命名规则**
+
+- 数据库名不得超过30个字符，变量名限制为29个 
+- 必须只能包含 A–Z, a–z, 0–9, _共63个字符
+- 不能在对象名的字符间留空格 
+- 必须不能和用户定义的其他对象重名 
+- 必须保证你的字段没有和保留字、数据库系统或常用 方法冲突 
+- 保持字段名和类型的一致性,在命名字段并为其指定数 据类型的时候一定要保证一致性。假如数据类型在一 个表里是整数,那在另一个表里可就别变成字符型了
+
+#### 5.2.1 表的创建 ★
+
+```sql
+语法：
+create table 表名(
+    列名 列的类型【(长度) 约束】,
+	列名 列的类型【(长度) 约束】,
+    列名 列的类型【(长度) 约束】,
+    ...
+    列名 列的类型【(长度) 约束】
+)
+```
+
+- 常用数据类型
+
+| 类型          | 描述                                                         |
+| ------------- | ------------------------------------------------------------ |
+| INT           | 使用4个字节保存整数数据                                      |
+| CHAR(size)    | 定长字符数据。若未指定，默认为1个字符，最大长度255           |
+| VARCHAR(size) | 可变长字符数据，根据字符串实际长度保存，必须指定长度         |
+| FLOAT(M,D)    | 单精度，M=整数位+小数位，D=小数位。 D<=M<=255,0<=D<=30， 默认M+D<=6 |
+| DOUBLE(M,D)   | 双精度。D<=M<=255,0<=D<=30，默认M+D<=15                      |
+| DATE          | 日期型数据，格式’YYYY-MM-DD’                                 |
+| BLOB          | 二进制形式的长文本数据，最大可达4G                           |
+| TEXT          | 长文本数据，最大可达4G                                       |
+
+
+
+```sql
+#案例：创建表Book
+CREATE TABLE book(
+    id INT,#编号
+    bName VARCHAR(20),#图书名
+    price DOUBLE,#价格
+    authorId  INT,#作者编号
+    publishDate DATETIME#出版日期
+);
+DESC book;
+
+#案例：创建表author
+CREATE TABLE IF NOT EXISTS author(
+    id INT,
+    au_name VARCHAR(20),
+    nation VARCHAR(10)
+)
+DESC author;
+```
+
+
+
+#### 5.2.2 表的修改
+
+- 语法
+
+```sql
+alter table 表名 add|drop|modify|change column 列名 【列类型 约束】;
+```
+
+```sql
+#①修改列名
+ALTER TABLE book CHANGE COLUMN publishdate pubDate DATETIME;
+#②修改列的类型或约束
+ALTER TABLE book MODIFY COLUMN pubdate TIMESTAMP;
+#③添加新列
+ALTER TABLE author ADD COLUMN annual DOUBLE; 
+#④删除列
+ALTER TABLE book_author DROP COLUMN  annual;
+#⑤修改表名
+ALTER TABLE author RENAME TO book_author;
+
+DESC book;
+```
+
+
+
+#### 5.2.3 表的删除
+
+- 语法
+
+```sql
+DROP TABLE IF EXISTS book_author;
+SHOW TABLES;
+
+#通用的写法：
+DROP DATABASE IF EXISTS 旧库名;
+CREATE DATABASE 新库名;
+
+DROP TABLE IF EXISTS 旧表名;
+CREATE TABLE  表名();
+
+```
+
+
+
+#### 5.2.4 表的复制
+
+```sql
+INSERT INTO author VALUES
+(1,'村上春树','日本'),
+(2,'莫言','中国'),
+(3,'冯唐','中国'),
+(4,'金庸','中国');
+
+SELECT * FROM Author;
+
+#1.仅仅复制表的结构
+CREATE TABLE copy LIKE author;
+
+#2.复制表的结构+数据
+CREATE TABLE copy2 SELECT * FROM author;
+#只复制部分数据
+CREATE TABLE copy3 SELECT id,au_name FROM author WHERE nation='中国';
+#仅仅复制某些字段
+CREATE TABLE copy4 SELECT id,au_name FROM author WHERE 0;
+```
+
+
+
+
+
+
+
