@@ -2667,3 +2667,368 @@ public CarManagementPageDTOS page(CarManagementPageRequest pageRequest) {
     return carManagementPageDTOS;
 }
 ```
+
+
+
+## 七 Spring 整合 JPA
+
+### 三种整合方式
+
+- LocalEntityManagerFactoryBean：适用于那些仅使用 JPA 进行数据访问的项目，该 FactoryBean 将根据JPA PersistenceProvider 自动检测配置文件进行工作，一般从“META-INF/persistence.xml”读取配置信息，这种方式最简单，但不能设置 Spring 中定义的DataSource，且不支持 Spring 管理的全局事务
+
+- 从JNDI中获取：用于从 Java EE 服务器获取指定的EntityManagerFactory，这种方式在进行 Spring 事务管理时一般要使用 JTA 事务管理
+
+- LocalContainerEntityManagerFactoryBean：适用于所有环境的 FactoryBean，能全面控制 EntityManagerFactory 配置,如指定 Spring 定义的 DataSource 等等。
+
+
+### 示例:
+
+- pom.xml
+
+```java
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.ifox.hgx</groupId>
+  <artifactId>jpa_ Integrated_spring</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>war</packaging>
+
+  <name>jpa_ Integrated_spring Maven Webapp</name>
+  <!-- FIXME change it to the project's website -->
+  <url>http://www.example.com</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+  </properties>
+
+  <dependencies>
+    <!-- https://mvnrepository.com/artifact/org.springframework/spring-context -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+      <version>5.0.3.RELEASE</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.springframework/spring-core -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-core</artifactId>
+      <version>5.0.3.RELEASE</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.springframework/spring-beans -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-beans</artifactId>
+      <version>5.0.3.RELEASE</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.springframework/spring-web -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-web</artifactId>
+      <version>5.0.3.RELEASE</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.springframework/spring-webmvc -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webmvc</artifactId>
+      <version>5.0.3.RELEASE</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.springframework/spring-jdbc -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-jdbc</artifactId>
+      <version>5.0.3.RELEASE</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.springframework/spring-orm -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-orm</artifactId>
+      <version>5.0.3.RELEASE</version>
+    </dependency>
+
+
+    <!-- https://mvnrepository.com/artifact/org.hibernate/hibernate-core -->
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-core</artifactId>
+      <version>5.2.13.Final</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.hibernate/hibernate-entitymanager -->
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-entitymanager</artifactId>
+      <version>5.2.13.Final</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>5.1.38</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/com.mchange/c3p0 -->
+    <dependency>
+      <groupId>com.mchange</groupId>
+      <artifactId>c3p0</artifactId>
+      <version>0.9.5.2</version>
+    </dependency>
+
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.11</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+```
+
+
+-  数据库连接信息:db.properties
+
+```properties
+jdbc.url = jdbc:mysql://localhost:3306/JPA
+jdbc.user = root
+jdbc.password = 123456
+jdbc.driverClass = com.mysql.jdbc.Driver
+```
+
+
+- spring配置:applicationContext.xml
+
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+
+    <!--配置自动扫描的包-->
+    <context:component-scan base-package="com.ifox.hgx.jpa.spring"></context:component-scan>
+
+    <!--配置 c3p0数据源-->
+    <context:property-placeholder location="classpath:db.properties"></context:property-placeholder>
+
+    <bean class="com.mchange.v2.c3p0.ComboPooledDataSource" id="dataSource">
+        <property name="jdbcUrl" value="${jdbc.url}"></property>
+        <property name="driverClass" value="${jdbc.driverClass}"></property>
+        <property name="user" value="${jdbc.user}"></property>
+        <property name="password" value="${jdbc.password}"></property>
+
+    </bean>
+
+    <!-- 配置 EntityManagerFactory -->
+    <bean id="entityManagerFactory"
+          class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+        <property name="dataSource" ref="dataSource"></property>
+        <!-- 配置 JPA 提供商的适配器. 可以通过内部 bean 的方式来配置 -->
+        <property name="jpaVendorAdapter">
+            <bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter"></bean>
+        </property>
+        <!-- 配置实体类所在的包 -->
+        <property name="packagesToScan" value="com.ifox.hgx.jpa.spring.entities"></property>
+        <!-- 配置 JPA 的基本属性. 例如 JPA 实现产品的属性 -->
+        <property name="jpaProperties">
+            <props>
+                <prop key="hibernate.show_sql">true</prop>
+                <prop key="hibernate.format_sql">true</prop>
+                <prop key="hibernate.hbm2ddl.auto">update</prop>
+            </props>
+        </property>
+    </bean>
+
+    <!-- 配置 JPA 使用的事务管理器 -->
+    <bean id="transactionManager"
+          class="org.springframework.orm.jpa.JpaTransactionManager">
+        <property name="entityManagerFactory" ref="entityManagerFactory"></property>
+    </bean>
+
+    <!-- 配置支持基于注解是事务配置 -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+</beans>
+```
+
+- Person.java 实体类
+
+```java
+@Table(name = "JPA_PERSON")
+@Entity
+public class Person {
+    private Integer id ;
+    private String lastName ;
+    private String email ;
+    private Integer age ;
+
+    public Person() {
+    }
+
+    public Person(String lastName, String email, Integer age) {
+        this.lastName = lastName;
+        this.email = email;
+        this.age = age;
+    }
+
+    //    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue
+    @Id
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    @Column(name = "LAST_NAME")
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
+    }
+
+    @Override
+    public String toString() {
+        return "Person{" +
+                "id=" + id +
+                ", lastName='" + lastName + '\'' +
+                ", email='" + email + '\'' +
+                ", age=" + age +
+                '}';
+    }
+}
+
+```
+
+- Dao层:PersonDao
+
+```java
+package com.ifox.hgx.jpa.spring.dao;
+
+import com.ifox.hgx.jpa.spring.entities.Person;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
+@Repository
+public class PersonDao {
+
+    //标注成员变量
+    @PersistenceContext
+    private EntityManager entityManager ;
+
+    @Transactional
+    public void save(Person person){
+        entityManager.persist(person);
+    }
+}
+
+```
+
+- Service层: PersonService 
+
+```java
+package com.ifox.hgx.jpa.spring.service;
+
+import com.ifox.hgx.jpa.spring.dao.PersonDao;
+import com.ifox.hgx.jpa.spring.entities.Person;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class PersonService {
+
+    @Autowired
+    private PersonDao personDao ;
+
+    public void save(Person person, Person person2){
+        personDao.save(person);
+        personDao.save(person2);
+    }
+
+}
+
+```
+
+- 测试类:JPATest
+
+```java
+package com.ifox.hgx.jap.spring;
+
+import com.ifox.hgx.jpa.spring.entities.Person;
+import com.ifox.hgx.jpa.spring.service.PersonService;
+import org.junit.Test;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+
+public class JPATest {
+
+    private ApplicationContext applicationContext = null ;
+    private PersonService personService = null ;
+
+    {
+        applicationContext = new ClassPathXmlApplicationContext("applicationContext.xml") ;
+        personService = applicationContext.getBean(PersonService.class) ;
+    }
+
+    @Test
+    public void testDataSource() throws Exception{
+        DataSource dataSource = applicationContext.getBean(DataSource.class) ;
+        Connection connection = dataSource.getConnection();
+        System.out.println(connection);
+
+    }
+
+    @Test
+    public void testPersonSave(){
+        Person person = new Person("AAA","12132@qq.com",13) ;
+        Person person1 = new Person("BBB","12312@qq.com",23) ;
+
+        personService.save(person,person1);
+
+
+    }
+}
+```
+
+
+- 目录结构:
+
+![目录结构](img/整合目录结构.png)
