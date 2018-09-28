@@ -929,3 +929,1293 @@ public class JPATest {
 
 ```
 
+
+
+## 五 映射关联关系
+
+### 映射单向多对一的关联关系
+
+-  Customer类
+
+```java
+package com.ifox.hgx.jpa.entity;
+
+import javax.persistence.*;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+
+@Table(name = "JPA_CUSTOMTERS")
+@Entity
+public class Customer {
+
+
+    private Integer id ;
+    private String lastName ;
+
+    private String email ;
+    private Integer age ;
+
+    private Date createTime ;
+    private Date birth ;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    public Date getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(Date createTime) {
+        this.createTime = createTime;
+    }
+
+    @Temporal(TemporalType.DATE)
+    public Date getBirth() {
+        return birth;
+    }
+
+    public void setBirth(Date birth) {
+        this.birth = birth;
+    }
+
+    // pkColumnName = "PK_NAME",pkColumnValue = "CUSTOMER_ID"确定行
+    // valueColumnName = "PK_VALUE"确定列
+    //allocationSize 每次增加多少
+//    @TableGenerator(name = "ID_GENERATOR",table = "jap_id_generators",
+//            pkColumnName = "PK_NAME",pkColumnValue = "CUSTOMER_ID",
+//            valueColumnName = "PK_VALUE",initialValue = 1,allocationSize = 100
+//
+//    )
+//    @GeneratedValue(strategy = GenerationType.TABLE,generator = "ID_GENERATOR")
+
+//    GeneratedValue 生成方式:策略为 GenerationType.AUTO 自动选择
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    @Column(name = "LAST_NAME")
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    @Column(length = 50)
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
+    }
+
+    //不是需要映射的字段的 需要加上注解Transient
+    @Transient
+    public String getInfo(){
+        return "lastName:"+lastName+" Email:" +email ;
+    }
+
+
+}
+
+```
+
+- Order类
+
+```java
+package com.ifox.hgx.jpa.entity;
+
+import javax.persistence.*;
+
+@Table(name = "JPA_ORDER")
+@Entity
+public class Order {
+    private Integer id ;
+    private String orderName ;
+    private Customer customer ;
+
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    @Column(name = "ORDER_NAME")
+    public String getOrderName() {
+        return orderName;
+    }
+
+    public void setOrderName(String orderName) {
+        this.orderName = orderName;
+    }
+
+//  @ManyToOne(fetch = FetchType.LAZY) 懒加载
+
+    @JoinColumn(name = "CUSTOMER_ID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    public Customer getCustomer() {
+        return customer;
+    }
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
+    }
+}
+
+```
+
+- 测试示例:
+
+```java
+package com.ifox.hgx.jpa.test;
+
+import com.ifox.hgx.jpa.entity.Customer;
+import com.ifox.hgx.jpa.entity.Order;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Persistence;
+import java.util.Date;
+
+public class TestMappingRelations {
+
+    private EntityManagerFactory entityManagerFactory ;
+    private EntityManager entityManager ;
+    private EntityTransaction transaction ;
+
+    @Before
+    public void init(){
+        entityManagerFactory = Persistence.createEntityManagerFactory("jpa_m1") ;
+        entityManager = entityManagerFactory.createEntityManager() ;
+        transaction = entityManager.getTransaction() ;
+        transaction.begin();
+    }
+
+    @After
+    public void distroy(){
+        transaction.commit();
+        entityManager.close();
+        entityManagerFactory.close();
+    }
+    
+//	保存多对一时, 建议先保存 1 的一端, 后保存 n 的一端, 这样不会多出额外的 UPDATE 语句.
+    @Test
+    public void testManyToOnePersist(){
+        Customer customer = new Customer();
+        customer.setAge(19);
+        customer.setBirth(new Date());
+        customer.setCreateTime(new Date());
+        customer.setEmail("GG@163.com");
+        customer.setLastName("GG");
+
+        Order order1 = new Order() ;
+        Order order2 = new Order() ;
+        order1.setOrderName("GG-0-1");
+        order2.setOrderName("GG-0-2");
+
+        order1.setCustomer(customer);
+        order2.setCustomer(customer);
+
+        //3条insert sql语句
+//        entityManager.persist(customer);
+//        entityManager.persist(order1);
+//        entityManager.persist(order2);
+
+        //3条insert 2条update
+        entityManager.persist(order1);
+        entityManager.persist(order2);
+        entityManager.persist(customer);
+    }
+	//默认情况下, 使用左外连接的方式来获取 n 的一端的对象和其关联的 1 的一端的对象. 
+	//可使用 @ManyToOne 的 fetch 属性来修改默认的关联属性的加载策略
+    //默认不使用懒加载
+    @Test
+    public void testManyToOneFind(){
+        Order order = entityManager.find(Order.class,1) ;
+        System.out.println(order.getOrderName());
+        System.out.println(order.getCustomer().getLastName());
+    }
+
+    
+
+    @Test
+    public void testManyToOneUpdate(){
+        Order order = entityManager.find(Order.class,1) ;
+        order.getCustomer().setLastName("FF");
+
+    }
+
+    //不能直接删除 1 的一端, 因为有外键约束.
+    @Test
+    public void testManyToOneRemove(){
+//        Order order = entityManager.find(Order.class,1) ;
+//        entityManager.remove(order);
+
+        Customer customer = entityManager.find(Customer.class,1) ;
+        entityManager.remove(customer);
+    }
+
+
+}
+
+
+```
+
+- persistence.xml中加入:
+
+```xml
+<!--添加持久化类-->
+        <class>com.ifox.hgx.jpa.entity.Customer</class>
+        <class>com.ifox.hgx.jpa.entity.Order</class>
+```
+
+
+### 映射单向一对多的关联关系
+
+----------------------------
+
+- Customer类中: 
+
+```java
+package com.ifox.hgx.jpa.entity;
+
+import javax.persistence.*;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+
+@Table(name = "JPA_CUSTOMTERS")
+@Entity
+public class Customer {
+
+
+    private Integer id ;
+    private String lastName ;
+
+    private String email ;
+    private Integer age ;
+
+    private Date createTime ;
+    private Date birth ;
+
+    private Set<Order> orders = new HashSet<>() ;
+
+    //1-n 添加时,需要cascade = CascadeType.PERSIST 级联添加
+    //1-n 级联删除,需要CascadeType.REMOVE
+    @JoinColumn(name = "CUSTOMER_ID")
+    @OneToMany(cascade = {CascadeType.PERSIST,CascadeType.REMOVE})
+    public Set<Order> getOrders() {
+        return orders;
+    }
+
+    public void setOrders(Set<Order> orders) {
+        this.orders = orders;
+    }
+
+    @Temporal(TemporalType.TIMESTAMP)
+    public Date getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(Date createTime) {
+        this.createTime = createTime;
+    }
+
+    @Temporal(TemporalType.DATE)
+    public Date getBirth() {
+        return birth;
+    }
+
+    public void setBirth(Date birth) {
+        this.birth = birth;
+    }
+
+    // pkColumnName = "PK_NAME",pkColumnValue = "CUSTOMER_ID"确定行
+    // valueColumnName = "PK_VALUE"确定列
+    //allocationSize 每次增加多少
+//    @TableGenerator(name = "ID_GENERATOR",table = "jap_id_generators",
+//            pkColumnName = "PK_NAME",pkColumnValue = "CUSTOMER_ID",
+//            valueColumnName = "PK_VALUE",initialValue = 1,allocationSize = 100
+//
+//    )
+//    @GeneratedValue(strategy = GenerationType.TABLE,generator = "ID_GENERATOR")
+
+//    GeneratedValue 生成方式:策略为 GenerationType.AUTO 自动选择
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    @Column(name = "LAST_NAME")
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    @Column(length = 50)
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
+    }
+
+    //不是需要映射的字段的 需要加上注解Transient
+    @Transient
+    public String getInfo(){
+        return "lastName:"+lastName+" Email:" +email ;
+    }
+
+    @Override
+    public String toString() {
+        return "Customer{" +
+                "id=" + id +
+                ", lastName='" + lastName + '\'' +
+                ", email='" + email + '\'' +
+                ", age=" + age +
+                ", createTime=" + createTime +
+                ", birth=" + birth +
+                ", orders=" + orders +
+                '}';
+    }
+}
+
+```
+
+- Order类:
+
+```java
+package com.ifox.hgx.jpa.entity;
+
+import javax.persistence.*;
+
+@Table(name = "JPA_ORDER")
+@Entity
+public class Order {
+    private Integer id ;
+    private String orderName ;
+//    private Customer customer ;
+
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    @Column(name = "ORDER_NAME")
+    public String getOrderName() {
+        return orderName;
+    }
+
+    public void setOrderName(String orderName) {
+        this.orderName = orderName;
+    }
+
+////  @ManyToOne(fetch = FetchType.LAZY) 懒加载
+//    @JoinColumn(name = "CUSTOMER_ID")
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    public Customer getCustomer() {
+//        return customer;
+//    }
+//
+//    public void setCustomer(Customer customer) {
+//        this.customer = customer;
+//    }
+}
+
+```
+
+
+测试示例:
+
+```java
+package com.ifox.hgx.jpa.test;
+
+import com.ifox.hgx.jpa.entity.Customer;
+import com.ifox.hgx.jpa.entity.Order;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Persistence;
+import java.util.Date;
+
+public class TestMapping_OneToMany {
+
+    private EntityManagerFactory entityManagerFactory ;
+    private EntityManager entityManager ;
+    private EntityTransaction transaction ;
+
+    @Before
+    public void init(){
+        entityManagerFactory = Persistence.createEntityManagerFactory("jpa_m1") ;
+        entityManager = entityManagerFactory.createEntityManager() ;
+        transaction = entityManager.getTransaction() ;
+        transaction.begin();
+    }
+
+    @After
+    public void destroy(){
+        transaction.commit();
+        entityManager.close();
+        entityManagerFactory.close();
+    }
+
+    //单向 1-n 关联关系执行保存时, 一定会多出 UPDATE 语句.
+    //因为 n 的一端在插入时不会同时插入外键列.
+    //
+    @Test
+    public void testOneToManyPersist(){
+        Customer customer = new Customer() ;
+        customer.setLastName("KKK");
+        customer.setCreateTime(new Date());
+        customer.setBirth(new Date());
+        customer.setEmail("KKK@qq.com");
+        customer.setAge(34);
+
+        Order order = new Order() ;
+        order.setOrderName("KK-01-1");
+
+        Order order1 = new Order() ;
+        order1.setOrderName("KK-02-2");
+
+        customer.getOrders().add(order);
+        customer.getOrders().add(order1) ;
+
+        entityManager.persist(order);
+        entityManager.persist(order);
+
+        entityManager.persist(customer);
+
+
+    }
+
+    //默认对关联的多的一方使用懒加载的加载策略.
+    //可以使用 @OneToMany 的 fetch 属性来修改默认的加载策略
+    @Test
+    public void testOneToManyFind(){
+        Customer customer = entityManager.find(Customer.class,1) ;
+        System.out.println(customer.getLastName());
+        System.out.println(customer.getOrders());
+    }
+
+    //默认情况下, 若删除 1 的一端, 则会先把关联的 n 的一端的外键置空, 然后进行删除.
+    //可以通过 @OneToMany 的 cascade 属性来修改默认的删除策略.
+    @Test
+    public void testOneToManyRemove(){
+        Customer customer  = entityManager.find(Customer.class,1) ;
+        entityManager.remove(customer);
+    }
+
+    @Test
+    public void testOneToManyUpdate(){
+        Customer customer  = entityManager.find(Customer.class,1) ;
+        customer.getOrders().iterator().next().setOrderName("0-xxx-x");
+    }
+}
+
+```
+
+
+### 映射双向多对一的关联关系
+
+- 双向一对多关系中，必须存在一个关系维护端，在 JPA 规范中，要求  many 的一方作为关系的维护端(owner side), one 的一方作为被维护端(inverse side).
+
+- 可以在 one 方指定 @OneToMany 注释并设置 mappedBy 属性，以指定它是这一关联中的被维护端，many 为维护端.
+
+- 在 many 方指定 @ManyToOne 注释，并使用 @JoinColumn 指定外键名称.
+
+---------------------------
+
+- Customer类
+```java
+package com.ifox.hgx.jpa.entity;
+
+import javax.persistence.*;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+
+@Table(name = "JPA_CUSTOMTERS")
+@Entity
+public class Customer {
+
+
+    private Integer id ;
+    private String lastName ;
+
+    private String email ;
+    private Integer age ;
+
+    private Date createTime ;
+    private Date birth ;
+
+    private Set<Order> orders = new HashSet<>() ;
+
+    //1-n 添加时,需要cascade = CascadeType.PERSIST 级联添加
+    //1-n 级联删除,需要CascadeType.REMOVE
+    //@JoinColumn(name = "CUSTOMER_ID")
+    @OneToMany(cascade = {CascadeType.PERSIST,CascadeType.REMOVE},mappedBy = "customer",fetch = FetchType.EAGER)
+    public Set<Order> getOrders() {
+        return orders;
+    }
+
+    public void setOrders(Set<Order> orders) {
+        this.orders = orders;
+    }
+
+    @Temporal(TemporalType.TIMESTAMP)
+    public Date getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(Date createTime) {
+        this.createTime = createTime;
+    }
+
+    @Temporal(TemporalType.DATE)
+    public Date getBirth() {
+        return birth;
+    }
+
+    public void setBirth(Date birth) {
+        this.birth = birth;
+    }
+
+    // pkColumnName = "PK_NAME",pkColumnValue = "CUSTOMER_ID"确定行
+    // valueColumnName = "PK_VALUE"确定列
+    //allocationSize 每次增加多少
+//    @TableGenerator(name = "ID_GENERATOR",table = "jap_id_generators",
+//            pkColumnName = "PK_NAME",pkColumnValue = "CUSTOMER_ID",
+//            valueColumnName = "PK_VALUE",initialValue = 1,allocationSize = 100
+//
+//    )
+//    @GeneratedValue(strategy = GenerationType.TABLE,generator = "ID_GENERATOR")
+
+//    GeneratedValue 生成方式:策略为 GenerationType.AUTO 自动选择
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    @Column(name = "LAST_NAME")
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    @Column(length = 50)
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
+    }
+
+    //不是需要映射的字段的 需要加上注解Transient
+    @Transient
+    public String getInfo(){
+        return "lastName:"+lastName+" Email:" +email ;
+    }
+
+    @Override
+    public String toString() {
+        return "Customer{" +
+                "id=" + id +
+                ", lastName='" + lastName + '\'' +
+                ", email='" + email + '\'' +
+                ", age=" + age +
+                ", createTime=" + createTime +
+                ", birth=" + birth +
+                ", orders=" + orders +
+                '}';
+    }
+}
+
+```
+
+- Order类
+
+```java
+package com.ifox.hgx.jpa.entity;
+
+import javax.persistence.*;
+
+@Table(name = "JPA_ORDER")
+@Entity
+public class Order {
+    private Integer id ;
+    private String orderName ;
+    private Customer customer ;
+
+
+
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    @Column(name = "ORDER_NAME")
+    public String getOrderName() {
+        return orderName;
+    }
+
+    public void setOrderName(String orderName) {
+        this.orderName = orderName;
+    }
+
+//  @ManyToOne(fetch = FetchType.LAZY) 懒加载
+    @JoinColumn(name = "CUSTOMER_ID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
+    }
+}
+
+```
+
+- 测试示例:
+
+```java
+package com.ifox.hgx.jpa.test;
+
+import com.ifox.hgx.jpa.entity.Customer;
+import com.ifox.hgx.jpa.entity.Order;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Persistence;
+import java.util.Date;
+
+public class TestMapping_TowWayOneToMany {
+
+    private EntityManagerFactory entityManagerFactory;
+    private EntityManager entityManager;
+    private EntityTransaction transaction;
+
+    @Before
+    public void init() {
+        entityManagerFactory = Persistence.createEntityManagerFactory("jpa_m1");
+        entityManager = entityManagerFactory.createEntityManager();
+        transaction = entityManager.getTransaction();
+        transaction.begin();
+    }
+
+    @After
+    public void destroy() {
+        transaction.commit();
+        entityManager.close();
+        entityManagerFactory.close();
+    }
+
+    //若是双向 1-n 的关联关系, 执行保存时
+    //若先保存 n 的一端, 再保存 1 的一端, 默认情况下, 会多出 n 条 UPDATE 语句.
+    //若先保存 1 的一端, 则会多出 n 条 UPDATE 语句
+    //在进行双向 1-n 关联关系时, 建议使用 n 的一方来维护关联关系, 而 1 的一方不维护关联系, 这样会有效的减少 SQL 语句.
+    //注意: 若在 1 的一端的 @OneToMany 中使用 mappedBy 属性, 则 @OneToMany 端就不能再使用 @JoinColumn 属性了.
+    @Test
+    public void testTowWayOneToManyPersist() {
+        Customer customer = new Customer();
+        customer.setLastName("CCC");
+        customer.setCreateTime(new Date());
+        customer.setBirth(new Date());
+        customer.setEmail("CCC@qq.com");
+        customer.setAge(34);
+
+        Order order = new Order();
+        order.setOrderName("CC-01-1");
+
+        Order order1 = new Order();
+        order1.setOrderName("CC-02-2");
+
+        customer.getOrders().add(order);
+        customer.getOrders().add(order1);
+
+        order.setCustomer(customer);
+        order1.setCustomer(customer);
+
+        //3insert 2update
+//        entityManager.persist(order);
+//        entityManager.persist(order);
+//
+//        entityManager.persist(customer);
+
+        //如果使用了mappedBy = "customer" 则只用3条insert语句
+        entityManager.persist(customer);
+
+        entityManager.persist(order);
+        entityManager.persist(order);
+
+
+    }
+
+    //可以使用 @OneToMany 的 fetch 属性来修改默认的加载策略,可以使用 @OneToMany 的 fetch 属性来修改默认的加载策略
+    @Test
+    public void testTowWayOneToManyFind(){
+        Customer customer = entityManager.find(Customer.class, 1);
+        System.out.println(customer.getLastName());
+
+        System.out.println(customer.getOrders().size());
+    }
+
+    //默认情况下, 若删除 1 的一端, 则会先把关联的 n 的一端的外键置空, 然后进行删除.
+    //可以通过 @OneToMany 的 cascade 属性来修改默认的删除策略. CascadeType.REMOVE 级联删除
+    @Test
+    public void tesTowWayOneToManyRemove(){
+        Customer customer = entityManager.find(Customer.class, 3);
+        entityManager.remove(customer);
+    }
+
+    @Test
+    public void testTowWayUpdate(){
+        Customer customer = entityManager.find(Customer.class, 1);
+        customer.getOrders().iterator().next().setOrderName("O-XXX-1");
+
+    }
+
+}
+
+```
+
+
+
+
+### 映射双向一对一的关联关系
+
+
+- 基于外键的 1-1 关联关系：在双向的一对一关联中，需要在关系被维护端(inverse side)中的 @OneToOne 注释中指定 mappedBy，以指定是这一关联中的被维护端。同时需要在关系维护端(owner side)建立外键列指向关系被维护端的主键列。
+
+- 如果延迟加载要起作用, 就必须设置一个代理对象.
+
+- Manager 其实可以不关联一个 Department
+
+- 如果有 Department 关联就设置为代理对象而延迟加载, 如果不存在关联的 Department 就设置 null, 因为外键字段是定义在 Department 表中的,Hibernate 在不读取 Department 表的情况是无法判断是否有关联有 Deparmtment, 因此无法判断设置 null 还是代理对象, 而统一设置为代理对象,也无法满足不关联的情况, 所以无法使用延迟加载,只 有显式读取 Department.
+
+-----------------
+
+
+- Department 类
+
+```java
+package com.ifox.hgx.jpa.entity;
+
+import javax.persistence.*;
+
+@Table(name="JPA_DEPARTMENTS")
+@Entity
+public class Department {
+
+    private Integer id;
+    private String deptName;
+
+    private Manager mgr;
+
+    @GeneratedValue
+    @Id
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    @Column(name="DEPT_NAME")
+    public String getDeptName() {
+        return deptName;
+    }
+
+    public void setDeptName(String deptName) {
+        this.deptName = deptName;
+    }
+
+    //使用 @OneToOne 来映射 1-1 关联关系。
+    //若需要在当前数据表中添加主键则需要使用 @JoinColumn 来进行映射. 注意, 1-1 关联关系, 所以需要添加 unique=true
+    @JoinColumn(name="MGR_ID", unique=true)
+    @OneToOne(fetch=FetchType.LAZY)
+    public Manager getMgr() {
+        return mgr;
+    }
+
+    public void setMgr(Manager mgr) {
+        this.mgr = mgr;
+    }
+}
+
+```
+
+- Manager 类
+
+```java
+package com.ifox.hgx.jpa.entity;
+
+import javax.persistence.*;
+
+@Table(name = "JPA_MANAGERS")
+@Entity
+public class Manager {
+
+    private Integer id;
+    private String mgrName;
+
+    private Department dept;
+
+    @GeneratedValue
+    @Id
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    @Column(name = "MGR_NAME")
+    public String getMgrName() {
+        return mgrName;
+    }
+
+    public void setMgrName(String mgrName) {
+        this.mgrName = mgrName;
+    }
+
+    //对于不维护关联关系, 没有外键的一方, 使用 @OneToOne 来进行映射, 建议设置 mappedBy=true
+    @OneToOne(mappedBy = "mgr")
+    public Department getDept() {
+        return dept;
+    }
+
+    public void setDept(Department dept) {
+        this.dept = dept;
+    }
+}
+
+
+
+```
+
+
+测试示例:
+
+
+```java
+package com.ifox.hgx.jpa.test;
+
+import com.ifox.hgx.jpa.entity.Department;
+import com.ifox.hgx.jpa.entity.Manager;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Persistence;
+
+public class TestMapping_TwoWayOneToOne {
+
+    private EntityManagerFactory entityManagerFactory;
+    private EntityManager entityManager;
+    private EntityTransaction transaction;
+
+    @Before
+    public void init() {
+        entityManagerFactory = Persistence.createEntityManagerFactory("jpa_m1");
+        entityManager = entityManagerFactory.createEntityManager();
+        transaction = entityManager.getTransaction();
+        transaction.begin();
+    }
+
+    @After
+    public void destroy() {
+        transaction.commit();
+        entityManager.close();
+        entityManagerFactory.close();
+    }
+
+    //双向 1-1 的关联关系, 建议先保存不维护关联关系的一方, 即没有外键的一方, 这样不会多出 UPDATE 语句.
+    @Test
+    public void testTwoWayOneToOnePersist(){
+        Manager mgr = new Manager();
+        mgr.setMgrName("M-BB");
+
+        Department dept = new Department();
+        dept.setDeptName("D-BB");
+
+        //设置关联关系
+        mgr.setDept(dept);
+        dept.setMgr(mgr);
+
+        //执行保存操作
+        entityManager.persist(mgr);
+        entityManager.persist(dept);
+    }
+
+    //1.默认情况下, 若获取维护关联关系的一方, 则会通过左外连接获取其关联的对象.
+    //但可以通过 @OntToOne 的 fetch 属性来修改加载策略. lazy 下: com.ifox.hgx.jpa.entity.Manager$HibernateProxy$vI5wL1QS 代理对象
+    @Test
+    public void testTwoWayOneToOneFind(){
+        Department dept = entityManager.find(Department.class, 2);
+        System.out.println(dept.getDeptName());
+        System.out.println(dept.getMgr().getClass().getName());
+    }
+
+    //1. 默认情况下, 若获取不维护关联关系的一方, 则也会通过左外连接获取其关联的对象.
+    //可以通过 @OneToOne 的 fetch 属性来修改加载策略. 但依然会再发送 SQL 语句来初始化其关联的对象
+    //这说明在不维护关联关系的一方, 不建议修改 fetch 属性.
+    @Test
+    public void testTwoWayOneToOneFind2(){
+        Manager mgr = entityManager.find(Manager.class, 1);
+        System.out.println(mgr.getMgrName());
+        System.out.println(mgr.getDept().getClass().getName());
+    }
+}
+
+```
+
+persistence.xml中加入:
+
+```xml
+ <!--添加持久化类-->
+<class>com.ifox.hgx.jpa.entity.Manager</class>
+<class>com.ifox.hgx.jpa.entity.Department</class>
+
+```
+
+
+### 映射双向多对多的关联关系
+
+- 在双向多对多关系中，我们必须指定一个关系维护端(owner side),可以通过 @ManyToMany 注释中指定 mappedBy 属性来标识其为关系维护端。
+
+--------------
+
+
+
+- Item 实体类
+
+```java
+package com.ifox.hgx.jpa.entity;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.Table;
+
+@Table(name="JPA_ITEMS")
+@Entity
+public class Item {
+
+    private Integer id;
+    private String itemName;
+
+    private Set<Category> categories = new HashSet<>();
+
+    @GeneratedValue
+    @Id
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    @Column(name="ITEM_NAME")
+    public String getItemName() {
+        return itemName;
+    }
+
+    public void setItemName(String itemName) {
+        this.itemName = itemName;
+    }
+
+    //使用 @ManyToMany 注解来映射多对多关联关系
+    //使用 @JoinTable 来映射中间表
+    //1. name 指向中间表的名字
+    //2. joinColumns 映射当前类所在的表在中间表中的外键
+    //2.1 name 指定外键列的列名
+    //2.2 referencedColumnName 指定外键列关联当前表的哪一列
+    //3. inverseJoinColumns 映射关联的类所在中间表的外键
+    @JoinTable(name="ITEM_CATEGORY",
+            joinColumns={@JoinColumn(name="ITEM_ID", referencedColumnName="ID")},
+            inverseJoinColumns={@JoinColumn(name="CATEGORY_ID", referencedColumnName="ID")})
+    @ManyToMany
+    public Set<Category> getCategories() {
+        return categories;
+    }
+
+    public void setCategories(Set<Category> categories) {
+        this.categories = categories;
+    }
+}
+
+```
+
+- Category 实体类
+
+
+```java
+package com.ifox.hgx.jpa.entity;
+
+
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.ManyToMany;
+import javax.persistence.Table;
+
+@Table(name="JPA_CATEGORIES")
+@Entity
+public class Category {
+
+    private Integer id;
+    private String categoryName;
+
+    private Set<Item> items = new HashSet<>();
+
+    @GeneratedValue
+    @Id
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    @Column(name="CATEGORY_NAME")
+    public String getCategoryName() {
+        return categoryName;
+    }
+
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
+    }
+
+    @ManyToMany(mappedBy="categories")
+    public Set<Item> getItems() {
+        return items;
+    }
+
+    public void setItems(Set<Item> items) {
+        this.items = items;
+    }
+}
+
+
+```
+
+
+![多对多](img/多对多.png)
+
+
+- persistence.xml中加入:
+
+```xml
+<class>com.ifox.hgx.jpa.entity.Category</class>
+<class>com.ifox.hgx.jpa.entity.Item</class>
+```
+
+
+- 测试示例:
+
+```java
+package com.ifox.hgx.jpa.test;
+
+import com.ifox.hgx.jpa.entity.Category;
+import com.ifox.hgx.jpa.entity.Item;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Persistence;
+
+public class Test_TwoWayManyToMany {
+
+
+    private EntityManagerFactory entityManagerFactory;
+    private EntityManager entityManager;
+    private EntityTransaction transaction;
+
+    @Before
+    public void init() {
+        entityManagerFactory = Persistence.createEntityManagerFactory("jpa_m1");
+        entityManager = entityManagerFactory.createEntityManager();
+        transaction = entityManager.getTransaction();
+        transaction.begin();
+    }
+
+    @After
+    public void destroy() {
+        transaction.commit();
+        entityManager.close();
+        entityManagerFactory.close();
+    }
+
+    //多对多的保存
+    @Test
+    public void testManyToManyPersist(){
+        Item i1 = new Item();
+        i1.setItemName("i-1");
+
+        Item i2 = new Item();
+        i2.setItemName("i-2");
+
+        Category c1 = new Category();
+        c1.setCategoryName("C-1");
+
+        Category c2 = new Category();
+        c2.setCategoryName("C-2");
+
+        //设置关联关系
+        i1.getCategories().add(c1);
+        i1.getCategories().add(c2);
+
+        i2.getCategories().add(c1);
+        i2.getCategories().add(c2);
+
+        c1.getItems().add(i1);
+        c1.getItems().add(i2);
+
+        c2.getItems().add(i1);
+        c2.getItems().add(i2);
+
+        //执行保存
+        entityManager.persist(i1);
+        entityManager.persist(i2);
+        entityManager.persist(c1);
+        entityManager.persist(c2);
+    }
+
+
+    //对于关联的集合对象, 默认使用懒加载的策略.
+    //使用维护关联关系的一方获取, 还是使用不维护关联关系的一方获取, SQL 语句相同.
+    @Test
+    public void testManyToManyFind(){
+//		Item item = entityManager.find(Item.class, 5);
+//		System.out.println(item.getItemName());
+//
+//		System.out.println(item.getCategories().size());
+
+        Category category = entityManager.find(Category.class, 7);
+        System.out.println(category.getCategoryName());
+        System.out.println(category.getItems().size());
+    }
+}
+
+```
+
+
+### 报错的话
+
+尝试:
+
+pom.xml
+
+```xml
+<!--&lt;!&ndash; https://mvnrepository.com/artifact/org.hibernate/hibernate-entitymanager &ndash;&gt;-->
+        <!--<dependency>-->
+            <!--<groupId>org.hibernate</groupId>-->
+            <!--<artifactId>hibernate-entitymanager</artifactId>-->
+            <!--<version>5.3.1.Final</version>-->
+        <!--</dependency>-->
+
+        <!-- https://mvnrepository.com/artifact/hibernate/hibernate-entitymanager -->
+        <dependency>
+            <groupId>hibernate</groupId>
+            <artifactId>hibernate-entitymanager</artifactId>
+            <version>3.4.0.GA</version>
+            <type>pom</type>
+        </dependency>
+```
+
