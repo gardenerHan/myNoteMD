@@ -2219,3 +2219,451 @@ pom.xml
         </dependency>
 ```
 
+
+
+## 六 JPQL
+
+### JPQL语言
+
+- JPQL语言，即 Java Persistence Query Language 的简称。JPQL 是一种和 SQL 非常类似的中间性和对象化查询语言，它最终会被编译成针对不同底层数据库的 SQL 查询，从而屏蔽不同数据库的差异。
+
+- JPQL语言的语句可以是 select 语句、update 语句或delete语句，它们都通过 Query 接口封装执行
+
+### javax.persistence.Query
+
+- Query接口封装了执行数据库查询的相关方法。调用 EntityManager 的 createQuery、create NamedQuery 及 createNativeQuery 方法可以获得查询对象，进而可调用 Query 接口的相关方法来执行查询操作。
+
+- Query接口的主要方法
+
+   -  `int executeUpdate()` 用于执行update或delete语句。
+
+    -  `List getResultList()` 用于执行select语句并返回结果集实体列表。
+
+    -  `Object getSingleResult()` 用于执行只返回单个结果实体的select语句。
+
+    -  `Query setFirstResult(int startPosition)` 用于设置从哪个实体记录开始返回查询结果。
+
+    -  `Query setMaxResults(int maxResult)`  用于设置返回结果实体的最大数。与setFirstResult结合使用可实现分页查询。
+
+    -  `Query setFlushMode(FlushModeType flushMode)`  设置查询对象的Flush模式。参数可以取2个枚举值：FlushModeType.AUTO 为自动更新数据库记录，FlushMode Type.COMMIT 为直到提交事务时才更新数据库记录。
+
+    -  `setHint(String hintName, Object value)`  设置与查询对象相关的特定供应商参数或提示信息。参数名及其取值需要参考特定 JPA 实现库提供商的文档。如果第二个参数无效将抛出IllegalArgumentException异常。
+
+    -  `setParameter(int position, Object value)`  为查询语句的指定位置参数赋值。Position 指定参数序号，value 为赋给参数的值。
+
+    -  `setParameter(int position, Date d, TemporalType type)`  为查询语句的指定位置参数赋 Date 值。Position 指定参数序号，value 为赋给参数的值，temporalType 取 TemporalType 的枚举常量，包括 DATE、TIME 及 TIMESTAMP 三个，，用于将 Java 的 Date 型值临时转换为数据库支持的日期时间类型（java.sql.Date、java.sql.Time及java.sql.Timestamp）。
+
+    -  `setParameter(int position, Calendar c, TemporalType type)` 为查询语句的指定位置参数赋 Calenda r值。position 指定参数序号，value 为赋给参数的值，temporalType 的含义及取舍同前。
+
+    -  `setParameter(String name, Object value)`  为查询语句的指定名称参数赋值。
+
+    -  `setParameter(String name, Date d, TemporalType type)`  为查询语句的指定名称参数赋 Date 值。用法同前。
+    -  `setParameter(String name, Calendar c, TemporalType type)`  为查询语句的指定名称参数设置Calendar值。name为参数名，其它同前。该方法调用时如果参数位置或参数名不正确，或者所赋的参数值类型不匹配，将抛出 IllegalArgumentException 异常。
+
+
+###  JPQL语句
+
+#### select语句用于执行查询。其语法可表示为：
+ - select_clause 
+ - form_clause 
+ - [where_clause] 
+ - [groupby_clause] 
+ - [having_clause]
+ - [orderby_clause]
+
+#### select-from 子句
+
+ - from 子句是查询语句的必选子句。
+
+ - Select 用来指定查询返回的结果实体或实体的某些属性
+
+ - From 子句声明查询源实体类，并指定标识符变量（相当于SQL表的别名）。
+
+- 如果不希望返回重复实体，可使用关键字 distinct 修饰。select、from 都是 JPQL 的关键字，通常全大写或全小写，建议不要大小写混用。
+
+#### 查询所有实体
+
+- 查询所有实体的 JPQL 查询字串很简单，例如：
+  select o from Order o 或  select o from Order as o
+
+- 关键字 as 可以省去。
+
+- 标识符变量的命名规范与 Java 标识符相同，且区分大小写。
+
+- 调用 EntityManager 的 createQuery() 方法可创建查询对象，接着调用 Query 接口的 getResultList() 方法就可获得查询结果集。
+
+
+#### where 子句
+
+- JPQL也支持包含参数的查询，例如：
+
+   - select o from Orders o where o.id = :myId
+
+    - select o from Orders o where o.id = :myId and o.customer = :customerName
+
+ - 注意：参数名前必须冠以冒号(`:`)，执行查询前须使用Query.setParameter(name, value)方法给参数赋值。
+
+- 也可以不使用参数名而使用参数的序号，例如：
+
+   - select o from Order o where o.id = ?1 and o.customer = ?2
+
+    - 其中 ?1 代表第一个参数，?2 代表第一个参数。在执行查询之前需要使用重载方法
+       Query.setParameter(pos, value) 提供参数值。
+     uery query = entityManager.createQuery( "select o from 　	Orders o where o.id = ?1 and o.customer = ?2" );
+       query.setParameter( 1, 2 );
+       query.setParameter( 2, "John" );
+       List orders = query.getResultList();
+       … …
+
+
+
+#### 查询部分属性
+
+- 如果只须查询实体的部分属性而不需要返回整个实体。例如：
+   select o.id, o.customerName, o.address.streetNumber from Order o order by o.id
+
+- 执行该查询返回的不再是Orders实体集合，而是一个对象数组的集合(Object[])，集合的每个成员为一个对象数组，可通过数组元素访问各个属性。
+
+
+#### 使用 Hibernate 的查询缓存
+
+```java
+ String jpql = "FROM Customer c WHERE c.age > ?1";
+        Query query = entityManager.createQuery(jpql).setHint(QueryHints.HINT_CACHEABLE, true);
+
+        //占位符的索引是从 1 开始
+        query.setParameter(1, 1);
+        List<Customer> customers = query.getResultList();
+        System.out.println(customers.size());
+
+        query = entityManager.createQuery(jpql).setHint(QueryHints.HINT_CACHEABLE, true);
+```
+
+
+#### order by子句
+
+- order by子句用于对查询结果集进行排序。和SQL的用法类似，可以用 “asc“ 和 "desc“ 指定升降序。如果不显式注明，默认为升序。
+  select o from Orders o order by o.id
+  select o from Orders o order by o.address.streetNumber desc
+  select o from Orders o order by o.customer asc, o.id desc
+
+
+#### group by子句与聚合查询
+
+- group by 子句用于对查询结果分组统计，通常需要使用聚合函数。常用的聚合函数主要有 AVG、SUM、COUNT、MAX、MIN 等，它们的含义与SQL相同。例如：
+  select max(o.id) from Orders o
+
+- 没有 group by 子句的查询是基于整个实体类的，使用聚合函数将返回单个结果值，可以使用Query.getSingleResult()得到查询结果。例如：
+  Query query = entityManager.createQuery(
+  				"select max(o.id) from Orders o");
+  Object result = query.getSingleResult();
+  Long max = (Long)result;
+  … …
+
+
+
+#### having子句
+
+- Having 子句用于对 group by 分组设置约束条件，用法与where 子句基本相同，不同是 where 子句作用于基表或视图，以便从中选择满足条件的记录；having 子句则作用于分组，用于选择满足条件的组，其条件表达式中通常会使用聚合函数。
+
+- 例如，以下语句用于查询订购总数大于100的商家所售商品及数量：
+  select o.seller, o.goodId, sum(o.amount) from V_Orders o group by 
+  o.seller, o.goodId having sum(o.amount) > 100
+
+- having子句与where子句一样都可以使用参数。
+
+#### 子查询
+
+- JPQL也支持子查询，在 where 或 having 子句中可以包含另一个查询。当子查询返回多于 1 个结果集时，它常出现在 any、all、exist s表达式中用于集合匹配查询。它们的用法与SQL语句基本相同。
+
+
+####  JPQL函数
+
+- JPQL提供了以下一些内建函数，包括字符串处理函数、算术函数和日期函数。
+
+- 字符串处理函数主要有：
+   - concat(String s1, String s2)：字符串合并/连接函数。
+
+     - substring(String s, int start, int length)：取字串函数。
+
+    - trim([leading|trailing|both,] [char c,] String s)：从字符串中去掉首/尾指定的字符或空格。
+
+    - ower(String s)：将字符串转换成小写形式。
+
+    - upper(String s)：将字符串转换成大写形式。
+
+    - ength(String s)：求字符串的长度。
+
+    - locate(String s1, String s2[, int start])：从第一个字符串中查找第二个字符串(子串)出现的位置。若未找到则返回0。
+
+   - 算术函数主要有 abs、mod、sqrt、size 等。Size 用于求集合的元素个数。
+
+   - 日期函数主要为三个，即 current_date、current_time、current_timestamp，它们不需要参数，返回服务器上的当前日期、时间和时戳。
+
+
+#### update语句
+
+- update语句用于执行数据更新操作。主要用于针对单个实体类的批量更新
+
+
+#### delete语句
+
+- delete语句用于执行数据更新操作。
+
+
+
+### 示例代码:
+
+- 常用API
+
+```java
+package com.ifox.hgx.jpa.test;
+
+import com.ifox.hgx.jpa.entity.Customer;
+import com.ifox.hgx.jpa.entity.Order;
+import org.hibernate.jpa.QueryHints;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.persistence.*;
+import java.util.List;
+
+public class TestJPQL {
+
+    private EntityManagerFactory entityManagerFactory;
+    private EntityManager entityManager;
+    private EntityTransaction transaction;
+
+    @Before
+    public void init() {
+        entityManagerFactory = Persistence.createEntityManagerFactory("jpa_m1");
+        entityManager = entityManagerFactory.createEntityManager();
+        transaction = entityManager.getTransaction();
+        transaction.begin();
+    }
+
+    @After
+    public void destroy() {
+        transaction.commit();
+        entityManager.close();
+        entityManagerFactory.close();
+    }
+
+
+    //需要注意的是位置参数的是位置前加符号”?”，命名参数是名称前是加符号”:”。
+    @Test
+    public void testHelloJPQL() {
+//        String jpql = "FROM Customer c WHERE c.age > ?1";
+//        Query query = entityManager.createQuery(jpql);
+//        query.setParameter(1, 1);
+
+        String jpql = "FROM Customer c where c.age > :age";
+
+        Query query = entityManager.createQuery(jpql);
+
+        query.setParameter("age", 1);
+        List<Customer> customers = query.getResultList();
+        System.out.println(customers.size());
+
+        /**
+         * 注意:如果是双向关联的 可能会发生:StackOverflowError
+         */
+//        for (Customer customer:customers) {
+//            System.out.println(customer);
+//        }
+    }
+
+    //默认情况下, 若只查询部分属性, 则将返回 Object[] 类型的结果. 或者 Object[] 类型的 List.
+    //也可以在实体类中创建对应的构造器, 然后再 JPQL 语句中利用对应的构造器返回实体类的对象.
+    @Test
+    public void testPartlyProperties() {
+        String jpql = "SELECT new Customer(c.lastName, c.age) FROM Customer c WHERE c.id > ?1";
+        List result = entityManager.createQuery(jpql).setParameter(1, 1).getResultList();
+
+        System.out.println(result);
+        //输出结果:[Customer{id=null, lastName='CCC', email='null', age=34, createTime=null, birth=null, orders=[]}]
+    }
+
+    //createNamedQuery 适用于在实体类前使用 @NamedQuery 标记的查询语句
+    //在实体类上:@NamedQuery(name = "testNameQuery" ,query = "select c from Customer c where c.age = ?1")
+    @Test
+    public void testNameQuery() {
+        Customer customer = (Customer) entityManager.createNamedQuery("testNameQuery").setParameter(1, 34).getSingleResult();
+        System.out.println(customer);
+    }
+
+    //createNativeQuery 适用于本地 SQL
+    @Test
+    public void test() {
+        String sql = "select age from JPA_CUSTOMTERS where id = ?";
+        Query query = entityManager.createNativeQuery(sql).setParameter(1, 1);
+        int age = (int) query.getSingleResult();
+        System.out.println("age:" + age);
+    }
+
+
+    //使用 hibernate 的查询缓存.
+    @Test
+    public void testQueryCache(){
+        String jpql = "FROM Customer c WHERE c.age > ?1";
+        Query query = entityManager.createQuery(jpql).setHint(QueryHints.HINT_CACHEABLE, true);
+
+        //占位符的索引是从 1 开始
+        query.setParameter(1, 1);
+        List<Customer> customers = query.getResultList();
+        System.out.println(customers.size());
+
+        query = entityManager.createQuery(jpql).setHint(QueryHints.HINT_CACHEABLE, true);
+
+        //占位符的索引是从 1 开始
+        query.setParameter(1, 1);
+        customers = query.getResultList();
+        System.out.println(customers.size());
+    }
+
+    //查询 order 数量大于 2 的那些 Customer
+    @Test
+    public void testGroupBy(){
+        String jpql = "SELECT o.customer FROM Order o "
+                + "GROUP BY o.customer "
+                + "HAVING count(o.id) >= 2";
+        List<Customer> customers = entityManager.createQuery(jpql).getResultList();
+
+        System.out.println(customers);
+    }
+
+    @Test
+    public void testOrderBy(){
+        String jpql = "FROM Customer c WHERE c.age > ?1 ORDER BY c.age DESC";
+        Query query = entityManager.createQuery(jpql).setHint(QueryHints.HINT_CACHEABLE, true);
+
+        //占位符的索引是从 1 开始
+        query.setParameter(1, 1);
+        List<Customer> customers = query.getResultList();
+        System.out.println(customers.size());
+    }
+
+    /**
+     * JPQL 的关联查询同 HQL 的关联查询.
+     *
+     * LEFT OUTER JOIN FETCH c.orders
+     *
+     * FETCH 很关键 会自动封装类
+     */
+    @Test
+    public void testLeftOuterJoinFetch(){
+        String jpql = "select c FROM Customer  c LEFT OUTER JOIN FETCH c.orders  WHERE c.id = ?1";
+
+        Customer customer =
+                (Customer) entityManager.createQuery(jpql).setParameter(1, 1).getSingleResult();
+        System.out.println(customer);
+        System.out.println(customer.getLastName());
+        System.out.println(customer.getOrders().size());
+
+//		List<Object[]> result = entityManager.createQuery(jpql).setParameter(1, 12).getResultList();
+//		System.out.println(result);
+    }
+
+    @Test
+    public void testSubQuery(){
+        //查询所有 Customer 的 lastName 为 YY 的 Order
+        String jpql = "SELECT o FROM Order o "
+                + "WHERE o.customer = (SELECT c FROM Customer c WHERE c.lastName = ?1)";
+
+        Query query = entityManager.createQuery(jpql).setParameter(1, "KKK");
+        List<Order> orders = query.getResultList();
+        System.out.println(orders.size());
+    }
+
+    //使用 jpql 内建的函数
+    @Test
+    public void testJpqlFunction(){
+        String jpql = "SELECT lower(c.email) FROM Customer c";
+
+        List<String> emails = entityManager.createQuery(jpql).getResultList();
+        System.out.println(emails);
+    }
+
+    //可以使用 JPQL 完成 UPDATE 和 DELETE 操作.
+    @Test
+    public void testExecuteUpdate(){
+        String jpql = "UPDATE Customer c SET c.lastName = ?1 WHERE c.id = ?2";
+        Query query = entityManager.createQuery(jpql).setParameter(1, "YYY").setParameter(2, 1);
+
+        query.executeUpdate();
+    }
+
+
+
+}
+
+```
+
+
+ - 实现分页排序查询
+
+```java
+public CarManagementPageDTOS page(CarManagementPageRequest pageRequest) {
+
+    String jpql = "select new com.enduser.dto.CarManagementPage(ee.userName, ec.id, ec.endUserId, ec.parkedStatus,ec.plateNumber, ec.status, ecc.vin,ecc.imgUrl)" + "from com.entity.enduer.EndUserCarInfoEO ec left join EndUserCarCeEO ecc on ec.id = ecc.endUserCarInfoId left join com.entity.enduer.EndUserEO ee on ec.endUserId = ee.id where 1=1 ";
+
+    //拼装条件
+    if (pageRequest.getUserName() != null) {
+        jpql = jpql + " and ec.endUserId in ( SELECT id FROM com.entity.enduer.EndUserEO er WHERE er.userName LIKE :userName) ";
+    }
+    if (pageRequest.getPlateNumber() != null) {
+        jpql = jpql + " and ec.plateNumber  like :plateNumber ";
+    }
+
+    //排序
+    jpql = jpql + " order by ec.modifyDate DESC  ";
+
+    //创建jpql查询
+    Query query = entityManager.createQuery(jpql);
+
+    //设置参数
+    if (pageRequest.getUserName() != null) {
+        query.setParameter("userName", "%" + pageRequest.getUserName() + "%");
+    }
+    if (pageRequest.getPlateNumber() != null) {
+        query.setParameter("plateNumber", "%" + pageRequest.getPlateNumber() + "%");
+    }
+
+    //得到总的记录数
+    int totalCount = query.getResultList().size();
+
+
+    /**
+	public class PageDetail {
+		//总记录数
+		private int totalCount;
+		//当页数量
+		private int pageSize;
+		//页码
+		private int pageNo;
+		//....
+	*/
+
+    //设置分页信息
+    PageResponseDetail pageResponseDetail = new PageResponseDetail();
+    pageResponseDetail.setPageNo(pageRequest.getPageNo() - 1);
+    pageResponseDetail.setPageSize(pageRequest.getPageSize());
+    pageResponseDetail.setTotalCount(totalCount);
+
+    //得到查询内容的实体
+    List<CarManagementPageDTO> carManagementPageDTOList = query.setFirstResult((pageRequest.getPageNo() - 1) * pageRequest.getPageSize()).setMaxResults(pageRequest.getPageSize()).getResultList();
+
+    /**
+		public class CarManagementPageDTOS {
+			//查询信息封装的实体
+			private List<CarManagementPageDTO> carManagementPageDTOList ;
+			//分页实体
+			private PageResponseDetail pageResponseDetail ;
+			//....
+	*/
+    CarManagementPageDTOS carManagementPageDTOS = new CarManagementPageDTOS(carManagementPageDTOList, pageResponseDetail);
+    //封装了查询的信息,分页信息
+    return carManagementPageDTOS;
+}
+```
