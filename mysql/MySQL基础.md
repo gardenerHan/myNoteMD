@@ -1736,7 +1736,176 @@ CREATE TABLE copy4 SELECT id,au_name FROM author WHERE 0;
 
 
 
+### 5.3 常见数据类型介绍
+
+#### 5.3.1 数值类型
+
+- **整型** 
+
+  - 特点：
+
+    - ① 如果不设置无符号还是有符号，默认是有符号，如果想设置无符号，需要添加unsigned关键字
+    - ② 如果插入的数值超出了整型的范围,会报out of range异常，并且插入临界值
+    - ③ 如果不设置长度，会有默认的长度
+
+    **长度代表了显示的最大宽度，如果不够会用0在左边填充，但必须搭配zerofill使用！**
+
+| 整数类型     | 字节 | 范围                                                         |
+| ------------ | ---- | ------------------------------------------------------------ |
+| Tinyint      | 1    | 有符号：-128~127 无符号：0~255                               |
+| Smallint     | 2    | 有符号：-32768~32767 无符号：0~65535                         |
+| Mediumint    | 3    | 有符号：-8388608~8388607 无符号：0~1677215                   |
+| Int、integer | 4    | 有符号：- 2147483648~2147483647 无符号：0~4294967295         |
+| Bigint       | 8    | 有符号： -9223372036854775808 ~9223372036854775807 无符号：0~ 9223372036854775807*2+1 |
+
+```sql
+#1.如何设置无符号和有符号
+DROP TABLE IF EXISTS tab_int;
+CREATE TABLE tab_int(
+	t1 INT(7) ZEROFILL,
+	t2 INT(7) ZEROFILL 
+   # t3 INT(7) unsigned
+);
+
+DESC tab_int;
+INSERT INTO tab_int VALUES(-123456);
+INSERT INTO tab_int VALUES(-123456,-123456);
+INSERT INTO tab_int VALUES(2147483648,4294967296);
+INSERT INTO tab_int VALUES(123,123);
+SELECT * FROM tab_int;
+```
+
+- **小数**
+  - 特点：
+    - ①M：整数部位+小数部位 , D：小数部位,如果超过范围，则插入临界值
+    - ②M和D都可以省略 如果是decimal，则M默认为10，D默认为0 ,如果是float和double，则会根据插入的数值的精度来决定精度
+    - ③定点型的精确度较高，如果要求插入数值的精度较高如货币运算等则考虑使用
+  - 原则: 所选择的类型越简单越好，能保存数值的类型越小越好
+
+| 浮点数类型            | 字节 | 范围                                                         |
+| --------------------- | ---- | ------------------------------------------------------------ |
+| float                 | 4    | ±1.75494351E-38~±3.402823466E+38                             |
+| double                | 8    | ±2.2250738585072014E-308~ ±1.7976931348623157E+308           |
+| 定点数类型            | 字节 | 范围                                                         |
+| DEC(M,D) DECIMAL(M,D) | M+2  | 最大取值范围与double相同，给定decimal的有效取值范围由M和D 决定 |
+
+```sql
+#测试M和D
+DROP TABLE tab_float;
+CREATE TABLE tab_float(
+	f1 FLOAT,
+	f2 DOUBLE,
+	f3 DECIMAL
+);
+SELECT * FROM tab_float;
+DESC tab_float;
+INSERT INTO tab_float VALUES(123.4523,123.4523,123.4523);
+INSERT INTO tab_float VALUES(123.456,123.456,123.456);
+INSERT INTO tab_float VALUES(123.4,123.4,123.4);
+INSERT INTO tab_float VALUES(1523.4,1523.4,1523.4);
+```
 
 
 
+- **位类型**
+
+| 位类型 | 字节 | 范围          |
+| ------ | ---- | ------------- |
+| Bit(M) | 1~8  | Bit(1)~bit(8) |
+
+ 
+
+ #### 5.3.2 字符类型
+
+- **char和varchar类型** 
+
+  - 说明：用来保存MySQL中较短的文本。
+  - **较长的文本：text  ， blob(较大的二进制)**
+  - 特点:
+
+  | #       | 写法      | M的意思                         | 特点           | 空间的耗费 | 效率 |
+  | ------- | --------- | ------------------------------- | -------------- | ---------- | ---- |
+  | char    | char(M)   | 最大的字符数，可以省略，默认为1 | 固定长度的字符 | 比较耗费   | 高   |
+  | varchar | archar(M) | 最大的字符数，不可以省略        | 可变长度的字符 | 比较节省   | 低   |
+
+
+| 字符串类型 | 最多字符数 | 描述及存储需求       |
+| ---------- | ---------- | -------------------- |
+| char(M)    | M          | M为0~255之间的整数   |
+| varchar(M) | M          | M为0~65535之间的整数 |
+
+```sql
+CREATE TABLE tab_char(
+	c1 ENUM('a','b','c')
+);
+INSERT INTO tab_char VALUES('a');
+INSERT INTO tab_char VALUES('b');
+INSERT INTO tab_char VALUES('c');
+INSERT INTO tab_char VALUES('m');
+INSERT INTO tab_char VALUES('A');
+
+SELECT * FROM tab_set;
+
+CREATE TABLE tab_set(
+	s1 SET('a','b','c','d')
+);
+INSERT INTO tab_set VALUES('a');
+INSERT INTO tab_set VALUES('A,B');
+INSERT INTO tab_set VALUES('a,c,d');
+```
+
+- **binary和varbinary类型**
+
+  - 说明：类似于char和varchar，不同的是它们包含二进制字符串而不包含非二 进制字符串。
+
+- **Enum类型**
+
+  - 说明:又称为枚举类型哦，要求插入的值必须属于列表中指定的值之一。 如果列表成员为1~255，则需要1个字节存储 如果列表成员为255~65535，则需要2个字节存储 最多需要65535个成员！
+
+- **Set类型**
+
+  - 说明：和Enum类型类似，里面可以保存0~64个成员。和Enum类型最大的区 别是：SET类型一次可以选取多个成员，而Enum只能选一个 根据成员个数不同，存储所占的字节也不同
+
+    | 成员数 | 字节数 |
+    | ------ | ------ |
+    | 1~8    | 1      |
+    | 9~16   | 2      |
+    | 17~24  | 3      |
+    | 25~32  | 4      |
+    | 33~64  | 8      |
+
+ #### 5.3.4 日期类型
+
+- 分类：
+  - date只保存日期
+  - time 只保存时间
+  - year只保存年
+  - datetime保存日期+时间
+  - timestamp保存日期+时间
+
+| 日期和时间类型 | 字节 | 最小值              | 最大值              |
+| -------------- | ---- | ------------------- | ------------------- |
+| date           | 4    | 1000-01-01          | 9999-12-31          |
+| datetime       | 8    | 1000-01-01 00:00:00 | 9999-12-31 23:59:59 |
+| timestamp      | 4    | 19700101080001      | 2038年的某个时刻    |
+| time           | 3    | -838:59:59          | 838:59:59           |
+| year           | 1    | 1901                | 2155                |
+
+- **datetime和timestamp的区别**
+  - 1、Timestamp支持的时间范围较小，取值范围：19700101080001——2038年的某个时间,Datetime的取值范围大：1000-1-1 ——9999—12-31
+  - 2、timestamp和实际时区有关，更能反映实际的日期，而datetime则只能反映出插入时的当地时区 
+  - 3、timestamp的属性受Mysql版本和SQLMode的影响很大
+
+
+```sql
+CREATE TABLE tab_date(
+	t1 DATETIME,
+	t2 TIMESTAMP
+);
+
+INSERT INTO tab_date VALUES(NOW(),NOW());
+SELECT * FROM tab_date;
+SHOW VARIABLES LIKE 'time_zone';
+SET time_zone='+9:00';
+```
 
