@@ -46,8 +46,6 @@ dependencies {
 - HelloWorld.java
 
 ```java
-package com.atguigu.spring.helloworld;
-
 public class HelloWorld {
 
     private String user;
