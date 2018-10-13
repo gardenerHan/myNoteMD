@@ -2,6 +2,12 @@
 
 
 
+<font color="green">*@Author:hanguixian*</font> 
+
+<font color="green">*@Email:hn_hanguixian@163.com*<font>   
+
+---------------
+
 ## 一 Spring是什么？
 
 - Spring 是一个开源框架.
@@ -202,7 +208,7 @@ public class HelloWorld {
 
 #### 3.2.5 字面值 
 
-- 字面值：可用字符串表示的值，可以通过 <value> 元素标签或 value 属性进行注入。
+- 字面值：可用字符串表示的值，可以通过 `<value>` 元素标签或 value 属性进行注入。
 - 基本数据类型及其封装类、String 等类型都可以采取字面值注入的方式
 - 若字面值中包含特殊字符，可以使用 <![CDATA[]]> 把字面值包裹起来。
 
@@ -362,9 +368,9 @@ public class HelloWorld {
   - autowire 属性要么根据类型自动装配, 要么根据名称自动装配, 不能两者兼而有之.
   - 一般情况下，在实际的项目中很少使用自动装配功能，因为和自动装配功能所带来的好处比起来，明确清晰的配置文档更有说服力一些
 
-###  3.2.13 继承 Bean 配置&依赖 Bean 配置  
+####  3.2.13 继承 Bean 配置&依赖 Bean 配置  
 
-#### 3.2.13.1 继承 Bean 配置
+##### 3.2.13.1 继承 Bean 配置
 
 - Spring 允许继承 bean 的配置, 被继承的 bean 称为父 bean. 继承这个父 Bean 的 Bean 称为子 Bean
 - 子 Bean 从父 Bean 中继承配置, 包括 Bean 的属性配置
@@ -373,7 +379,7 @@ public class HelloWorld {
 - 并不是 `<bean>` 元素里的所有属性都会被继承. 比如: autowire, abstract 等.
 - 也可以忽略父 Bean 的 class 属性, 让子 Bean 指定自己的类, 而共享相同的属性配置. 但此时 abstract 必须设为 true
 
-#### 3.2.13.2 依赖 Bean 配置 
+##### 3.2.13.2 依赖 Bean 配置 
 - Spring 允许用户通过 depends-on 属性设定 Bean 前置依赖的Bean，前置依赖的 Bean 会在本 Bean 实例化之前创建好
 - 如果前置依赖于多个 Bean，则可以通过逗号，空格或的方式配置 Bean 的名称
 
@@ -389,7 +395,7 @@ public class HelloWorld {
 
 
 
-### 3.2.14 Bean 的作用域 
+#### 3.2.14 Bean 的作用域 
 
 - 在 Spring 中, 可以在 `<bean>` 元素的 scope 属性里设置 Bean 的作用域. 
 - 默认情况下, Spring 只为每个在 IOC 容器里声明的 Bean 创建唯一一个实例, 整个 IOC 容器范围内都能共享该实例：所有后续的 getBean() 调用和 Bean 引用都将返回这个唯一的 Bean 实例.该作用域被称为 **singleton**, 它是所有 Bean 的默认作用域.
