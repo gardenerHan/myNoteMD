@@ -317,7 +317,7 @@ public class HelloWorld {
     <ref bean="car2"/>
 </util:list>
 
-<bean id="user2" class="com.atguigu.spring.helloworld.User">
+<bean id="user2" class="xxx.User">
     <property name="userName" value="Rose"></property>
     <!-- 引用外部声明的 list -->
     <property name="cars" ref="cars"></property>
@@ -333,7 +333,7 @@ public class HelloWorld {
 - 使用 p 命名空间后，基于 XML 的配置方式将进一步简化
 
 ```xml
-<bean id="user3" class="com.atguigu.spring.helloworld.User" p:cars-ref="cars" p:userName="Titannic"></bean>
+<bean id="user3" class="xxx.User" p:cars-ref="cars" p:userName="Titannic"></bean>
 ```
 
 
@@ -362,7 +362,39 @@ public class HelloWorld {
   - autowire 属性要么根据类型自动装配, 要么根据名称自动装配, 不能两者兼而有之.
   - 一般情况下，在实际的项目中很少使用自动装配功能，因为和自动装配功能所带来的好处比起来，明确清晰的配置文档更有说服力一些
 
+###  3.2.13 继承 Bean 配置&依赖 Bean 配置  
 
+#### 3.2.13.1 继承 Bean 配置
+
+- Spring 允许继承 bean 的配置, 被继承的 bean 称为父 bean. 继承这个父 Bean 的 Bean 称为子 Bean
+- 子 Bean 从父 Bean 中继承配置, 包括 Bean 的属性配置
+- 子 Bean 也可以覆盖从父 Bean 继承过来的配置
+- 父 Bean 可以作为配置模板, 也可以作为 Bean 实例. 若只想把父 Bean 作为模板, 可以设置 <bean> 的abstract 属性为 true, 这样 Spring 将不会实例化这个 Bean
+- 并不是 `<bean>` 元素里的所有属性都会被继承. 比如: autowire, abstract 等.
+- 也可以忽略父 Bean 的 class 属性, 让子 Bean 指定自己的类, 而共享相同的属性配置. 但此时 abstract 必须设为 true
+
+#### 3.2.13.2 依赖 Bean 配置 
+- Spring 允许用户通过 depends-on 属性设定 Bean 前置依赖的Bean，前置依赖的 Bean 会在本 Bean 实例化之前创建好
+- 如果前置依赖于多个 Bean，则可以通过逗号，空格或的方式配置 Bean 的名称
+
+```xml
+<!-- bean 的配置能够继承吗 ? 使用 parent 来完成继承 -->	
+<bean id="user4" parent="user" p:userName="Bob"></bean>
+
+<bean id="user6" parent="user" p:userName="维多利亚"></bean>
+
+<!-- 测试 depents-on -->	
+<bean id="user5" parent="user" p:userName="Backham" depends-on="user6"></bean>
+```
+
+
+
+### 3.2.14 Bean 的作用域 
+
+- 在 Spring 中, 可以在 `<bean>` 元素的 scope 属性里设置 Bean 的作用域. 
+- 默认情况下, Spring 只为每个在 IOC 容器里声明的 Bean 创建唯一一个实例, 整个 IOC 容器范围内都能共享该实例：所有后续的 getBean() 调用和 Bean 引用都将返回这个唯一的 Bean 实例.该作用域被称为 **singleton**, 它是所有 Bean 的默认作用域.
+
+![bean作用域](img\bean作用域.png)
 
 
 
