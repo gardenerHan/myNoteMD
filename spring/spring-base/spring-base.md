@@ -21,7 +21,7 @@
 
 - spring模块
 
-  ![](img\spring模块.png)
+  ![spring模块](img/spring模块.png)
 
 
 
@@ -394,7 +394,7 @@ public class HelloWorld {
 - 在 Spring 中, 可以在 `<bean>` 元素的 scope 属性里设置 Bean 的作用域. 
 - 默认情况下, Spring 只为每个在 IOC 容器里声明的 Bean 创建唯一一个实例, 整个 IOC 容器范围内都能共享该实例：所有后续的 getBean() 调用和 Bean 引用都将返回这个唯一的 Bean 实例.该作用域被称为 **singleton**, 它是所有 Bean 的默认作用域.
 
-![bean作用域](img\bean作用域.png)
+![bean作用域](img/bean作用域.png)
 
 
 
