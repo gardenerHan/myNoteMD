@@ -1914,7 +1914,7 @@ SET time_zone='+9:00';
 - 含义：一种限制，用于限制表中的数据，为了保证表中的数据的准确和可靠性
 - 分类：六大约束
 
-| 约束        | 详细                                                         |
+| 约束        | 概述                                                         |
 | ----------- | ------------------------------------------------------------ |
 | NOT NULL    | 非空，用于保证该字段的值不能为空：比如姓名、学号等           |
 | DEFAULT     | 默认，用于保证该字段有默认值：比如性别                       |
@@ -1923,12 +1923,46 @@ SET time_zone='+9:00';
 | CHECK       | 检查约束【mysql中不支持】：比如年龄、性别                    |
 | FOREIGN KEY | 外键，用于限制两个表的关系，用于保证该字段的值必须来自于主表的关联列的值，在从表添加外键约束，用于引用主表中某列的值：比如学生表的专业编号，员工表的部门编号，员工表的工种编号 |
 
+- 详细
+
+  - **NOT NULL 约束**
+    - 非空约束用于确保当前列的值不为空值，非空约束只能出现在表对象的列上。
+    - Null类型特征： 
+      - 所有的类型的值都可以是null，包括int、 float等数据类型 
+      - 空字符串””不等于null，0也不等于null
+  - **UNIQUE 约束**
+    - 同一个表可以有多个唯一约束，多个列组合的约束。 在创建唯一约束的时候，如果不给唯一约束名称，就默认和列名相同。 
+    - MySQL会给唯一约束的列上默认创建一个唯一索引
+  - **PRIMARY KEY 约束**
+    - 主键约束相当于唯一约束+非空约束的组合，主 键约束列不允许重复，也不允许出现空值 
+    -  如果是多列组合的主键约束，那么这些列都不允 许为空值，并且组合的值不允许重复。 
+    - 每个表最多只允许一个主键，建立主键约束可以 在列级别创建，也可以在表级别上创建。 
+    - MySQL的主键名总是PRIMARY，当创建主键约束 时，系统默认会在所在的列和列组合上建立对应的 唯一索引。
+  - **FOREIGN KEY 约束** 
+    - 外键约束是保证一个或两个表之间的参照完整性， 外键是构建于一个表的两个字段或是两个表的两个字 段之间的参照关系。 
+    - 从表的外键值必须在主表中能找到或者为空。当主 表的记录被从表参照时，主表的记录将不允许删除， 如果要删除数据，需要先删除从表中依赖该记录的数据，然后才可以删除主表的数据。 
+    -  还有一种就是级联删除子表数据。 
+    - 注意：外键约束的参照列，在主表中引用的**只能是主键或唯一键约束的列** 
+    -  同一个表可以有多个外键约束
+    - FOREIGN KEY 约束的关键字
+      - FOREIGN KEY: 在表级指定子表中的列 
+      - REFERENCES: 标示在父表中的列 
+      - ON DELETE CASCADE(级联删除): 当父表中的列被删除 时，子表中相对应的列也被删除 
+      - ON DELETE SET NULL(级联置空): 子表中相应的列置空
+  - **CHECK 约束** 
+    -  MySQL可以使用check约束，但check约束对数据 验证没有任何作用,添加数据时，没有任何错误或 警告
+
+  
+
 - 添加约束的时机：
+
   - 1.创建表时
   - 2.修改表时
+
 - 约束的添加分类：
   - 列级约束：六大约束语法上都支持，但**外键约束没有效果**
   - 表级约束：除了**非空、默认**，其他的都支持
+
 - 主键和唯一的大对比：
 
 | #    | 保证唯一性 | 是否允许为空 | 一个表中可以有多少个  | 是否允许组合 |
@@ -1941,3 +1975,181 @@ SET time_zone='+9:00';
   - 2、从表的外键列的类型和主表的关联列的类型要求一致或兼容，名称无要求
   - 3、主表的关联列必须是一个key（一般是主键或唯一）
   - 4、插入数据时，先插入主表，再插入从表，删除数据时，先删除从表，再删除主表
+
+```sql
+CREATE TABLE 表名(
+	字段名 字段类型 列级约束,
+	字段名 字段类型,
+	表级约束
+)
+```
+
+
+
+####  4.1 创建表时添加约束
+
+##### 4.1.1 添加列级约束
+
+- 语法：直接在字段名和类型后面追加 约束类型即可。
+- 只支持：默认、非空、主键、唯一
+
+```sql
+DROP TABLE stuinfo;
+CREATE TABLE stuinfo(
+	id INT PRIMARY KEY,#主键
+    stuName VARCHAR(20) NOT NULL UNIQUE,#非空
+    gender CHAR(1) CHECK(gender='男' OR gender ='女'),#检查
+    seat INT UNIQUE,#唯一
+    age INT DEFAULT  18,#默认约束
+    majorId INT REFERENCES major(id)#外键
+);
+
+CREATE TABLE major(
+	id INT PRIMARY KEY,
+	majorName VARCHAR(20)
+);
+
+#查看stuinfo中的所有索引，包括主键、外键、唯一
+SHOW INDEX FROM stuinfo;
+```
+
+
+
+##### 4.1.2 添加表级约束
+
+- 语法：在各个字段的最下面【constraint 约束名】 约束类型(字段名) 
+
+```sql
+DROP TABLE IF EXISTS stuinfo;
+CREATE TABLE stuinfo(
+	id INT,
+	stuname VARCHAR(20),
+	gender CHAR(1),
+	seat INT,
+	age INT,
+	majorid INT,
+	CONSTRAINT pk PRIMARY KEY(id),#主键
+	CONSTRAINT uq UNIQUE(seat),#唯一键
+	CONSTRAINT ck CHECK(gender ='男' OR gender  = '女'),#检查
+	CONSTRAINT fk_stuinfo_major FOREIGN KEY(majorid) REFERENCES major(id)#外键
+);
+SHOW INDEX FROM stuinfo;
+
+#通用的写法：★
+CREATE TABLE IF NOT EXISTS stuinfo(
+	id INT PRIMARY KEY,
+	stuname VARCHAR(20),
+	sex CHAR(1),
+	age INT DEFAULT 18,
+	seat INT UNIQUE,
+	majorid INT,
+	CONSTRAINT fk_stuinfo_major FOREIGN KEY(majorid) REFERENCES major(id)
+);
+```
+
+
+
+#### 4.2 修改表时添加约束
+
+- 1、添加列级约束
+
+```sql
+alter table 表名 modify column 字段名 字段类型 新约束;
+```
+
+- 2、添加表级约束
+
+```sql
+alter table 表名 add 【constraint 约束名】 约束类型(字段名) 【外键的引用】;
+```
+
+```sql
+DROP TABLE IF EXISTS stuinfo;
+CREATE TABLE stuinfo(
+	id INT,
+	stuname VARCHAR(20),
+	gender CHAR(1),
+	seat INT,
+	age INT,
+	majorid INT
+)
+DESC stuinfo;
+
+#1.添加非空约束
+ALTER TABLE stuinfo MODIFY COLUMN stuname VARCHAR(20)  NOT NULL;
+
+#2.添加默认约束
+ALTER TABLE stuinfo MODIFY COLUMN age INT DEFAULT 18;
+
+#3.添加主键
+#①列级约束
+ALTER TABLE stuinfo MODIFY COLUMN id INT PRIMARY KEY;
+#②表级约束
+ALTER TABLE stuinfo ADD PRIMARY KEY(id);
+
+#4.添加唯一
+#①列级约束
+ALTER TABLE stuinfo MODIFY COLUMN seat INT UNIQUE;
+#②表级约束
+ALTER TABLE stuinfo ADD UNIQUE(seat);
+
+#5.添加外键
+ALTER TABLE stuinfo ADD CONSTRAINT fk_stuinfo_major FOREIGN KEY(majorid) REFERENCES major(id); 
+
+```
+
+
+
+#### 4.3 修改表时删除约束
+
+```sql
+#1.删除非空约束
+ALTER TABLE stuinfo MODIFY COLUMN stuname VARCHAR(20) NULL;
+
+#2.删除默认约束
+ALTER TABLE stuinfo MODIFY COLUMN age INT ;
+
+#3.删除主键
+ALTER TABLE stuinfo DROP PRIMARY KEY;
+
+#4.删除唯一
+ALTER TABLE stuinfo DROP INDEX seat;
+
+#5.删除外键
+ALTER TABLE stuinfo DROP FOREIGN KEY fk_stuinfo_major;
+
+SHOW INDEX FROM stuinfo;
+```
+
+
+
+#### 4.4 标识列
+
+- 又称为自增长列
+- 含义：可以不用手动的插入值，系统提供默认的序列值
+- 特点：
+  - 1、标识列必须和主键搭配吗？不一定，但要求是一个key
+  - 2、一个表可以有几个标识列？至多一个！
+  - 3、标识列的类型只能是数值型
+  - 4、标识列可以通过 `SET auto_increment_increment=value`;设置步长 可以通过手动插入值，设置起始值
+
+
+```sql
+#创建表时设置标识列
+DROP TABLE IF EXISTS tab_identity;
+CREATE TABLE tab_identity(
+	id INT  ,
+	NAME FLOAT UNIQUE AUTO_INCREMENT,
+	seat INT 
+);
+TRUNCATE TABLE tab_identity;
+
+INSERT INTO tab_identity(id,NAME) VALUES(NULL,'john');
+INSERT INTO tab_identity(NAME) VALUES('lucy');
+SELECT * FROM tab_identity;
+
+SHOW VARIABLES LIKE '%auto_increment%';
+
+SET auto_increment_increment=3;
+```
+
