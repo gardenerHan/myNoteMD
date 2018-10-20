@@ -1,5 +1,9 @@
 # MySQL基础
 
+*@Author:hanguixian*
+
+*@Email:hn_hanguixian@163.com*
+
 
 
 ## 一 数据库和Sql概述
@@ -36,6 +40,11 @@
 - 1、DML(Data Manipulation Language):数据操纵语句，用于添加、删除、修改、查询数据库记录，并检查数据完整性 
 - 2、DDL(Data Definition Language):数据定义语句，用于库和表的创建、修改、删除。 
 - 3、DCL(Data Control Language):数据控制语句，用于定义用 户的访问权限和安全级别。
+- 注意:有其他的分类说法:
+  - DQL（Data Query Language）：数据查询语言[select] （在DML里面）
+  - DML(Data Manipulate Language):数据操作语言[insert 、update、delete]
+  - DDL（Data Define Languge）：数据定义语言[create、drop、alter]
+  - TCL（Transaction Control Language）：事务控制语言[commit、rollback]   (在DCL里面)
 
 ##### 4.2.1 DML
 
@@ -2152,4 +2161,161 @@ SHOW VARIABLES LIKE '%auto_increment%';
 
 SET auto_increment_increment=3;
 ```
+
+
+
+## 六 TCL(Transaction Control Language)事务控制语言
+
+###  1 事务
+
+#### 1.1 事务的概念：
+
+ - 事务由单独单元的一个或多个SQL语句组成，在这 个单元中，每个MySQL语句是相互依赖的。而整个单独单 元作为一个不可分割的整体，如果单元中某条SQL语句一 旦执行失败或产生错误，整个单元将会回滚。所有受到影 响的数据将返回到事物开始以前的状态；如果单元中的**所有SQL语句均执行成功，则事物被顺利执行**。
+
+#### 1.2 MySQL 中的存储引擎（基本）
+
+- 1、概念：在mysql中的数据用各种不同的技术存储 在文件（或内存）中。
+- 2、通过show engines；来查看mysql支持的存储引 擎。 
+- 3、 在mysql中用的最多的存储引擎有：innodb， myisam ,memory 等。其中innodb支持事务，而 myisam、memory等不支持事务。
+
+![存储引擎](img/存储引擎.png)
+
+#### 1.3 事务的特点 
+
+- 事务的ACID(acid)属性 
+  - 原子性（Atomicity)
+    - 原子性是指事务是一个不可分割的工作单位，事务中的操作要么 都发生，要么都不发生。  
+  - 一致性（Consistency） 
+    - 事务必须使数据库从一个一致性状态变换到另外一个一致性状态 。 
+  - 隔离性（Isolation） 
+    - 事务的隔离性是指一个事务的执行不能被其他事务干扰，即一个事务内部的操作及使用的数据对并发的其他事务是隔离的，并发执行的各个事务之间不能互相干扰。 
+  - 持久性（Durability） 
+    - 持久性是指一个事务一旦被提交，它对数据库中数据的改变就是 永久性的，接下来的其他操作和数据库故障不应该对其有任何影响
+- 通俗解释acid：
+  - 原子性：一个事务不可再分割，要么都执行要么都不执行
+  - 一致性：一个事务执行会使数据从一个一致状态切换到另外一个一致状态（比如:总的金额不变，无论怎么修改保持一致）
+  - 隔离性：一个事务的执行不受其他事务的干扰
+  - 持久性：一个事务一旦提交，则会永久的改变数据库的数据.
+
+### 2. 事务的创建
+
+- 隐式事务：事务没有明显的开启和结束的标记
+  - 比如insert、update、delete语句
+
+- 显式事务：事务具有明显的开启和结束的标记
+  - 前提：必须先设置自动提交功能为禁用 : **set autocommit=0;**
+
+```sql
+# 显示事务
+步骤1：开启事务
+set autocommit=0;
+start transaction;可选的
+
+步骤2：编写事务中的sql语句(select insert update delete)
+语句1;
+语句2;
+...
+
+步骤3：结束事务
+commit;提交事务
+rollback;回滚事务
+
+savepoint 节点名;设置保存点
+```
+
+
+
+```sql
+#1.演示事务的使用步骤
+
+#开启事务
+SET autocommit=0;
+START TRANSACTION;
+#编写一组事务的语句
+UPDATE account SET balance = 1000 WHERE username='张无忌';
+UPDATE account SET balance = 1000 WHERE username='赵敏';
+
+#结束事务
+ROLLBACK;
+#commit;
+
+SELECT * FROM account;
+
+
+#2.演示事务对于delete和truncate的处理的区别
+
+SET autocommit=0;
+START TRANSACTION;
+
+DELETE FROM account;
+ROLLBACK;
+
+
+
+#3.演示savepoint 的使用
+SET autocommit=0;
+START TRANSACTION;
+DELETE FROM account WHERE id=25;
+SAVEPOINT a;#设置保存点
+DELETE FROM account WHERE id=28;
+ROLLBACK TO a;#回滚到保存点
+
+
+SELECT * FROM account;
+```
+
+
+
+### 3  事务隔离级别
+
+ #### 3. 1 并发问题
+
+- 对于同时运行的多个事务, 当这些事务访问数据库中相同的数据时, 如果没 有采取必要的隔离机制, 就会导致各种并发问题: 
+  - **脏读**: 对于两个事务 T1, T2, T1 读取了已经被 T2 更新但还没有被提交的字段. 之后, 若 T2 回滚, T1读取的内容就是临时且无效的. 
+  - **不可重复读**: 对于两个事务T1, T2, T1 读取了一个字段, 然后 T2 更新了该字段. 之后, T1再次读取同一个字段, 值就不同了. 
+  - **幻读**: 对于两个事务T1, T2, T1 从一个表中读取了一个字段, 然后 T2 在该表中插 入了一些新的行. 之后, 如果 T1 再次读取同一个表, 就会多出几行. 
+- 数据库事务的隔离性: 数据库系统必须具有隔离并发运行各个事务的能力, 使它们不会相互影响, 避免各种并发问题.  
+- 一个事务与其他事务隔离的程度称为隔离级别. 数据库规定了多种事务隔 离级别, 不同隔离级别对应不同的干扰程度, 隔离级别越高, 数据一致性就 越好, 但并发性越弱.
+
+#### 3.2 数据库的隔离级别
+
+- 数据库提供的4种事务隔离级别和并发问题
+
+| 隔离级别                   | 脏读 | 不可重复读 | 幻读 |
+| -------------------------- | ---- | ---------- | ---- |
+| read uncommitted(读未提交) | √    | √          | √    |
+| read committed(读已提交)   | ×    | √          | √    |
+| repeatable read(可重复读)  | ×    | ×          | √    |
+| serializable（串行化）     | ×    | ×          | ×    |
+
+- Oracle 支持的 2 种事务隔离级别：
+  - READ COMMITED, SERIALIZABLE。 
+  - Oracle 默认的事务隔离级别为: READ COMMITED（第二个）
+- Mysql 支持 4 种事务隔离级别. 
+  - Mysql 默认的事务隔离级别 为: REPEATABLE READ（第三个）
+
+####  3.3 在 MySql 中设置隔离级
+
+- 每启动一个 mysql 程序, 就会获得一个单独的数据库连接. 每 个数据库连接都有一个全局变量 @@tx_isolation, 表示当前的事务隔离级别. 
+
+- 查看当前的隔离级别: SELECT @@tx_isolation; 
+
+- 设置当前 mySQL 连接的隔离级别: 
+
+  ```sql
+  set  session transaction isolation level read committed; 
+  ```
+
+- 设置数据库系统的全局的隔离级别: 
+
+   ```sql
+    set global transaction isolation level read committed;
+   ```
+
+  
+
+
+
+
+
 
