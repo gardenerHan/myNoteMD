@@ -895,3 +895,297 @@ public class TestGeneric {
 }
 ```
 
+
+
+## 四 Spring AOP
+
+### 4.1 AOP 简介
+
+- AOP(Aspect-Oriented Programming, 面向切面编程): 是一种新的方法论, 是对传统 OOP(Object-Oriented Programming, 面向对象编程) 的补充.
+- AOP 的主要编程对象是切面(aspect), 而切面模块化横切关注点.
+- 在应用 AOP 编程时, 仍然需要定义公共功能, 但可以明确的定义这个功能在哪里, 以什么方式应用, 并且不必修改受影响的类. 这样一来横切关注点就被模块化到特殊的对象(切面)里.
+- AOP 的好处:
+  - 每个事物逻辑位于一个位置, 代码不分散, 便于维护和升级
+  - 业务模块更简洁, 只包含核心业务代码.
+
+![aop.png](img/aop.png)
+
+
+
+### 4.2 AOP 术语
+
+- 切面(Aspect):  横切关注点(跨越应用程序多个模块的功能)被模块化的特殊对象
+- 通知(Advice):  切面必须要完成的工作
+- 目标(Target): 被通知的对象
+- 代理(Proxy): 向目标对象应用通知之后创建的对象
+- 连接点（Joinpoint）：程序执行的某个特定位置：如类某个方法调用前、调用后、方法抛出异常后等。连接点由两个信息确定：方法表示的程序执行点；相对点表示的方位。例如 ArithmethicCalculator#add() 方法执行前的连接点，执行点为 ArithmethicCalculator#add()； 方位为该方法执行前的位置
+- 切点（pointcut）：每个类都拥有多个连接点：例如 ArithmethicCalculator 的所有方法实际上都是连接点，即连接点是程序类中客观存在的事务。AOP 通过切点定位到特定的连接点。类比：连接点相当于数据库中的记录，切点相当于查询条件。切点和连接点不是一对一的关系，一个切点匹配多个连接点，切点通过 org.springframework.aop.Pointcut 接口进行描述，它使用类和方法作为连接点的查询条件。
+
+### 4.3 AspectJ 
+
+- Java 社区里最完整最流行的 AOP 框架.在 Spring2.0 以上版本中, 可以使用基于 AspectJ 注解或基于 XML 配置的 AOP
+
+#### 4.3.1 在 Spring 中启用 AspectJ 注解支持
+
+- 要在 Spring 应用中使用 AspectJ 注解, 必须在 classpath 下包含 AspectJ 类库: aopalliance.jar、aspectj.weaver.jar 和 spring-aspects.jar
+- 将 aop Schema 添加到 `<beans> `根元素中.
+- 要在 Spring IOC 容器中启用 AspectJ 注解支持, 只要在 Bean 配置文件中定义一个空的 XML 元素 `<aop:aspectj-autoproxy>`
+- 当 Spring IOC 容器侦测到 Bean 配置文件中的 `<aop:aspectj-autoproxy> `元素时, 会自动为与 AspectJ 切面匹配的 Bean 创建代理.
+
+#### 4.3.2 用 AspectJ 注解声明切面 
+
+- 要在 Spring 中声明 AspectJ 切面, 只需要在 IOC 容器中将切面声明为 Bean 实例. 当在 Spring IOC 容器中初始化 AspectJ 切面之后, Spring IOC 容器就会为那些与 AspectJ 切面相匹配的 Bean 创建代理.
+- 在 AspectJ 注解中, 切面只是一个带有 @Aspect 注解的 Java 类. 
+- 通知是标注有某种注解的简单的 Java 方法.
+- AspectJ 支持 5 种类型的通知注解: 
+  - @Before: 前置通知, 在方法执行之前执行
+  - @After: 后置通知, 在方法执行之后执行 
+  - @AfterRunning: 返回通知, 在方法返回结果之后执行
+  - @AfterThrowing: 异常通知, 在方法抛出异常之后
+  - @Around: 环绕通知, 围绕着方法执行
+- **前置通知**
+  -  在方法执行之前执行的通知
+  - 前置通知使用 @Before 注解, 并将切入点表达式的值作为注解值.
+- **后置通知**
+  - 后置通知是在连接点完成之后执行的, 即连接点返回结果或者抛出异常的时候, 下面的后置通知记录了方法的终
+- **返回通知**
+  - 无论连接点是正常返回还是抛出异常, 后置通知都会执行. 如果只想在连接点返回的时候记录日志, 应使用返回通知代替后置通知.
+  - **在返回通知中访问连接点的返回值** 
+    - 在返回通知中, 只要将 returning 属性添加到 @AfterReturning 注解中, 就可以访问连接点的返回值. 该属性的值即为用来传入返回值的参数名称. 
+    - 必须在通知方法的签名中添加一个同名参数. 在运行时, Spring AOP 会通过这个参数传递返回值.
+    - 原始的切点表达式需要出现在 pointcut 属性中
+- **异常通知**
+  - 只在连接点抛出异常时才执行异常通知
+  - 将 throwing 属性添加到 @AfterThrowing 注解中, 也可以访问连接点抛出的异常. Throwable 是所有错误和异常类的超类. 所以在异常通知方法可以捕获到任何错误和异常.
+  - 如果只对某种特殊的异常类型感兴趣, 可以将参数声明为其他异常的参数类型. 然后通知就只在抛出这个类型及其子类的异常时才被执行.
+- **环绕通知** 
+  - 环绕通知是所有通知类型中功能最为强大的, 能够全面地控制连接点. 甚至可以控制是否执行连接点.
+  - 对于环绕通知来说, 连接点的参数类型必须是 ProceedingJoinPoint . 它是 JoinPoint 的子接口, 允许控制何时执行, 是否执行连接点.
+  - 在环绕通知中需要明确调用 ProceedingJoinPoint 的 proceed() 方法来执行被代理的方法. 如果忘记这样做就会导致通知被执行了, 但目标方法没有被执行.
+  - 注意: 环绕通知的方法需要返回目标方法执行之后的结果, 即调用 joinPoint.proceed(); 的返回值, 否则会出现空指针异常
+
+
+ #### 4.3.3 利用方法签名编写AspectJ 切入点表达式 
+
+- 最典型的切入点表达式时根据方法的签名来匹配各种方法:
+  - `execution * xxx.ArithmeticCalculator.*(..)`: 匹配 ArithmeticCalculator 中声明的所有方法,第一个 * 代表任意修饰符及任意返回值. 第二个 * 代表任意方法. `.. `匹配任意数量的参数. 若目标类与接口与该切面在同一个包中, 可以省略包名.
+  - `execution public * ArithmeticCalculator.*(..)`: 匹配 ArithmeticCalculator 接口的所有公有方法.
+  - `execution public double ArithmeticCalculator.*(..)`: 匹配 ArithmeticCalculator 中返回 double 类型数值的方法
+  - `execution public double ArithmeticCalculator.*(double, ..)`: 匹配第一个参数为 double 类型的方法, `.. `匹配任意数量任意类型的参数
+  - `execution public double ArithmeticCalculator.*(double, double)`: 匹配参数类型为 double, double 类型的方法.
+
+#### 4.3.4 合并切入点表达式 
+
+- 在 AspectJ 中, 切入点表达式可以通过操作符 &&, ||, ! 结合起来.  
+
+![img/aspect合并表达式.png](img/aspect合并表达式.png)
+
+#### 4.3.5 让通知访问当前连接点的细节
+
+- 可以在通知方法中声明一个类型为 JoinPoint 的参数. 然后就能访问链接细节. 如方法名称和参数值. 
+
+
+
+#### 4.3.6 实践
+
+- gradle中引入aspectj
+
+```gradle
+dependencies {
+    compile group: 'org.springframework', name: 'spring-context', version: '5.0.8.RELEASE'
+    compile group: 'org.springframework', name: 'spring-aspects', version: '5.0.8.RELEASE'
+    compile group: 'junit', name: 'junit', version: '4.12'
+}
+```
+
+- java逻辑代码
+
+```java
+//ArithmeticCalculator
+public interface ArithmeticCalculator {
+	int add(int i, int j);
+	int sub(int i, int j);
+	int mul(int i, int j);
+	int div(int i, int j);
+	
+}
+
+//ArithmeticCalculatorImpl
+@Component("arithmeticCalculator")
+public class ArithmeticCalculatorImpl implements ArithmeticCalculator {
+
+    @Override
+    public int add(int i, int j) {
+        int result = i + j;
+        return result;
+    }
+
+    @Override
+    public int sub(int i, int j) {
+        int result = i - j;
+        return result;
+    }
+
+    @Override
+    public int mul(int i, int j) {
+        int result = i * j;
+        return result;
+    }
+
+    @Override
+    public int div(int i, int j) {
+        int result = i / j;
+        return result;
+    }
+}
+```
+
+- LoggingAspect
+
+```java
+//LoggingAspect
+@Aspect
+@Component
+public class LoggingAspect {
+
+    //@Before 表示在目标方法执行之前执行 @Before 标记的方法的方法体.
+    //@Before("execution(public int xxx.aop.ArithmeticCalculator.add(int,int))")
+    //@Before("execution(public int xxx.aop.*.*(int,int))")
+    //@Before("execution(public int xxx.aop.*.*(..))")
+    //前置通知, 在方法执行之前执行
+    //在方法执行之后执行的代码. 无论该方法是否出现异常
+    @Before("execution(* xxx.aop.*.*(..))")
+    public void beforeMethod(JoinPoint joinPoint){
+        String methodName = joinPoint.getSignature().getName() ;
+        List<Object> args = Arrays.asList(joinPoint.getArgs());
+        System.out.println("The method"+methodName+" begins" + args);
+    }
+    
+    //后置通知, 在方法执行之后执行 
+    //在方法执行之后执行的代码. 无论该方法是否出现异常
+    @After("execution(* xxx.aop.*.*(..))")
+    public void afterMethod(JoinPoint joinPoint){
+        String methodName = joinPoint.getSignature().getName();
+        System.out.println("The method " + methodName + " ends");
+    }
+    
+    //返回通知, 在方法返回结果之后执行
+    //方法法正常结束执行的代码 返回通知是可以访问到方法的返回值的!
+    @AfterReturning(value = "execution(* xxx.aop.*.*(..))",returning = "result")
+    public void afterReturning(JoinPoint joinPoint,Object result){
+        String methodName = joinPoint.getSignature().getName();
+        System.out.println("The method " + methodName + " afterReturning with " + result);
+    }
+
+    //异常通知, 在方法抛出异常之后
+    //在目标方法出现异常时会执行的代码. 可以访问到异常对象; 且可以指定在出现特定异常时在执行通知代码
+    @AfterThrowing(value = "execution(* xxx.aop.*.*(..))",throwing = "ex")
+    public void afterThrowing(JoinPoint joinPoint,Exception ex){
+        String methodName = joinPoint.getSignature().getName();
+        System.out.println("The method " + methodName + " afterThrowing with " + ex);
+    }
+    
+	//异常通知, 在方法抛出异常之后
+    @AfterThrowing(value = "execution(* xxx.aop.*.*(..))",throwing = "ex")
+    public void afterThrowingNull(JoinPoint joinPoint,NullPointerException ex){
+        String methodName = joinPoint.getSignature().getName();
+        System.out.println("The method " + methodName + " afterThrowing NullPointerException " + ex);
+    }
+    
+    
+    /**
+	 * 环绕通知需要携带 ProceedingJoinPoint 类型的参数. 
+	 * 环绕通知类似于动态代理的全过程: ProceedingJoinPoint 类型的参数可以决定是否执行目标方法.
+	 * 且环绕通知必须有返回值, 返回值即为目标方法的返回值
+	 */
+    
+	/*
+	@Around("execution(public int xxx.aop.ArithmeticCalculator.*(..))")
+	public Object aroundMethod(ProceedingJoinPoint pjd){
+		
+		Object result = null;
+		String methodName = pjd.getSignature().getName();
+		
+		try {
+			//前置通知
+			System.out.println("The method " + methodName + " begins with " + Arrays.asList(pjd.getArgs()));
+			//执行目标方法
+			result = pjd.proceed();
+			//返回通知
+			System.out.println("The method " + methodName + " ends with " + result);
+		} catch (Throwable e) {
+			//异常通知
+			System.out.println("The method " + methodName + " occurs exception:" + e);
+			throw new RuntimeException(e);
+		}
+		//后置通知
+		System.out.println("The method " + methodName + " ends");
+		
+		return result;
+	}
+	*/
+}
+
+/**
+The methodadd begins[1, 2]
+The method add ends
+The method add afterReturning with 3
+3
+The methoddiv begins[3, 0]
+The method div ends
+The method div afterThrowing with java.lang.ArithmeticException: / by zero
+*/
+```
+
+
+
+- application-aop.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+    <!--自动扫描包-->
+    <context:component-scan base-package="xxx.aop "></context:component-scan>
+    <!-- 使 AspectJ 的注解起作用 -->
+    <aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+</beans>
+```
+
+- test
+
+```java
+public class Main {
+
+    private static ClassPathXmlApplicationContext context;
+	static {
+        context = new ClassPathXmlApplicationContext("application-aop.xml");
+    }
+    
+    @Test
+    public void  test1(){
+        ArithmeticCalculator arithmeticCalculator = context.getBean(ArithmeticCalculator.class) ;
+        System.out.println(arithmeticCalculator.add(1,2));
+        System.out.println(arithmeticCalculator.div(3,2));
+    }
+}
+```
+
+
+#### 4.3.7 指定切面的优先级 
+
+- 在同一个连接点上应用不止一个切面时, 除非明确指定, 否则它们的优先级是不确定的.
+- 切面的优先级可以通过实现 Ordered 接口或利用 @Order 注解指定.
+- 实现 Ordered 接口, getOrder() 方法的返回值越小, 优先级越高.
+- 若使用 @Order 注解, 序号出现在注解中
+
+```java
+@Order(0)
+@Aspect
+@Component
+public class LoggingAspect {}
+```
+
