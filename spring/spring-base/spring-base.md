@@ -1189,3 +1189,207 @@ public class Main {
 public class LoggingAspect {}
 ```
 
+
+
+#### 4.3.8 重用切入点 
+
+- 在编写 AspectJ 切面时, 可以直接在通知注解中书写切入点表达式. 但同一个切点表达式可能会在多个通知中重复出现.
+- 在 AspectJ 切面中, 可以通过 @Pointcut 注解将一个切入点声明成简单的方法. 切入点的方法体通常是空的, 因为将切入点定义与应用程序逻辑混在一起是不合理的. 
+- 切入点方法的访问控制符同时也控制着这个切入点的可见性. 如果切入点要在多个切面中共用, 最好将它们集中在一个公共的类中. 在这种情况下, 它们必须被声明为 public. 在引入这个切入点时, 必须将类名也包括在内. 如果类没有与这个切面放在同一个包中, 还必须包含包名.
+- 其他通知可以通过方法名称引入该切入点.
+
+```java
+/**
+	 * 定义一个方法, 用于声明切入点表达式. 一般地, 该方法中再不需要添入其他的代码. 
+	 * 使用 @Pointcut 来声明切入点表达式. 
+	 * 后面的其他通知直接使用方法名来引用当前的切入点表达式. 
+	 */
+	@Pointcut("execution(public int xxx.aop.ArithmeticCalculator.*(..))")
+	public void declareJointPointExpression(){}
+	
+	/**
+	 * 在 com.atguigu.spring.aop.ArithmeticCalculator 接口的每一个实现类的每一个方法开始之前执行一段代码
+	 */
+	@Before("declareJointPointExpression()")
+	public void beforeMethod(JoinPoint joinPoint){
+		String methodName = joinPoint.getSignature().getName();
+		Object [] args = joinPoint.getArgs();
+		System.out.println("The method " + methodName + " begins with " + Arrays.asList(args));
+	}
+	
+```
+
+
+
+#### 4.3.9 用基于 XML 的配置声明切面 
+
+- 除了使用 AspectJ 注解声明切面, Spring 也支持在 Bean 配置文件中声明切面. 这种声明是通过 aop schema 中的 XML 元素完成的.
+- 正常情况下, 基于注解的声明要优先于基于 XML 的声明. 通过 AspectJ 注解, 切面可以与 AspectJ 兼容, 而基于 XML 的配置则是 Spring 专有的. 由于 AspectJ 得到越来越多的 AOP 框架支持, 所以以注解风格编写的切面将会有更多重用的机会.
+- 基于 XML ---- 声明切面 
+  - 当使用 XML 声明切面时, 需要在 `<beans>` 根元素中导入 aop Schema
+  - 在 Bean 配置文件中, 所有的 Spring AOP 配置都必须定义在 `<aop:config>` 元素内部. 对于每个切面而言, 都要创建一个` <aop:aspect> `元素来为具体的切面实现引用后端 Bean 实例. 
+  - 切面 Bean 必须有一个标示符, 供` <aop:aspect>` 元素引用
+- 基于 XML ---- 声明切入点 
+  - 切入点使用 `<aop:pointcut>` 元素声明
+  - 切入点必须定义在` <aop:aspect> `元素下, 或者直接定义在` <aop:config> `元素下.
+    - 定义在` <aop:aspect> `元素下: 只对当前切面有效
+    - 定义在` <aop:config> `元素下: 对所有切面都有效
+  - 基于 XML 的 AOP 配置不允许在切入点表达式中用名称引用其他切入点. 
+- 基于 XML ---- 声明通知 
+  - 在 aop Schema 中, 每种通知类型都对应一个特定的 XML 元素. 
+  - 通知元素需要使用` <pointcut-ref> `来引用切入点, 或用 `<pointcut> `直接嵌入切入点表达式.  method 属性指定切面类中通知方法的名称.
+- 示例
+  - java逻辑代码
+
+```java
+//ArithmeticCalculator
+public interface ArithmeticCalculator {
+	int add(int i, int j);
+	int sub(int i, int j);
+	int mul(int i, int j);
+	int div(int i, int j);
+	
+}
+
+//ArithmeticCalculatorImpl
+public class ArithmeticCalculatorImpl implements ArithmeticCalculator {
+	@Override
+	public int add(int i, int j) {
+		int result = i + j;
+		return result;
+	}
+	@Override
+	public int sub(int i, int j) {
+		int result = i - j;
+		return result;
+	}
+	@Override
+	public int mul(int i, int j) {
+		int result = i * j;
+		return result;
+	}
+	@Override
+	public int div(int i, int j) {
+		int result = i / j;
+		return result;
+	}
+}
+
+```
+
+
+
+- LoggingAspect 日志切面 & VlidationAspect 校验切面
+
+```java
+//LoggingAspect
+public class LoggingAspect {
+	
+	public void beforeMethod(JoinPoint joinPoint){
+		String methodName = joinPoint.getSignature().getName();
+		Object [] args = joinPoint.getArgs();
+		System.out.println("The method " + methodName + " begins with " + Arrays.asList(args));
+	}
+	
+	public void afterMethod(JoinPoint joinPoint){
+		String methodName = joinPoint.getSignature().getName();
+		System.out.println("The method " + methodName + " ends");
+	}
+	
+	public void afterReturning(JoinPoint joinPoint, Object result){
+		String methodName = joinPoint.getSignature().getName();
+		System.out.println("The method " + methodName + " ends with " + result);
+	}
+	
+	public void afterThrowing(JoinPoint joinPoint, Exception e){
+		String methodName = joinPoint.getSignature().getName();
+		System.out.println("The method " + methodName + " occurs excetion:" + e);
+	}
+
+	public Object aroundMethod(ProceedingJoinPoint pjd){
+		Object result = null;
+		String methodName = pjd.getSignature().getName();	
+		try {
+			System.out.println("The method " + methodName + " begins with " + Arrays.asList(pjd.getArgs()));
+			result = pjd.proceed();
+			System.out.println("The method " + methodName + " ends with " + result);
+		} catch (Throwable e) {
+			System.out.println("The method " + methodName + " occurs exception:" + e);
+			throw new RuntimeException(e);
+		}
+		System.out.println("The method " + methodName + " ends");	
+		return result;
+	}
+}
+
+//VlidationAspect
+public class VlidationAspect {
+
+	public void validateArgs(JoinPoint joinPoint){
+		System.out.println("-->validate:" + Arrays.asList(joinPoint.getArgs()));
+	}	
+}
+```
+
+- test
+
+```java
+public class Main {
+	
+	public static void main(String[] args) {
+		
+		ApplicationContext ctx = new ClassPathXmlApplicationContext("application-xml.xml");
+		ArithmeticCalculator arithmeticCalculator = (ArithmeticCalculator) ctx.getBean("arithmeticCalculator");
+		System.out.println(arithmeticCalculator.getClass().getName());
+		
+		int result = arithmeticCalculator.add(1, 2);
+		System.out.println("result:" + result);
+		
+		result = arithmeticCalculator.div(1000, 0);
+		System.out.println("result:" + result);
+	}
+}
+```
+
+-  application-xml.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+
+    <!-- 配置 bean -->
+    <bean id="arithmeticCalculator"
+          class="com.ifox.hgx.spring.aop.xml.ArithmeticCalculatorImpl"></bean>
+
+    <!-- 配置切面的 bean. -->
+    <bean id="loggingAspect"
+          class="com.ifox.hgx.spring.aop.xml.LoggingAspect"></bean>
+
+    <bean id="vlidationAspect"
+          class="com.ifox.hgx.spring.aop.xml.VlidationAspect"></bean>
+
+    <!-- 配置 AOP -->
+    <aop:config>
+        <!-- 配置切点表达式 -->
+        <aop:pointcut expression="execution(* com.ifox.hgx.spring.aop.xml.ArithmeticCalculator.*(int, int))"
+                      id="pointcut"/>
+        <!-- 配置切面及通知 -->
+        <aop:aspect ref="loggingAspect" order="2">
+            <aop:before method="beforeMethod" pointcut-ref="pointcut"/>
+            <aop:after method="afterMethod" pointcut-ref="pointcut"/>
+            <aop:after-throwing method="afterThrowing" pointcut-ref="pointcut" throwing="e"/>
+            <aop:after-returning method="afterReturning" pointcut-ref="pointcut" returning="result"/>
+            <!--
+            <aop:around method="aroundMethod" pointcut-ref="pointcut"/>
+            -->
+        </aop:aspect>
+        <aop:aspect ref="vlidationAspect" order="1">
+            <aop:before method="validateArgs" pointcut-ref="pointcut"/>
+        </aop:aspect>
+    </aop:config>
+</beans>
+```
+
