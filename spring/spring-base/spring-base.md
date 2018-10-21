@@ -95,7 +95,26 @@ public class HelloWorld {
 </beans>
 ```
 
+- test
 
+  ```java
+  public class TestBean {
+  
+  	private static ClassPathXmlApplicationContext context;
+  
+      static {
+          context = new ClassPathXmlApplicationContext("applicationContext.xml");
+      }
+  
+      @Test
+      public void testBean() {
+          HelloWorld helloWorld = context.getBean("helloWorld", HelloWorld.class);
+          System.out.println(helloWorld);
+      }
+  }
+  ```
+
+  
 
 ## 三 Spring中Bean的配置
 
@@ -402,5 +421,477 @@ public class HelloWorld {
 
 ![bean作用域](img/bean作用域.png)
 
+#### 3.2.15 使用外部属性文件 
 
+- •在配置文件里配置 Bean 时, 有时需要在 Bean 的配置里混入系统部署的细节信息(例如: 文件路径, 数据源配置信息等). 而这些部署细节实际上需要和 Bean 配置相分离
+- Spring 提供了一个 **PropertyPlaceholderConfigurer** 的 BeanFactory 后置处理器, 这个处理器允许用户将 Bean 配置的部分内容外移到属性文件中. 可以在 Bean 配置文件里使用形式为 ${var} 的变量, PropertyPlaceholderConfigurer 从属性文件里加载属性, 并使用这些属性来替换变量.
+- Spring 还允许在属性文件中使用 ${propName}，以实现属性之间的相互引用。
+
+```xml
+<!-- 导入外部的资源文件 -->
+<context:property-placeholder location="classpath:db.properties"/>
+	
+<!-- 配置数据源 -->
+<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+    <property name="user" value="${jdbc.user}"></property>
+    <property name="password" value="${jdbc.password}"></property>
+    <property name="driverClass" value="${jdbc.driverClass}"></property>
+    <property name="jdbcUrl" value="${jdbc.jdbcUrl}"></property>
+
+    <property name="initialPoolSize" value="${jdbc.initPoolSize}"></property>
+    <property name="maxPoolSize" value="${jdbc.maxPoolSize}"></property>
+</bean>
+```
+
+
+
+#### 3.2.16 Spring表达式语言：SpEL  
+
+- Spring 表达式语言（简称SpEL）：是一个支持运行时查询和操作对象图的强大的表达式语言。
+- 语法类似于 EL：SpEL 使用 #{…} 作为定界符，所有在大框号中的字符都将被认为是 SpEL
+- SpEL 为 bean 的属性进行动态赋值提供了便利
+- 通过 SpEL 可以实现：
+  - 通过 bean 的 id 对 bean 进行引用
+  - 调用方法以及引用对象中的属性
+  - 计算表达式的值
+  - 正则表达式的匹配
+
+##### 3.2.16.1 字面量的表示：
+
+- 整数：`<property name="count" value="#{5}"/>`
+- 小数：`<property name="frequency" value="#{89.7}"/>`
+- 科学计数法：`<property name="capacity" value="#{1e4}"/>`
+- String可以使用单引号或者双引号作为字符串的定界符号：`<property name=“name” value="#{'Chuck'}"/> 或 <property name='name' value='#{"Chuck"}'/>`
+- Boolean：`<property name="enabled" value="#{false}"/>`
+
+##### 3.2.16.2 SpEL：引用 Bean、属性和方法 
+
+- 引用其他对象 
+- 引用其他对象的属性
+- 调用其他方法，还可以链式操作 
+- •调用静态方法或静态属性：通过 T() 调用一个类的静态方法，它将返回一个 Class Object，然后再调用相应的方法或属性： 
+
+```xml
+<bean id="girl" class="xxx.User">
+    <property name="userName" value="周迅"></property>
+</bean>
+<bean id="boy" class="xxxx.User" >
+    <property name="userName" value="高胜远"></property>
+    <property name="wifeName" value="#{girl.userName}"></property>
+</bean>
+
+<bean id="car" class="xxx.Car" p:id="45949" p:name="kksssk"></bean>
+<bean id="person2" class="xxx.Person">
+    <property name="car" value="#{car}"></property>
+ 	<property name="id" value="#{T(java.lang.Math).abs(23)}"></property>
+</bean>
+
+<bean id="car2" class="xxx.Car">
+    <property name="id" value="#{car.getId()}"></property>
+    <property name="name" value="#{person2.car.name}"></property>
+</bean>
+```
+
+##### 3.2.16.3 SpEL支持的运算符号 
+
+- 逻辑运算符号： and, or, not, | 
+- if-else 运算符：?: (ternary), ?: (Elvis) 
+- •正则表达式：matches 
+
+
+
+#### 3.2.17  IOC 容器中Bean的生命周期 
+
+##### 3.2.17.1  IOC 容器中Bean的生命周期方法
+
+- Spring IOC 容器可以管理 Bean 的生命周期, Spring 允许在 Bean 生命周期的特定点执行定制的任务. 
+- Spring IOC 容器对 Bean 的生命周期进行管理的过程:
+  - 通过构造器或工厂方法创建 Bean 实例
+  - 为 Bean 的属性设置值和对其他 Bean 的引用
+  - 调用 Bean 的初始化方法
+  - Bean 可以使用了
+  - 当容器关闭时, 调用 Bean 的销毁方法
+- 在 Bean 的声明里设置 init-method 和 destroy-method 属性, 为 Bean 指定初始化和销毁方法.
+
+##### 3.2.17.2 创建 Bean后置处理器
+
+- Bean 后置处理器允许在调用初始化方法前后对 Bean 进行额外的处理.
+- Bean 后置处理器对 IOC 容器里的所有 Bean 实例逐一处理, 而非单一实例. 其典型应用是: 检查 Bean 属性的正确性或根据特定的标准更改 Bean 的属性.
+- 对Bean 后置处理器而言, 需要实现 `org.springframework.beans.factory.config.BeanPostProcessor`                         接口. 在初始化方法被调用前后, Spring 将把每个 Bean 实例分别传递给上述接口的以下两个方法:
+
+```java
+public interface BeanPostProcessor {
+	@Nullable
+	default Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+		return bean;
+	}
+	@Nullable
+	default Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+		return bean;
+	}
+}
+```
+
+
+
+##### 3.2.17.3 添加Bean后置处理器后Bean的生命周期 
+
+- Spring IOC 容器对 Bean 的生命周期进行管理的过程:
+  - 通过构造器或工厂方法创建 Bean 实例
+  - 为 Bean 的属性设置值和对其他 Bean 的引用
+  - 将 Bean 实例传递给 Bean 后置处理器的 postProcessBeforeInitialization 方法
+  - 调用 Bean 的初始化方法
+  - 将 Bean 实例传递给 Bean 后置处理器的 postProcessAfterInitialization方法
+  - Bean 可以使用了
+  - 当容器关闭时, 调用Bean的销毁方法
+
+
+ - MyBeanPostProcessor.java
+```java
+public class MyBeanPostProcessor implements BeanPostProcessor {
+    @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+        System.out.println("postProcessBeforeInitialization---->bean:"+bean + ",beanName:"+beanName);
+        return bean;
+    }
+
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        System.out.println("postProcessAfterInitialization---->bean:"+bean + ",beanName:"+beanName);
+        return bean;
+    }
+}
+```
+
+ - Car.java
+```java
+public class Car {
+
+    private Integer id ;
+    private String name ;
+
+    public void init(){
+        System.out.println("init ...");
+    }
+    public void destroy(){
+        System.out.println("destroy ....");
+    }
+    public Car() {
+        System.out.println("Car's Constructor  ...");
+    }
+    public Integer getId() {
+        return id;
+    }
+    public void setId(Integer id) {
+        System.out.println("设置id");
+        this.id = id;
+    }
+    public String getName() {
+        return name;
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
+}
+```
+
+- application.xml 中配置bean
+
+```xml
+<bean id="car" class="xxx.Car" p:id="45949" p:name="kksssk" init-method="init" destroy-method="destroy"></bean>
+<!-- 配置 bean 后置处理器: 不需要配置 id 属性, IOC 容器会识别到他是一个 bean 后置处理器, 并调用其方法 -->
+<bean class="xxx.MyBeanPostProcessor"></bean>
+```
+
+
+
+#### 3.2.18 通过工厂方法配置Bean(静态工厂方法 & 实例工厂方法&)
+
+##### 3.2.18.1 静态工厂方法
+
+- 调用静态工厂方法创建 Bean是将对象创建的过程封装到静态方法中. 当客户端需要对象时, 只需要简单地调用静态方法, 而不同关心创建对象的细节.
+- 要声明通过静态方法创建的 Bean, 需要在 Bean 的 class 属性里指定拥有该工厂的方法的类, 同时在 factory-method 属性里指定工厂方法的名称. 最后, 使用 `<constrctor-arg> `元素为该方法传递方法参数.
+
+- CarStaticFactory.java
+
+```java
+public class CarStaticFactory {
+    private static Map<Integer, Car> cars = new HashMap<>();
+    static {
+        cars.put(1, new Car(1, "大奔"));
+        cars.put(2, new Car(2, "劳斯莱斯"));
+    }
+    public static Car getCar(Integer id) {
+        return cars.get(2);
+    }
+}
+```
+
+- applicationContext.xml
+
+```xml
+<!-- 通过工厂方法的方式来配置 bean -->
+<!-- 1. 通过静态工厂方法: 一个类中有一个静态方法, 可以返回一个类的实例 -->
+<!-- 在class中指定静态工厂方法的全类名, 在factory-method中指定静态工厂方法的方法名 -->
+<bean class="xxx.CarStaticFactory" id="car3" factory-method="getCar">
+        <constructor-arg value="1"></constructor-arg>
+</bean>
+```
+
+##### 3.2.18.2 实例工厂方法 
+
+- 实例工厂方法: 将对象的创建过程封装到另外一个对象实例的方法里. 当客户端需要请求对象时, 只需要简单的调用该实例方法而不需要关心对象的创建细节.
+- 要声明通过实例工厂方法创建的 Bean
+  - 在 bean 的 factory-bean 属性里指定拥有该工厂方法的 Bean
+  - 在 factory-method 属性里指定该工厂方法的名称
+  - 使用 construtor-arg 元素为工厂方法传递方法参数
+
+- CarInstanceFactory.java
+
+```java
+public class CarInstanceFactory {
+    private Map<Integer,Car> cars ;
+
+    public CarInstanceFactory() {
+        cars = new HashMap<>() ;
+        cars.put(1, new Car(1, "大奔"));
+        cars.put(2, new Car(2, "劳斯莱斯"));
+    }
+    public Car getCar(Integer id){
+        return cars.get(id) ;
+    }
+}
+
+```
+
+- applicationContext.xml
+
+```xml
+<!-- 2. 实例工厂方法: 先需要创建工厂对象, 再调用工厂的非静态方法返回实例 -->
+<!-- ①. 创建工厂对应的 bean -->
+<bean class="xxx.CarInstanceFactory" id="carInstanceFactory"></bean>
+<!-- ②. 有实例工厂方法来创建 bean 实例 -->
+<!-- factory-bean 指向工厂 bean, factory-method 指定工厂方法 -->
+<bean class="xxx.Car" id="car4" factory-bean="carInstanceFactory" factory-method="getCar">
+    <constructor-arg value="1"></constructor-arg>
+</bean>
+```
+
+
+
+##### 3.2.18.3 FactoryBean
+
+- Spring 中有两种类型的 Bean, 一种是普通Bean, 另一种是工厂Bean, 即FactoryBean. 
+- 工厂 Bean 跟普通Bean不同, 其返回的对象不是指定类的一个实例, 其返回的是该工厂 Bean 的 getObject 方法所返回的对象 
+- CarFactoryBean.java
+
+```java
+public class CarFactoryBean implements FactoryBean<Car> {
+
+    //返回Bean的对象
+    @Override
+    public Car getObject() throws Exception {
+        return new Car(1,"大奔");
+    }
+    //返回Bean的类型
+    @Override
+    public Class<?> getObjectType() {
+        return Car.class;
+    }
+    //返回的实例是不是单实例的
+    @Override
+    public boolean isSingleton() {
+        return true;
+    }
+}
+```
+
+- applicationContext.xml
+
+```xml
+ <bean class="com.ifox.hgx.spring.factory.CarFactoryBean" id="car5"></bean>
+```
+
+
+
+#### 3.2.19 注解的方式配置Bean
+
+##### 3.2.19.1 在 classpath 中扫描组件 
+
+- 组件扫描(component scanning):  Spring 能够从 classpath 下自动扫描, 侦测和实例化具有特定注解的组件. 
+
+- 特定组件包括:
+
+  - @Component: 基本注解, 标识了一个受 Spring 管理的组件
+  - @Respository: 标识持久层组件
+  - @Service: 标识服务层(业务层)组件
+  - @Controller: 标识表现层组件
+
+- 对于扫描到的组件, Spring 有默认的命名策略: 使用非限定类名, 第一个字母小写. 也可以在注解中通过 value 属性值标识组件的名称
+
+- 当在组件类上使用了特定的注解之后, 还需要在 Spring 的配置文件中声明 `<context:component-scan>` ：
+
+  - base-package 属性指定一个需要扫描的基类包，Spring 容器将会扫描这个基类包里及其子包中的所有类. 
+
+  - 当需要扫描多个包时, 可以使用逗号分隔.
+
+  - 如果仅希望扫描特定的类而非基包下的所有类，可使用 `resource-pattern` 属性过滤特定的类，示例：
+
+    - `<context:include-filter>` 子节点表示要包含的目标类
+
+    - `<context:exclude-filter>` 子节点表示要排除在外的目标类
+    - `<context:component-scan>` 下可以拥有若干个` <context:include-filter>` 和 `<context:exclude-filter>` 子节点
+
+  - `<context:include-filter>` 和` <context:exclude-filter> `子节点支持多种类型的过滤表达式： 
+
+  
+
+| 类别       | 示例                  | 说明                                                         |
+| ---------- | --------------------- | ------------------------------------------------------------ |
+| annotation | com.xxx.XxxAnnotation | 所有标注了XxxAnnotation的类。该类型采用目标类是否标注了某个注解进行过滤 |
+| assinable  | com.xxx.XxxService    | 所有继承或扩展XxService的类。该类型采用目标类是否继承或扩展某个特定类进行过滤 |
+| aspectj    | com.xxx.. Service+    | 所有类名以Service结束的类及继承或扩展它们的类。该类型采用AspejctJ表达式进行过滤 |
+| regex      | com.\xxx\.anno..*     | 所有com.xxx.anno包下的类。该类型采用正则表达式根据类的类名进行过滤 |
+| custom     | com.xxx.XxxTypeFilter | 该类采用XxxTypeFilter通过代码的方式定义过滤规则。必须实现org.springframework.core.type.TypeFiter接口 |
+
+
+- beans-annotation.xml
+
+```xml
+<!-- 配置自动扫描的包: 需要加入 aop 对应的 jar 包 -->
+<context:component-scan base-package="xxxx.annotation"></context:component-scan>
+```
+
+- java类
+
+```java
+//controller
+@Controller
+public class UserCnntroller {
+    public void execute(){
+        System.out.println("UserController,execute ...");
+    }
+}
+
+//serice
+public interface UserService {
+  void getUser() ;
+}
+//serviceImpl
+@Service("userService")
+public class UserServiceImpl implements UserService {
+    public void getUser(){
+        System.out.println("UserServiceImpl,getUser");
+    }
+}
+
+//repository
+@Repository
+public class UserDao {
+    public void save(){
+        System.out.println("UserDao,save");
+    }
+}
+```
+
+- test
+
+```java
+public class TestAnnotation {
+    private static ClassPathXmlApplicationContext context;
+
+    static {
+        context = new ClassPathXmlApplicationContext("beans-annotation.xml");
+    }
+
+    @Test
+    public void test1() {
+        String[] s = context.getBeanDefinitionNames();
+        for (String name : s) {
+            System.out.println(name);
+        }
+         
+    @Test
+    public void  test2(){
+            UserService userService = context.getBean(UserServiceImpl.class) ;
+            userService.getUser();
+    	}
+    }
+```
+
+
+
+##### 3.2.19.2 组件装配
+
+- `<context:component-scan>` 元素还会自动注册 `AutowiredAnnotationBeanPostProcessor` 实例, 该实例可以自动装配具有 `@Autowired `和 `@Resource` 、`@Inject`注解的属性. 
+- 使用 @Autowired 自动装配 Bean
+  - @Autowired 注解自动装配具有兼容类型的单个 Bean属性
+    - 构造器, 普通字段(即使是非public), 一切具有参数的方法都可以应用@Authwired 注解
+    - 默认情况下, 所有使用 @Authwired 注解的属性都需要被设置. 当 Spring 找不到匹配的 Bean 装配属性时, 会抛出异常, **若某一属性允许不被设置, 可以设置 @Authwired 注解的 required 属性为 false**
+    - 默认情况下, 当 IOC 容器里存在多个类型兼容的 Bean 时, 通过类型的自动装配将无法工作. 此时可以在 **@Qualifier 注解里提供 Bean 的名称. Spring 允许对方法的入参标注 @Qualifiter 已指定注入 Bean 的名称**
+    -  @Authwired 注解也可以应用在数组类型的属性上, 此时 Spring 将会把所有匹配的 Bean 进行自动装配.
+    - @Authwired 注解也可以应用在集合属性上, 此时 Spring 读取该集合的类型信息, 然后自动装配所有与之兼容的 Bean. 
+    - @Authwired 注解用在 `java.util.Map` 上时, 若该 Map 的键值为 String, 那么 Spring 将自动装配与之 Map 值类型兼容的 Bean, 此时 Bean 的名称作为键值
+- 使用 @Resource 或 @Inject   自动装配 Bean
+  - Spring 还支持 @Resource 和 @Inject 注解，这两个注解和 @Autowired 注解的功用类似
+  - @Resource 注解要求提供一个 Bean 名称的属性，若该属性为空，则自动采用标注处的变量或方法名作为 Bean 的名称
+  - @Inject 和 @Autowired 注解一样也是按类型匹配注入的 Bean， 但没有 reqired 属性
+  - **建议使用 @Autowired 注解**
+
+#### 3.2.20 泛型依赖注入 
+
+- Spring 4.x 中可以为子类注入子类对应的泛型类型的成员变量的引用 
+
+![泛型依赖注入](img/泛型依赖注入.png)
+
+- java代码
+
+```java
+//BaseDao
+public class BaseDao<T> {
+    public void save(T t) {
+        System.out.println("dao: save:" + t);
+
+    }
+}
+//BaseService
+public class BaseService<T> {
+
+    @Autowired
+    protected BaseDao<T> baseDao ;
+
+    public void save(T t){
+        baseDao.save(t);
+        System.out.println("service: save" + t);
+    }
+}
+
+//Student
+public class Student {
+}
+
+//StudentDao
+@Repository
+public class StudentDao extends BaseDao<Student> {
+}
+
+//StudentService
+@Service
+public class StudentService extends BaseService<Student> {
+}
+
+//TestGeneric
+public class TestGeneric {
+    private static ClassPathXmlApplicationContext context;
+    static {
+        context = new ClassPathXmlApplicationContext("beans-annotation.xml");
+    }
+    
+    @Test
+    public void test1(){
+        StudentService studentService = context.getBean(StudentService.class) ;
+        studentService.save(new Student());
+    }
+}
+```
 
