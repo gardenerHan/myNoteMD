@@ -1362,19 +1362,19 @@ public class Main {
 
     <!-- 配置 bean -->
     <bean id="arithmeticCalculator"
-          class="com.ifox.hgx.spring.aop.xml.ArithmeticCalculatorImpl"></bean>
+          class="xxx.aop.xml.ArithmeticCalculatorImpl"></bean>
 
     <!-- 配置切面的 bean. -->
     <bean id="loggingAspect"
-          class="com.ifox.hgx.spring.aop.xml.LoggingAspect"></bean>
+          class="xxx.aop.xml.LoggingAspect"></bean>
 
     <bean id="vlidationAspect"
-          class="com.ifox.hgx.spring.aop.xml.VlidationAspect"></bean>
+          class="xxx.xml.VlidationAspect"></bean>
 
     <!-- 配置 AOP -->
     <aop:config>
         <!-- 配置切点表达式 -->
-        <aop:pointcut expression="execution(* com.ifox.hgx.spring.aop.xml.ArithmeticCalculator.*(int, int))"
+        <aop:pointcut expression="execution(* xxx.aop.xml.ArithmeticCalculator.*(int, int))"
                       id="pointcut"/>
         <!-- 配置切面及通知 -->
         <aop:aspect ref="loggingAspect" order="2">
