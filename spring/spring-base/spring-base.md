@@ -1458,7 +1458,9 @@ public <T> T queryForObject(String sql, Class<T> requiredType, @Nullable Object.
 - 也可以使用 SqlParameterSource 参数
 - 批量更新时可以提供 Map 或 SqlParameterSource 的数组
 
-#### 5.4 案例(前置条件：建立相应的数据表)
+#### 5.4 案例
+
+- (前置条件：建立相应的数据表)
 
 - gradle加入依赖`
 
