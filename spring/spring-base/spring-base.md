@@ -1393,3 +1393,339 @@ public class Main {
 </beans>
 ```
 
+
+
+## 五 JDBC
+
+#### 5.1 JdbcTemplate 简介 
+
+- 为了使 JDBC 更加易于使用, Spring 在 JDBC API 上定义了一个抽象层, 以此建立一个 JDBC 存取框架.
+- 作为 Spring JDBC 框架的核心, JDBC 模板的设计目的是为不同类型的 JDBC 操作提供模板方法. 每个模板方法都能控制整个过程, 并允许覆盖过程中的特定任务. 通过这种方式, 可以在尽可能保留灵活性的情况下, 将数据库存取的工作量降到最低.
+- 使用 JdbcTemplate 更新数据库 
+
+```java
+public <T> T queryForObject(String sql, RowMapper<T> rowMapper, @Nullable Object... args) throws DataAccessException {
+    List<T> results = query(sql, args, new RowMapperResultSetExtractor<>(rowMapper, 1));
+    return DataAccessUtils.nullableSingleResult(results);
+}
+```
+
+- 批量更新数据库: 
+
+```java
+@Override
+public int[] batchUpdate(String sql, List<Object[]> batchArgs) throws DataAccessException {
+    return batchUpdate(sql, batchArgs, new int[0]);
+}
+```
+
+- 使用 JdbcTemplate 查询数据库 
+
+```java
+//查询单行	
+@Override
+@Nullable
+public <T> T queryForObject(String sql, RowMapper<T> rowMapper, @Nullable Object... args) throws DataAccessException {
+    List<T> results = query(sql, args, new RowMapperResultSetExtractor<>(rowMapper, 1));
+    return DataAccessUtils.nullableSingleResult(results);
+}
+//查询多行
+@Override
+public <T> List<T> query(String sql, RowMapper<T> rowMapper) throws DataAccessException {
+    return result(query(sql, new RowMapperResultSetExtractor<>(rowMapper)));
+}
+//单值查询
+@Override
+public <T> T queryForObject(String sql, Class<T> requiredType, @Nullable Object... args) throws DataAccessException {
+    return queryForObject(sql, args, getSingleColumnRowMapper(requiredType));
+}
+```
+
+#### 5.2 简化 JDBC 模板查询
+
+- 每次使用都创建一个 JdbcTemplate 的新实例, 这种做法效率很低下.
+- JdbcTemplate 类被设计成为线程安全的, 所以可以再 IOC 容器中声明它的单个实例, 并将这个实例注入到所有的 DAO 实例中.
+- JdbcTemplate 也利用了 Java 1.5 的特定(自动装箱, 泛型, 可变长度等)来简化开发
+- Spring JDBC 框架还提供了一个 JdbcDaoSupport 类来简化 DAO 实现. 该类声明了 jdbcTemplate 属性, 它可以从 IOC 容器中注入, 或者自动从数据源中创建.
+
+#### 5.3 在 JDBC 模板中使用具名参数
+
+- 在经典的 JDBC 用法中, SQL 参数是用占位符 ? 表示,并且受到位置的限制. 定位参数的问题在于, 一旦参数的顺序发生变化, 就必须改变参数绑定. 
+- 在 Spring JDBC 框架中, 绑定 SQL 参数的另一种选择是使用具名参数(named parameter). 
+- 具名参数: SQL 按名称(以冒号开头)而不是按位置进行指定. 具名参数更易于维护, 也提升了可读性. 具名参数由框架类在运行时用占位符取代
+- 具名参数只在 **NamedParameterJdbcTemplate** 中得到支持 
+- 在 SQL 语句中使用具名参数时, 可以在一个 Map 中提供参数值, 参数名为键
+- 也可以使用 SqlParameterSource 参数
+- 批量更新时可以提供 Map 或 SqlParameterSource 的数组
+
+#### 5.4 案例(前置条件：建立相应的数据表)
+
+- gradle加入依赖`
+
+```gradle
+compile group: 'org.springframework', name: 'spring-context', version: '5.0.8.RELEASE'
+compile group: 'org.springframework', name: 'spring-aspects', version: '5.0.8.RELEASE'
+//新增
+compile group: 'org.springframework', name: 'spring-jdbc', version: '5.0.8.RELEASE'
+compile group: 'com.mchange', name: 'c3p0', version: '0.9.5.2'
+compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.47'
+
+//...
+compile group: 'junit', name: 'junit', version: '4.12'
+```
+
+
+
+- javaBean
+
+```java
+//Department
+public class Department {
+	private Integer id;
+	private String name;
+    //setter,getter ....
+
+}
+//Employee
+public class Employee {
+	private Integer id;
+	private String lastName;
+	private String email;
+	private Integer dpetId;
+    //setter,getter ...
+}
+
+```
+
+- dao
+
+```java
+//DepartmentDao
+//不推荐使用 JdbcDaoSupport, 而推荐直接使用 JdbcTempate 作为 Dao 类的成员变量 
+@Repository
+public class DepartmentDao extends JdbcDaoSupport{
+	@Autowired
+	public void setDataSource2(DataSource dataSource){
+		setDataSource(dataSource);
+	}
+	public Department get(Integer id){
+		String sql = "SELECT id, dept_name name FROM departments WHERE id = ?";
+		RowMapper<Department> rowMapper = new BeanPropertyRowMapper<>(Department.class);
+		return getJdbcTemplate().queryForObject(sql, rowMapper, id);
+	}
+}
+
+//EmployeeDao
+@Repository
+public class EmployeeDao {
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+	public Employee get(Integer id){
+		String sql = "SELECT id, last_name lastName, email FROM employees WHERE id = ?";
+		RowMapper<Employee> rowMapper = new BeanPropertyRowMapper<>(Employee.class);
+		Employee employee = jdbcTemplate.queryForObject(sql, rowMapper, id);
+		return employee;
+	}
+}
+```
+
+- test
+
+```java
+public class JDBCTest {
+	
+	private ApplicationContext ctx = null;
+	private JdbcTemplate jdbcTemplate;
+	private EmployeeDao employeeDao;
+	private DepartmentDao departmentDao;
+	private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+	
+	{
+		ctx = new ClassPathXmlApplicationContext("application-jdbc.xml");
+		jdbcTemplate = (JdbcTemplate) ctx.getBean("jdbcTemplate");
+		employeeDao = ctx.getBean(EmployeeDao.class);
+		departmentDao = ctx.getBean(DepartmentDao.class);
+		namedParameterJdbcTemplate = ctx.getBean(NamedParameterJdbcTemplate.class);
+	}
+	
+
+    /**
+	 * 使用具名参数时, 可以使用 update(String sql, SqlParameterSource paramSource) 方法进行更新操作
+	 * 1. SQL 语句中的参数名和类的属性一致!
+	 * 2. 使用 SqlParameterSource 的 BeanPropertySqlParameterSource 实现类作为参数. 
+	 */
+	@Test
+	public void testNamedParameterJdbcTemplate2(){
+		String sql = "INSERT INTO employees(last_name, email, dept_id) "
+				+ "VALUES(:lastName,:email,:dpetId)";
+		
+		Employee employee = new Employee();
+		employee.setLastName("XYZ");
+		employee.setEmail("xyz@sina.com");
+		employee.setDpetId(3);
+		
+		SqlParameterSource paramSource = new BeanPropertySqlParameterSource(employee);
+		namedParameterJdbcTemplate.update(sql, paramSource);
+	}
+
+    /**
+	 * 可以为参数起名字. 
+	 * 1. 好处: 若有多个参数, 则不用再去对应位置, 直接对应参数名, 便于维护
+	 * 2. 缺点: 较为麻烦. 
+	 */
+	@Test
+	public void testNamedParameterJdbcTemplate(){
+		String sql = "INSERT INTO employees(last_name, email, dept_id) VALUES(:ln,:email,:deptid)";
+		
+		Map<String, Object> paramMap = new HashMap<>();
+		paramMap.put("ln", "FF");
+		paramMap.put("email", "ff@atguigu.com");
+		paramMap.put("deptid", 2);
+		
+		namedParameterJdbcTemplate.update(sql, paramMap);
+	}
+	
+	@Test
+	public void testDepartmentDao(){
+		System.out.println(departmentDao.get(1));
+	}
+	
+	@Test
+	public void testEmployeeDao(){
+		System.out.println(employeeDao.get(1));
+	}	
+
+    /**
+	 * 获取单个列的值, 或做统计查询
+	 * 使用 queryForObject(String sql, Class<Long> requiredType) 
+	 */
+	@Test
+	public void testQueryForObject2(){
+		String sql = "SELECT count(id) FROM employees";
+		long count = jdbcTemplate.queryForObject(sql, Long.class);
+		
+		System.out.println(count);
+	}
+
+    /**
+	 * 查到实体类的集合
+	 * 注意调用的不是 queryForList 方法
+	 */
+	@Test
+	public void testQueryForList(){
+		String sql = "SELECT id, last_name lastName, email FROM employees WHERE id > ?";
+		RowMapper<Employee> rowMapper = new BeanPropertyRowMapper<>(Employee.class);
+		List<Employee> employees = jdbcTemplate.query(sql, rowMapper,5);
+		
+		System.out.println(employees);
+	}
+
+    /**
+	 * 从数据库中获取一条记录, 实际得到对应的一个对象
+	 * 注意不是调用 queryForObject(String sql, Class<Employee> requiredType, Object... args) 方法!
+	 * 而需要调用 queryForObject(String sql, RowMapper<Employee> rowMapper, Object... args)
+	 * 1. 其中的 RowMapper 指定如何去映射结果集的行, 常用的实现类为 BeanPropertyRowMapper
+	 * 2. 使用 SQL 中列的别名完成列名和类的属性名的映射. 例如 last_name lastName
+	 * 3. 不支持级联属性. JdbcTemplate 到底是一个 JDBC 的小工具, 而不是 ORM 框架
+	 */
+	@Test
+	public void testQueryForObject(){
+		String sql = "SELECT id, last_name lastName, email, dept_id as \"department.id\" FROM employees WHERE id = ?";
+		RowMapper<Employee> rowMapper = new BeanPropertyRowMapper<>(Employee.class);
+		Employee employee = jdbcTemplate.queryForObject(sql, rowMapper, 1);
+		
+		System.out.println(employee);
+	}
+    
+	/**
+	 * 执行批量更新: 批量的 INSERT, UPDATE, DELETE
+	 * 最后一个参数是 Object[] 的 List 类型: 因为修改一条记录需要一个 Object 的数组, 那么多条不就需要多个 Object 的数组吗
+	 */
+	@Test
+	public void testBatchUpdate(){
+		String sql = "INSERT INTO employees(last_name, email, dept_id) VALUES(?,?,?)";
+		
+		List<Object[]> batchArgs = new ArrayList<>();
+		
+		batchArgs.add(new Object[]{"AA", "aa@atguigu.com", 1});
+		batchArgs.add(new Object[]{"BB", "bb@atguigu.com", 2});
+		batchArgs.add(new Object[]{"CC", "cc@atguigu.com", 3});
+		batchArgs.add(new Object[]{"DD", "dd@atguigu.com", 3});
+		batchArgs.add(new Object[]{"EE", "ee@atguigu.com", 2});
+		
+		jdbcTemplate.batchUpdate(sql, batchArgs);
+	}
+    /**
+	 * 执行 INSERT, UPDATE, DELETE
+	 */
+	@Test
+	public void testUpdate(){
+		String sql = "UPDATE employees SET last_name = ? WHERE id = ?";
+		jdbcTemplate.update(sql, "Jack", 5);
+	}
+	@Test
+	public void testDataSource() throws SQLException {
+		DataSource dataSource = ctx.getBean(DataSource.class);
+		System.out.println(dataSource.getConnection());
+	}
+}
+```
+
+
+
+- application-jdbc.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+
+    <context:component-scan base-package="com.ifox.hgx.spring.jdbc"></context:component-scan>
+
+    <!-- 导入资源文件 -->
+    <context:property-placeholder location="classpath:db.properties"/>
+
+    <!-- 配置 C3P0 数据源 -->
+    <bean id="dataSource"
+          class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <property name="user" value="${jdbc.user}"></property>
+        <property name="password" value="${jdbc.password}"></property>
+        <property name="jdbcUrl" value="${jdbc.jdbcUrl}"></property>
+        <property name="driverClass" value="${jdbc.driverClass}"></property>
+
+        <property name="initialPoolSize" value="${jdbc.initPoolSize}"></property>
+        <property name="maxPoolSize" value="${jdbc.maxPoolSize}"></property>
+    </bean>
+
+    <!-- 配置 Spirng 的 JdbcTemplate -->
+    <bean id="jdbcTemplate"
+          class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <!-- 配置 NamedParameterJdbcTemplate, 该对象可以使用具名参数, 其没有无参数的构造器, 所以必须为其构造器指定参数 -->
+    <bean id="namedParameterJdbcTemplate"
+          class="org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate">
+        <constructor-arg ref="dataSource"></constructor-arg>
+    </bean>
+</beans>
+```
+
+- db.properties
+
+```properties
+jdbc.user=root
+jdbc.password=123456
+jdbc.driverClass=com.mysql.jdbc.Driver
+jdbc.jdbcUrl=jdbc:mysql:///spring
+jdbc.initPoolSize=5
+jdbc.maxPoolSize=10
+```
+
+
+
+
+
