@@ -1946,14 +1946,561 @@ jdbc.maxPoolSize=10
 ### 6.6.6 超时和只读属性  
 
 - 由于事务可以在行和表上获得锁,  因此长事务会占用资源, 并对整体性能产生影响. 
-
 - 如果一个事物只读取数据但不做修改, 数据库引擎可以对这个事务进行优化.
-
 - 超时事务属性: 事务在强制回滚之前可以保持多久. 这样可以防止长期运行的事务占用资源.
-
 - 只读事务属性: 表示这个事务只读取数据但不更新数据, 这样可以帮助数据库引擎优化事务.
-
 - 超时和只读属性可以在 @Transactional 注解中定义.超时属性以秒为单位来计算.在 Spring 2.x 事务通知中, 超时和只读属性可以在` <tx:method>`元素中进行指定
+
+## 七 整合
+
+### 7.1 Spring 整合 Hibernate
+
+- Spring 支持大多数流行的 ORM 框架, 包括 Hibernate JDO, TopLink, Ibatis 和 JPA。
+- Spring 对这些 ORM 框架的支持是一致的, 因此可以把和 Hibernate 整合技术应用到其他 ORM 框架上.
+
+#### 7.1.1 在 Spring 中配置 SessionFactory 
+
+- 对于 Hibernate 而言, 必须从原生的 Hibernate API 中构建 SessionFactory. 此外, 应用程序也无法利用 Spring 提供的数据存储机制(例如: Spring 的事务管理机制)
+- Spring 提供了对应的工厂 Bean, 可以用单实例的形式在 IOC 容器中创建 SessionFactory实例
+- 可以利用 **LocalSessionFactoryBean** 工厂 Bean, 声明一个使用 XML 映射文件的 SessionFactory 实例.
+- 需要为该工厂 Bean 指定 configLocation 属性来加载 Hibernate 配置文件.
+- 如果在 Spring IOC 容器中配置数据源. 可以将该数据源注入到 LocalSessionFactoryBean 的 dataSource 属性中. 该属性可以指定的数据源会覆盖掉 Hibernate 配置文件里的数据库配置
+- 可以将所有配置合并到 LocalSessionFactoryBean 中,从而忽略 Hibernate 配置文件. 
+- 可以在 LocalSessionFactoryBean 的 mappingResources 属性中指定 XML 映射文件的位置.该属性为 String[] 类型. 因此可以指定一组映射文件.
+- 在 hibernateProperties 属性中指定数据库方言等.
+
+```xml
+ <!-- 配置 Hibernate 的 SessionFactory 实例: 通过 Spring 提供的 LocalSessionFactoryBean 进行配置 -->
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+        <!-- 配置数据源属性 -->
+        <property name="dataSource" ref="dataSource"></property>
+        <!-- 配置 hibernate 配置文件的位置及名称 -->
+
+        <property name="configLocation" value="classpath:hibernate.cfg.xml"></property>
+
+        <!--&lt;!&ndash; 使用 hibernateProperties 属相来配置 Hibernate 原生的属性 &ndash;&gt;-->
+        <!--<property name="hibernateProperties">-->
+            <!--<props>-->
+                <!--<prop key="hibernate.dialect">org.hibernate.dialect.MySQL57Dialect</prop>-->
+                <!--<prop key="hibernate.show_sql">true</prop>-->
+                <!--<prop key="hibernate.format_sql">true</prop>-->
+                <!--<prop key="hibernate.hbm2ddl.auto">update</prop>-->
+            <!--</props>-->
+        <!--</property>-->
+        <!-- 配置 hibernate 映射文件的位置及名称, 可以使用通配符 -->
+        <property name="packagesToScan"
+                  value="com.ifox.hgx.spring.hibernate.entity"></property>
+    </bean>
+
+    <!-- 配置 Spring 的声明式事务 -->
+    <!-- 1. 配置事务管理器 -->
+    <bean id="transactionManager" class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory"></property>
+    </bean>
+```
+
+
+
+#### 7.1.2 用 Spring 的 ORM 模板持久化对象 
+
+- 在单独使用 ORM 框架时, 必须为每个 DAO 操作重复某些常规任务. 例如: 打开关闭 Session 对象; 启动, 提交, 回滚事务等.
+
+- 同 JDBC 一样, Spring 采取了相同的方法 ------ 定义模板类和 DAO 支持类来简化 ORM 框架的使用. 而且 Spring 在不同的事务管理 API 之上定义了一个事务抽象层. 对于不同的 ORM 框架, 只需要选择相应的事务管理器实现.
+
+- Spring 对不同数据存储策略的支持类 
+
+  - HibernateTemplate 确保了 Hibernate 会话能够正确地打开和关闭. 
+  - HibernateTemplate 也会让原生的 Hibernate 事务参与到 Spring 的事务管理体系中来. 从而利用 Spring 的声明式事务管理事务.
+
+  ![Spring 对不同数据存储策略的支持类.png](img/Spring 对不同数据存储策略的支持类.png)
+
+
+
+#### 7.1.3 使用 Hibernate 模板 
+
+- HibernateTemplate 中的模板方法管理会话和事务. 如果在一个支持事务的 DAO 方法中有多个 Hibernate 操作, 模板方法可以确保它们会在同一个会话和事务中运行. 因此没有必要为了会话和事务管理去和 Hibernate API 打交道.
+- 通过为 DAO 方法添加 @Transactional 注解将其声明为受事务管理的.
+- HibernateTemplate 类是线程安全的, 因此可以在 Bean 配置文件中只声明一个实例, 并将该实例注入到所有的 Hibernate DAO 中.
+
+
+
+#### 7.1.4 继承 Hibernate 的 DAO 支持类
+
+- Hibernate DAO 可以通过继承 HibernateDaoSupport 来继承 setSessionFactory() 和 setHibernateTemplate() 方法. 然后, 只要在 DAO 方法中调用 getHibernateTemplate() 方法就可以获取到模板实例.
+- 如果为 HibernateDaoSupport 实现类注入了 SessionFactory 实例, 就不需要在为之注入 HibernateTemplate 实例了, 因为HibernateDaoSupport  会根据传入的 SessionFactory 在其构造器内创建 HibernateTemplate 的实例, 并赋给 hibernateTemplate 属性
+
+#### 7.1.5 用 Hibernate 的上下文 Session 持久化对象
+
+- •Spring 的 HibernateTemplate 可以管理会话和事务, 简化 DAO 实现. 但使用 HibernateTemplate 意味着DAO 必须依赖于 Spring 的 API
+
+- 代替 HibernateTemplate 的另一种办法是使用 Hibernate 的上下文 Session 对象. 
+
+- Hibernate 上下文 Session 对象和 Spring 的事务管理合作的很好, 但此时需保证所有的DAO 方法都支持事务
+
+- 注意此时不需在 beans.xml 文件中配置, 因为 Spring 此时已经开始事务, 所以已经在 ThreadLocal 对象中绑定了 Session 对象 
+
+- 在 Hibernate 会话中调用原生的方法时, 抛出的异常依旧是原生的 HibernateException. 
+
+- 为了保持一致的异常处理方法, 即把 Hibernate 异常转换为 Spring 的 DataAccessException 异常, 那么必须为需要异常转换的 DAO 类添加 @Respository 注解.
+
+  然后在注册一个`org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor` 实例, 将原生的 Hibernate 异常转换为 Spring的DataAccessException层次结构中的数据存取异常. 这个 Bean 后置处理器只为添加了@Respository注解的 Bean 转换异常
+
+```xml
+ <!-- 配置事务异常封装 -->
+   <bean id="persistenceExceptionTranslationPostProcessor" 
+       class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor" />
+```
+
+#### 7.1.6 Hibernate 上下文相关的 Session
+
+- 从 Hibernate 3 开始, SessionFactory 新增加了 getCurrentSession() 方法, 该方法可直接获取“上下文“相关的 Session. 
+
+- Hibernate 通过 CurrentSessionContext 接口的实现类和 配置参数`hibernate.current_session_context_class`定义 “上下文”
+
+  - JTASessionContext: 根据 JTA 来跟踪和界定 Session 对象.
+  - ThreadLocalSessionContext: 通过当前正在执行的线程来跟踪和界定 Session 对象
+  - ManagedSessionContext: 通过正在当前执行来跟踪和界定 Session 对象. 但程序需要调用该类的静态方法来绑定 Sessio 对象, 取消绑定, flush 或者关闭 Session 对象.
+
+- 如果使用 ThreadLocalSessionContext 策略, Hibernate 的 Session 会随着 getCurrentSession() 方法自动打开, 随着事务提交自动关闭.
+
+- 若当前应用是基于 JTA 的分布式事务, 通常采用第一种方式; 而对于独立的 Hibernate 应用则使用第二种应用.
+
+- 配置:
+
+  - 根据 JTA 来跟踪和界定 Session 对象:
+
+  ```xml
+  <property name="hibernate.current_session_context_class">thread</property>
+  ```
+
+  - 通过当前正在执行的线程来跟踪和界定 Session 对象：
+
+  ```xml
+  <property name="hibernate.current_session_context_class">jta</property>
+  ```
+
+
+
+#### 7.1.7 案例
+
+- gradle
+
+```gradle
+compile group: 'org.springframework', name: 'spring-context', version: '5.0.8.RELEASE'
+compile group: 'org.springframework', name: 'spring-aspects', version: '5.0.8.RELEASE'
+compile group: 'org.springframework', name: 'spring-jdbc', version: '5.0.8.RELEASE'
+compile group: 'com.mchange', name: 'c3p0', version: '0.9.5.2'
+compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.47'
+compile group: 'org.springframework', name: 'spring-orm', version: '5.0.8.RELEASE'
+compile group: 'org.hibernate', name: 'hibernate-core', version: '5.2.17.Final'
+```
+
+- application-hibernate.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <!-- 配置自动扫描的包 -->
+    <context:component-scan base-package="xxx.spring.hibernate"></context:component-scan>
+
+    <!-- 配置数据源 -->
+    <!-- 导入资源文件 -->
+    <context:property-placeholder location="classpath:db.properties"/>
+
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <property name="user" value="${jdbc.user}"></property>
+        <property name="password" value="${jdbc.password}"></property>
+        <property name="driverClass" value="${jdbc.driverClass}"></property>
+        <property name="jdbcUrl" value="${jdbc.jdbcUrl}"></property>
+
+        <property name="initialPoolSize" value="${jdbc.initPoolSize}"></property>
+        <property name="maxPoolSize" value="${jdbc.maxPoolSize}"></property>
+    </bean>
+
+    <!-- 配置 Hibernate 的 SessionFactory 实例: 通过 Spring 提供的 LocalSessionFactoryBean 进行配置 -->
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+        <!-- 配置数据源属性 -->
+        <property name="dataSource" ref="dataSource"></property>
+        <!-- 配置 hibernate 配置文件的位置及名称 -->
+
+        <property name="configLocation" value="classpath:hibernate.cfg.xml"></property>
+
+        <!--&lt;!&ndash; 使用 hibernateProperties 属相来配置 Hibernate 原生的属性 &ndash;&gt;-->
+        <!--<property name="hibernateProperties">-->
+            <!--<props>-->
+                <!--<prop key="hibernate.dialect">org.hibernate.dialect.MySQL57Dialect</prop>-->
+                <!--<prop key="hibernate.show_sql">true</prop>-->
+                <!--<prop key="hibernate.format_sql">true</prop>-->
+                <!--<prop key="hibernate.hbm2ddl.auto">update</prop>-->
+            <!--</props>-->
+        <!--</property>-->
+        <!-- 配置 hibernate 映射文件的位置及名称, 可以使用通配符 -->
+        <property name="packagesToScan"
+                  value="xxx.spring.hibernate.entity"></property>
+    </bean>
+
+    <!-- 配置 Spring 的声明式事务 -->
+    <!-- 1. 配置事务管理器 -->
+    <bean id="transactionManager" class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory"></property>
+    </bean>
+
+    <!--<tx:annotation-driven transaction-manager="transactionManager"></tx:annotation-driven>-->
+     <!--2. 配置事务属性, 需要事务管理器-->
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <tx:attributes>
+            <tx:method name="get*" read-only="true"/>
+            <!--<tx:method name="purchase" propagation="REQUIRES_NEW"/>-->
+            <tx:method name="purchase" propagation="REQUIRES_NEW"></tx:method>
+            <tx:method name="*"/>
+        </tx:attributes>
+    </tx:advice>
+
+    <!-- 3. 配置事务切点, 并把切点和事务属性关联起来 -->
+    <aop:config>
+        <aop:pointcut expression="execution(* xxx.spring.hibernate.service.*.*(..))"
+                      id="txPointcut"/>
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="txPointcut"/>
+    </aop:config>
+</beans>
+```
+
+- db.properties
+
+```properties
+jdbc.user=root
+jdbc.password=123456
+jdbc.driverClass=com.mysql.jdbc.Driver
+#jdbc.jdbcUrl=jdbc:mysql:///spring
+jdbc.jdbcUrl=jdbc:mysql:///hibernate
+jdbc.initPoolSize=5
+jdbc.maxPoolSize=10
+```
+
+- hibernate.cfg.xml
+
+```xml
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD//EN"
+        "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+    <session-factory>
+        <!-- 配置 hibernate 的基本属性 -->
+        <!-- 1. 数据源需配置到 IOC 容器中, 所以在此处不再需要配置数据源 -->
+        <!-- 2. 关联的 .hbm.xml 也在 IOC 容器配置 SessionFactory 实例时在进行配置 -->
+        <!-- 3. 配置 hibernate 的基本属性: 方言, SQL 显示及格式化, 生成数据表的策略以及二级缓存等. -->
+        <property name="hibernate.dialect">org.hibernate.dialect.MySQL57Dialect</property>
+        <property name="hibernate.show_sql">true</property>
+        <property name="hibernate.format_sql">true</property>
+        <property name="hibernate.hbm2ddl.auto">update</property>
+        <!--<mapping class="com.ifox.hgx.spring.hibernate.entity.Account"/>-->
+        <!--<mapping class="com.ifox.hgx.spring.hibernate.entity.Book"/>-->
+        <!-- 配置 hibernate 二级缓存相关的属性. -->
+    </session-factory>
+</hibernate-configuration>
+```
+
+- Entity
+
+```java
+@Entity
+public class Account {
+    private int id;
+    //用户名
+    private String username;
+    //余额
+    private Integer balance;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    @Basic
+    @Column(name = "username")
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    @Basic
+    @Column(name = "balance")
+    public Integer getBalance() {
+        return balance;
+    }
+
+    public void setBalance(Integer balance) {
+        this.balance = balance;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Account account = (Account) o;
+        return id == account.id &&
+                Objects.equals(username, account.username) &&
+                Objects.equals(balance, account.balance);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, username, balance);
+    }
+}
+//Book
+@Entity
+public class Book {
+    private int id;
+    //书名
+    private String bookName;
+    //书号：如1001
+    private String isbn;
+    //价格
+    private Integer price;
+    //库存
+    private Integer stock;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    @Basic
+    @Column(name = "bookName")
+    public String getBookName() {
+        return bookName;
+    }
+
+    public void setBookName(String bookName) {
+        this.bookName = bookName;
+    }
+
+    @Basic
+    @Column(name = "isbn")
+    public String getIsbn() {
+        return isbn;
+    }
+
+    public void setIsbn(String isbn) {
+        this.isbn = isbn;
+    }
+
+    @Basic
+    @Column(name = "price")
+    public Integer getPrice() {
+        return price;
+    }
+
+    public void setPrice(Integer price) {
+        this.price = price;
+    }
+
+    @Basic
+    @Column(name = "stock")
+    public Integer getStock() {
+        return stock;
+    }
+
+    public void setStock(Integer stock) {
+        this.stock = stock;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Book book = (Book) o;
+        return id == book.id &&
+                Objects.equals(bookName, book.bookName) &&
+                Objects.equals(isbn, book.isbn) &&
+                Objects.equals(price, book.price) &&
+                Objects.equals(stock, book.stock);
+    }
+
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(id, bookName, isbn, price, stock);
+    }
+}
+
+```
+
+- dao
+
+```java
+//BookShopService
+public interface BookShopService {
+    void purchase(String username, String isbn);
+    void save(Book book);
+}
+//Cashier
+public interface Cashier {
+	void checkout(String username, List<String> isbns);
+}
+
+//BookShopServiceImpl
+@Service
+public class BookShopServiceImpl implements BookShopService {
+
+    @Autowired
+    private BookShopDao bookShopDao;
+    /**
+     * Spring hibernate 事务的流程
+     * 1. 在方法开始之前
+     * ①. 获取 Session
+     * ②. 把 Session 和当前线程绑定, 这样就可以在 Dao 中使用 SessionFactory 的
+     * getCurrentSession() 方法来获取 Session 了
+     * ③. 开启事务
+     * <p>
+     * 2. 若方法正常结束, 即没有出现异常, 则
+     * ①. 提交事务
+     * ②. 使和当前线程绑定的 Session 解除绑定
+     * ③. 关闭 Session
+     * <p>
+     * 3. 若方法出现异常, 则:
+     * ①. 回滚事务
+     * ②. 使和当前线程绑定的 Session 解除绑定
+     * ③. 关闭 Session
+     */
+    @Override
+    public void purchase(String username, String isbn) {
+        int price = bookShopDao.findBookPriceByIsbn(isbn);
+        bookShopDao.updateBookStock(isbn);
+        bookShopDao.updateUserAccount(username, price);
+    }
+
+    @Override
+    public void save(Book book) {
+        bookShopDao.save(book);
+    }
+
+    @Override
+    public void savetestA(TestA testA) {
+        bookShopDao.saveTestA(testA);
+    }
+
+    @Override
+    public TestA findById(Integer id) {
+        return bookShopDao.getTestA(id);
+    }
+}
+//CashierImpl
+@Service
+public class CashierImpl implements Cashier {
+
+    @Autowired
+    private BookShopService bookShopService;
+
+    @Override
+    public void checkout(String username, List<String> isbns) {
+        for (String isbn : isbns) {
+            bookShopService.purchase(username, isbn);
+        }
+    }
+}
+```
+
+- Exception
+
+```java
+//BookStockException
+public class BookStockException extends RuntimeException{
+    private static final long serialVersionUID = 1L;
+    public BookStockException() {
+        super();
+    }
+    public BookStockException(String message, Throwable cause,
+                              boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
+    public BookStockException(String message, Throwable cause) {
+        super(message, cause);
+    }
+    public BookStockException(String message) {
+        super(message);
+    }
+    public BookStockException(Throwable cause) {
+        super(cause);
+    }
+}
+
+//UserAccountException
+public class UserAccountException extends RuntimeException{
+    private static final long serialVersionUID = 1L;
+    public UserAccountException() {
+        super();
+    }
+    public UserAccountException(String message, Throwable cause,
+                                boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
+    public UserAccountException(String message, Throwable cause) {
+        super(message, cause);
+    }
+    public UserAccountException(String message) {
+        super(message);
+    }
+    public UserAccountException(Throwable cause) {
+        super(cause);
+    }
+}
+```
+
+- test
+
+```java
+public class SpringHibernateTest {
+
+    private ApplicationContext ctx = null;
+    private BookShopService bookShopService = null;
+    private Cashier cashier = null;
+    private BookShopDao bookShopDao = null;
+
+    {
+        ctx = new ClassPathXmlApplicationContext("application-hibernate.xml");
+        bookShopService = ctx.getBean(BookShopService.class);
+        cashier = ctx.getBean(Cashier.class);
+        bookShopDao = ctx.getBean(BookShopDao.class);
+    }
+
+    @Test
+    public void testCashier() {
+        cashier.checkout("aa", Arrays.asList("1001", "1002"));
+    }
+
+    @Test
+    public void testBookShopService() {
+        bookShopService.purchase("aa", "1001");
+    }
+    @Test
+    public void testDataSource() {
+        DataSource dataSource = ctx.getBean(DataSource.class);
+        SessionFactory sessionFactory = ctx.getBean(SessionFactory.class) ;
+    }
+```
 
 
 
