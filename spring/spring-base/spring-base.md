@@ -2398,11 +2398,6 @@ public class BookShopServiceImpl implements BookShopService {
     }
 
     @Override
-    public void savetestA(TestA testA) {
-        bookShopDao.saveTestA(testA);
-    }
-
-    @Override
     public TestA findById(Integer id) {
         return bookShopDao.getTestA(id);
     }
@@ -2504,8 +2499,312 @@ public class SpringHibernateTest {
 
 
 
+### 7.2 spring整合Struts2
+
+#### 7.2.1 在通用的 web 应用中访问 Spring 
+
+- 通过注册 Servlet 监听器 ContextLoaderListener, Web 应用程序可以加载 Spring 的ApplicationContext 对象. 这个监听器会将加载好的ApplicationContext 对象保存到 Web 应用程序的 ServletContext 中. 随后, Servlet 或可以访问 ServletContext 的任意对象就能通过一个辅助方法来访问 Spring 的应用程序上下文了. 
+- 在 web.xml 文件中注册 Spring 提供的 Servlet 监听器`org.springframework.web.context.ContextLoaderListener`, 它会在当前 web 应用被加载时将 Spring 的 ApplicationContext 保存到 ServletContext 对象中. 
+- `org.springframework.web.context.ContextLoaderListener`监听器通过查找 web 应用初始化参数contextConfigLocation 来获取 Bean 配置文件的位置. 如果有多个 Bean 配置文件, 可以通过逗号或空格进行分隔. contextConfigLocation 的默认值为 /WEB-INF/applicationContext.xml. 若实际的文件和默认值一致则可以省略这个 web 应用的初始化参数
+
+```xml
+<!-- 配置 Spring 配置文件的名称和位置 -->
+<context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>classpath:application-web.xml</param-value>
+</context-param>
+
+<!-- 启动 IOC 容器的 ServletContextListener -->
+<listener>
+    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+</listener>
+```
+
+- 在 web 应用程序中访问 Spring 的 ApplicationContext 对象 
+
+```jsp
+<% 
+    //1. 从 appication 域对象中得到 IOC 容器的实例
+    ApplicationContext ctx = WebApplicationContextUtils.getWebApplicationContext(application);
+    //2. 从 IOC 容器中得到 bean
+    Person person = ctx.getBean(Person.class);
+    //3. 使用 bean
+    person.hello();
+%>
+```
+
+#### 7.2.2 整合Struts2
+
+- Struts2 通过插件实现和 Spring 的整合. 
+- Struts2 提供了两种和 Spring整合基本的策略:
+  - 将 Action 实例交给 Spring 容器来负责生成, 管理, 通过这种方式, 可以充分利用 Spring 容器的 IOC 特性, 提供最好的解耦
+  - 利用  Spring 插件的自动装配功能, 当 Spring 插件创建 Action 实例后, 立即将 Spring 容器中对应的业务逻辑组件注入 Action 实例. 
+
+##### 7.2.2.1 让 Spring 管理控制器 
+
+- 将 Action 实例交给 Spring 容器来负责生成, 管理, 通过这种方式, 可以充分利用 Spring 容器的 IOC 特性, 提供最好的解耦
+- 整合流程:
+  - 安装 Spring 插件: 把 struts2-spring-plugin-xxx.jar 复制到当前 WEB 应用的 WEB-INF/lib 目录下
+  - 在 Spring 的配置文件中配置 Struts2 的 Action 实例
+  - 在 Struts 配置文件中配置 action, 但其 class 属性不再指向该 Action 的实现类, 而是指向 Spring 容器中 Action 实例的 ID
+
+##### 7.2.2.2 自动装配
+
+- 利用  Spring 插件的自动装配功能, 当 Spring 插件创建 Action 实例后, 立即将 Spring 容器中对应的业务逻辑组件注入 Action 实例. 
+- 配置自动装配策略: Spring 插件的自动装配可以通过 struts.objectFactory.spring.autoWire 常量指定, 该常量可以接受如下值:
+  - name: 根据属性名自动装配. 
+  - type: 根据类型自动装配. 若有多个 type 相同的 Bean, 就抛出一个致命异常; 若没有匹配的 Bean, 则什么都不会发生, 属性不会被设置
+  - auto: Spring 插件会自动检测需要使用哪种方式自动装配方式
+  - constructor: 同 type 类似, 区别是 constructor 使用构造器来构造注入所需的参数
+- 整合流程:
+  - 安装 Spring 插件
+  - 正常编写 struts 配置文件
+  - 编写 spring 配置文件, 在该配置文件中不需要配置 Action 实例
+
+#### 7.2.3 小总结
+
+Spring 如何在 WEB 应用中使用 ?
+
+1). 需要额外加入的 jar 包:
+
+spring-web-x.x.x.RELEASE.jar
+spring-webmvc-x.x.x.RELEASE.jar
+
+2). Spring 的配置文件, 没有什么不同
+
+3). 如何创建 IOC 容器 ? 
+
+①. 非 WEB 应用在 main 方法中直接创建
+②. 应该在 WEB 应用被服务器加载时就创建 IOC 容器: 
+
+在 ServletContextListener#contextInitialized(ServletContextEvent sce) 方法中创建 IOC 容器.
+
+③. 在 WEB 应用的其他组件中如何来访问 IOC 容器呢 ?
+
+在 ServletContextListener#contextInitialized(ServletContextEvent sce) 方法中创建 IOC 容器后, 可以把其放在
+ServletContext(即 application 域)的一个属性中. 
+
+④. 实际上, Spring 配置文件的名字和位置应该也是可配置的! 将其配置到当前 WEB 应用的初始化参数中较为合适. 
+
+4). 在 WEB 环境下使用 Spring
+
+①. 需要额外加入的 jar 包:
+
+spring-web-x.x.x.RELEASE.jar
+spring-webmvc-x.x.x.RELEASE.jar
+
+②. Spring 的配置文件, 和非 WEB 环境没有什么不同
+
+③. 需要在 web.xml 文件中加入如下配置:
+
+```xml
+<!-- 配置 Spring 配置文件的名称和位置 -->
+<context-param>
+	<param-name>contextConfigLocation</param-name>
+	<param-value>classpath:applicationContext.xml</param-value>
+</context-param>
+<!-- 启动 IOC 容器的 ServletContextListener -->
+<listener>
+	<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+</listener>
+```
+
+2. Spring 如何整合 Struts2 ?
+
+1). 整合目标 ? 使 IOC 容器来管理 Struts2 的 Action!
+
+2). 如何进行整合 ? 
+
+①. 正常加入 Struts2
+
+②. 在 Spring 的 IOC 容器中配置 Struts2 的 Action
+注意: 在 IOC 容器中配置 Struts2 的 Action 时, 需要配置 scope 属性, 其值必须为 prototype
+
+```xml
+<bean id="personAction" 
+	class="xxx.spring.struts2.actions.PersonAction" scope="prototype">
+	<property name="personService" ref="personService"></property>	
+</bean>
+```
+
+③. 配置 Struts2 的配置文件: action 节点的 class 属性需要指向 IOC 容器中该 bean 的 id
+
+```xml
+<action name="person-save" class="personAction">
+	<result>/success.jsp</result>
+</action> 
+```
+
+④. 加入 struts2-spring-plugin-xxxx.jar
+
+3). 整合原理: 通过添加 struts2-spring-plugin-xxx.jar 以后, Struts2 会先从 IOC 容器中
+获取 Action 的实例.
+
+```java
+if (appContext.containsBean(beanName)) {
+    o = appContext.getBean(beanName);
+} else {
+    Class beanClazz = getClassInstance(beanName);
+    o = buildBean(beanClazz, extraContext);
+}
+```
 
 
+
+#### 7.2.4 案例
+
+- gradle
+
+```xml
+compile group: 'org.springframework', name: 'spring-context', version: '5.0.8.RELEASE'
+compile group: 'org.springframework', name: 'spring-aspects', version: '5.0.8.RELEASE'
+compile group: 'org.springframework', name: 'spring-jdbc', version: '5.0.8.RELEASE'
+compile group: 'org.springframework', name: 'spring-web', version: '5.0.8.RELEASE'
+compile group: 'org.springframework', name: 'spring-webmvc', version: '5.0.8.RELEASE'
+compile group: 'com.mchange', name: 'c3p0', version: '0.9.5.2'
+compile group: 'mysql', name: 'mysql-connector-java', version: '5.1.47'
+compile group: 'org.springframework', name: 'spring-orm', version: '5.0.8.RELEASE'
+compile group: 'org.hibernate', name: 'hibernate-core', version: '5.2.17.Final'
+compile group: 'org.apache.struts', name: 'struts2-core', version: '2.5.16'
+compile group: 'org.apache.struts', name: 'struts2-spring-plugin', version: '2.5.16'
+```
+
+- application-web.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+    <bean id="person" class="com.ifox.hgx.spring.web.bean.Person">
+        <property name="name" value="spring"></property>
+    </bean>
+    <bean id="personService"
+          class="com.ifox.hgx.spring.web.service.PersonService"></bean>
+    <!-- 注意: 在 IOC 容器中配置 Struts2 的 Action 时, 需要配置 scope 属性, 其值必须为 prototype -->
+    <bean id="personAction"
+          class="com.ifox.hgx.spring.web.controller.PersonAction"
+          scope="prototype">
+        <property name="personService" ref="personService"></property>
+    </bean>
+</beans>
+```
+
+- bean
+
+```java
+public class Person {
+    private String name;
+    public String getName() {
+        return name;
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
+    public void hello() {
+        System.out.println("this is " + name + " Hello!");
+    }
+}
+
+```
+
+- service
+
+```java
+public class PersonService {
+	public void save(){
+		System.out.println("PersonService's save....");
+	}
+}
+```
+
+- controller
+
+```java
+public class PersonAction {
+	private PersonService personService;
+	public void setPersonService(PersonService personService) {
+		this.personService = personService;
+	}
+	public String execute(){
+		System.out.println("execute....");
+		personService.save();
+		return "success";
+	}
+}
+```
+
+- struts.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE struts PUBLIC
+        "-//Apache Software Foundation//DTD Struts Configuration 2.5//EN"
+        "http://struts.apache.org/dtds/struts-2.5.dtd">
+<struts>
+    <constant name="struts.enable.DynamicMethodInvocation" value="false"/>
+    <constant name="struts.devMode" value="true"/>
+
+    <package name="default" namespace="/" extends="struts-default">
+        <!--
+            Spring 整合 Struts2 时, 在 Struts2 中配置的 Spring 的 Action 的 class 需要指向 IOC 容器中该 bean 的 id
+        -->
+        <action name="person-save" class="personAction">
+            <result>/success.jsp</result>
+        </action>
+    </package>
+</struts>
+```
+
+- web.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+         version="3.1">
+
+    <!-- 配置 Spring 配置文件的名称和位置 -->
+    <context-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>classpath:application-web.xml</param-value>
+    </context-param>
+
+    <!-- 启动 IOC 容器的 ServletContextListener -->
+    <listener>
+        <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+    </listener>
+
+    <!-- 配置 Struts2 的 Filter -->
+    <filter>
+        <filter-name>struts2</filter-name>
+        <filter-class>org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter</filter-class>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>struts2</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+</web-app>
+```
+
+- jsp
+
+```jsp
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Insert title here</title>
+</head>
+<body>
+	<a href="person-save">Person Save</a>
+</body>
+</html>
+```
 
 
 
