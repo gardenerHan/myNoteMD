@@ -1,8 +1,8 @@
 # MySQL基础
 
-*@Author:hanguixian*
+<font color="green">*@Author:hanguixian*</font>
 
-*@Email:hn_hanguixian@163.com*
+<font color="green">*@Email:hn_hanguixian@163.com*</font>
 
 
 
