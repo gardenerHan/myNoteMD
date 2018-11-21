@@ -1,10 +1,8 @@
 # Spring
 
-
-
 <font color="green">*@Author:hanguixian*</font> 
 
-<font color="green">*@Email:hn_hanguixian@163.com*<font>   
+<font color="green">*@Email:hn_hanguixian@163.com*</font>   
 
 ---------------
 
@@ -114,7 +112,6 @@ public class HelloWorld {
   }
   ```
 
-  
 
 ## 三 Spring中Bean的配置
 
@@ -744,7 +741,6 @@ public class CarFactoryBean implements FactoryBean<Car> {
 
   - `<context:include-filter>` 和` <context:exclude-filter> `子节点支持多种类型的过滤表达式： 
 
-  
 
 | 类别       | 示例                  | 说明                                                         |
 | ---------- | --------------------- | ------------------------------------------------------------ |
