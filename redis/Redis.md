@@ -494,6 +494,8 @@ set
 
 ### 4 Redis字符串(String)
 
+- 单值单value
+
 #### 4.1 常用命令
 
 -  set/get/del/append/strlen
@@ -583,6 +585,8 @@ OK
 
 ### 5 Redis列表(List)
 
+- 单值多value
+
 #### 5.1 常用命令
 
 -  lpush/rpush/lrange
@@ -639,4 +643,54 @@ OK
 - 如果键已存在，新增内容；
 - 如果值全移除，对应的键也就消失了。
 - 链表的操作无论是头和尾效率都极高，但假如是对中间元素进行操作，效率就很惨淡了。
+
+### 6 Redis集合(Set)
+
+- 单值多value
+
+#### 6.1 常用命令
+
+-  sadd/smembers/sismember
+    -  sadd：将一个或多个 `member` 元素加入到集合 `key` 当中，已经存在于集合的 `member` 元素将被忽略。 
+    -  smembers：返回集合 `key` 中的所有成员。 
+    -  sismember：判断 `member` 元素是否集合 `key` 的成员。 
+-  scard，获取集合里面的元素个数
+-  srem key value 删除集合中元素
+    -  移除集合 `key` 中的一个或多个 `member` 元素，不存在的 `member` 元素会被忽略。 
+-  srandmember key 某个整数(随机出几个数)
+    - 从set集合里面随机取出2个
+    - 如果超过最大数量就全部取出
+    - 如果写的值是负数，比如-3 ，表示需要取出3个，但是可能会有重复值。
+-   spop key 随机出栈
+-   smove key1 key2 在key1里某个值：作用是将key1里的某个值赋给key2
+    -  SMOVE source destination member:将 `member` 元素从 `source` 集合移动到 `destination` 集合。
+-   数学集合类
+    -  差集：sdiff
+        -  返回一个集合的全部成员，该集合是所有给定集合之间的差集。 
+    -  交集：sinter
+        -  返回一个集合的全部成员，该集合是所有给定集合的交集。 
+    -  并集：sunion
+        -  返回一个集合的全部成员，该集合是所有给定集合的并集。 
+-  详情参考：http://redisdoc.com/set/index.html
+
+#### 6.2 示例
+
+```shell
+127.0.0.1:6379> FLUSHDB
+OK
+127.0.0.1:6379> keys *
+(empty list or set)
+127.0.0.1:6379> sadd cc 1 2 3 n n d 1
+(integer) 5
+127.0.0.1:6379> SMEMBERS cc
+1) "2"
+2) "n"
+3) "3"
+4) "d"
+5) "1"
+127.0.0.1:6379> scard cc
+(integer) 5
+```
+
+
 
