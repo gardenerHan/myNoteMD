@@ -1,5 +1,10 @@
 # Redis
 
+<font color = "green">*@Author:hanguixian* </font>
+<font color = "green">*@Email:hn_hanguixian@163.com*</font>
+
+
+
 ## 一 NoSql入门和概述
 
 ### 1 .  入门概述
@@ -380,7 +385,258 @@ root     14829 14738  0 16:03 pts/0    00:00:00 grep --color=auto redis
 - 为什么默认端口是6379
   - 6379在是手机按键上MERZ对应的号码，而MERZ取自意大利歌女[Alessia Merz](http://it.wikipedia.org/wiki/Alessia_Merz)的名字。MERZ长期以来被antirez及其朋友当作愚蠢的代名词。 
 
+## 三 Redis数据类型
+
+### 1 Redis的五大数据类型
+
+#### 1.1 string（字符串）
+
+- string是redis最基本的类型，你可以理解成与Memcached一模一样的类型，一个key对应一个value。
+- string类型是二进制安全的。意思是redis的string可以包含任何数据。比如jpg图片或者序列化的对象 。
+- string类型是Redis最基本的数据类型，一个redis中字符串value最多可以是512M
+
+#### 1.2 hash（哈希，类似java里的Map）
+
+- Redis hash 是一个键值对集合。
+- Redis hash是一个string类型的field和value的映射表，hash特别适合用于存储对象。
+- 类似Java里面的Map<String,Object>
+
+#### 1.3 List（列表）
+
+- Redis 列表是简单的字符串列表，按照插入顺序排序。你可以添加一个元素导列表的头部（左边）或者尾部（右边）。
+- 它的底层实际是个链表
+
+#### 1.4 Set（集合）
+
+- Redis的Set是string类型的无序集合。它是通过HashTable实现实现的
+
+#### 1.5 zset(sorted set：有序集合)
+
+- Redis的zset 和 set 一样也是string类型元素的集合,且不允许重复的成员。
+- 不同的是每个元素都会关联一个double类型的分数。
+- redis正是通过分数来为集合中的成员进行从小到大的排序。zset的成员是唯一的,但分数(score)却可以重复。
+
+### 2 常见数据类型操作命令
+
+官网：http://redisdoc.com/
+
+![常见数据类型操作命令](F:\myNoteMD\redis\img\redis命令参数.png)
+
+### 3 Redis 键(key)
+
+#### 3.1 常用命令
+
+- keys *
+-  exists key的名字，判断某个key是否存在
+-  move key db   --->当前库就没有了，被移除了
+-  expire key 秒钟：为给定的key设置过期时间
+-  ttl key 查看还有多少秒过期，-1表示永不过期，-2表示已过期
+-  type key 查看你的key是什么类型
+- 详情参考：http://redisdoc.com/key/index.html
+
+#### 3.2 示例
+
+```shell
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis.conf 
+14897:C 27 Nov 2018 17:32:46.353 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+14897:C 27 Nov 2018 17:32:46.353 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=14897, just started
+14897:C 27 Nov 2018 17:32:46.353 # Configuration loaded
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+127.0.0.1:6379> FLUSHDB 
+OK
+127.0.0.1:6379> keys *
+(empty list or set)
+127.0.0.1:6379> set k1 v1
+OK
+127.0.0.1:6379> KEYS *
+1) "k1"
+127.0.0.1:6379> EXISTS k1
+(integer) 1
+127.0.0.1:6379> EXISTS k2
+(integer) 0
+127.0.0.1:6379> move k1 2
+(integer) 1
+127.0.0.1:6379> KEYS *
+(empty list or set)
+127.0.0.1:6379> SELECT 2
+OK
+127.0.0.1:6379[2]> KEYS *
+1) "k1"
+127.0.0.1:6379[2]> SELECT 0
+OK
+127.0.0.1:6379> KEYS *
+(empty list or set)
+127.0.0.1:6379> set k02 v02
+OK
+127.0.0.1:6379> KEYS *
+1) "k02"
+127.0.0.1:6379> EXPIRE k02 10
+(integer) 1
+127.0.0.1:6379> ttl k02
+(integer) 2
+127.0.0.1:6379> ttl k02
+(integer) 0
+127.0.0.1:6379> EXPIRE k02 10
+(integer) 0
+127.0.0.1:6379> keys *
+(empty list or set)
+127.0.0.1:6379> set k03 v03 
+OK
+127.0.0.1:6379> type k03
+string
+127.0.0.1:6379> type v03
+none
+127.0.0.1:6379> type set01
+set
+127.0.0.1:6379> ttl set01
+(integer) -1
+```
+
+### 4 Redis字符串(String)
+
+#### 4.1 常用命令
+
+-  set/get/del/append/strlen
+   -  set：将字符串值 `value` 关联到 `key` 。 
+   -  get：返回 `key` 所关联的字符串值。 
+   -  del：删除给定的一个或多个 `key` 。不存在的 `key` 会被忽略。
+   -  append：如果 `key` 已经存在并且是一个字符串， [APPEND](http://redisdoc.com/string/append.html#append) 命令将 `value` 追加到 `key` 原来的值的末尾。 如果 `key` 不存在， [APPEND](http://redisdoc.com/string/append.html#append) 就简单地将给定 `key` 设为 `value` ，就像执行 `SET key value` 一样。 
+   -  strlen：返回 `key` 所储存的字符串值的长度。 
+-  Incr/decr/incrby/decrby,一定要是数字才能进行加减
+   -  Incr：将 `key` 中储存的数字值增一。 
+   -  decr：将 `key` 中储存的数字值减一。 
+   -  incrby：将 `key` 所储存的值加上增量 `increment` 。 
+   -  decrby：将 `key` 所储存的值减去减量 `decrement` 。 
+-  getrange/setrange
+   -  getrange：返回 `key` 中字符串值的子字符串，字符串的截取范围由 `start` 和 `end` 两个偏移量决定(包括 `start` 和 `end` 在内)。 
+   -  setrange：用 `value` 参数覆写(overwrite)给定 `key` 所储存的字符串值，从偏移量 `offset` 开始。 
+-  setex(set with expire)键秒值/setnx(set if not exist)
+   -  setex：将值 `value` 关联到 `key` ，并将 `key` 的生存时间设为 `seconds` (以秒为单位)。 
+   -  setnx：将 `key` 的值设为 `value` ，当且仅当 `key` 不存在。 
+-  mset/mget/msetnx
+   -  mset：同时设置一个或多个 `key-value` 对。 
+   -  mget：返回所有(一个或多个)给定 `key` 的值。 
+   -  msetnx：同时设置一个或多个 `key-value` 对，当且仅当所有给定 `key` 都不存在。 
+-  getset(先get再set)
+   -  将给定 `key` 的值设为 `value` ，并返回 `key` 的旧值(old value)。 
+-  详情参考：http://redisdoc.com/string/index.html
+
+#### 4.2 示例
+
+```shell
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis.conf 
+15038:C 27 Nov 2018 19:49:09.640 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+15038:C 27 Nov 2018 19:49:09.640 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=15038, just started
+15038:C 27 Nov 2018 19:49:09.640 # Configuration loaded
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+127.0.0.1:6379> FLUSHDB
+OK
+127.0.0.1:6379> keys *
+(empty list or set)
+127.0.0.1:6379> set k1 v1
+OK
+127.0.0.1:6379> get k1
+"v1"
+127.0.0.1:6379> append k1 aaaaaa
+(integer) 8
+127.0.0.1:6379> get k1
+"v1aaaaaa"
+127.0.0.1:6379> STRLEN k1
+(integer) 8
+127.0.0.1:6379> INCR k1
+(error) ERR value is not an integer or out of range
+127.0.0.1:6379> set int01 1
+OK
+127.0.0.1:6379> INCR int01
+(integer) 2
+127.0.0.1:6379> INCR int01
+(integer) 3
+127.0.0.1:6379> INCRBY int01 20
+(integer) 23
+127.0.0.1:6379> getrange k1 1 5 
+"1aaaa"
+127.0.0.1:6379> SETRANGE k1 1 bbb
+(integer) 8
+127.0.0.1:6379> get k1
+"vbbbaaaa"
+127.0.0.1:6379> setex k1 10 555555
+OK
+127.0.0.1:6379> get k1
+"555555"
+127.0.0.1:6379> get k1
+(nil)
+127.0.0.1:6379> mset k2 v2 k3 v3
+OK
+127.0.0.1:6379> mget k1 k2 k3
+1) (nil)
+2) "v2"
+3) "v3"
+127.0.0.1:6379> getset k2 mmmm
+"v2"
+127.0.0.1:6379> getset k2 uuuu
+"mmmm"
+127.0.0.1:6379> get k2
+"uuuu"
+```
 
 
 
+### 5 Redis列表(List)
+
+#### 5.1 常用命令
+
+-  lpush/rpush/lrange
+  - lpush：将一个或多个值 `value` 插入到列表 `key` 的表头 
+  - rpush：将一个或多个值 `value` 插入到列表 `key` 的表尾(最右边)。 
+  - lrange：返回列表 `key` 中指定区间内的元素，区间以偏移量 `start` 和 `stop` 指定。 
+-  lpop/rpop
+  - lpop：移除并返回列表 `key` 的头元素。 
+  - rpop：移除并返回列表 `key` 的尾元素。 
+-  lindex，按照索引下标获得元素(从上到下)
+  - 返回列表 `key` 中，下标为 `index` 的元素。 
+-  llen
+  - 返回列表 `key` 的长度。 
+-  lrem key 删N个value
+  - 根据参数 `count` 的值，移除列表中与参数 `value` 相等的元素。 
+-  ltrim key 开始index 结束index，截取指定范围的值后再赋值给key
+  - ltrim：截取指定索引区间的元素，格式是ltrim list的key 起始索引 结束索引
+-  rpoplpush 源列表 目的列表
+  - 移除列表的最后一个元素，并将该元素添加到另一个列表并返回
+-  lset key index value
+  - 将列表 `key` 下标为 `index` 的元素的值设置为 `value` 。 
+-  linsert key  before/after 值1 值2
+  - 在list某个已有值的前后再添加具体值
+- 详情参考：http://redisdoc.com/list/index.html
+
+#### 5.2 示例
+
+```shell
+127.0.0.1:6379> FLUSHDB
+OK
+127.0.0.1:6379> keys *
+(empty list or set)
+127.0.0.1:6379> lpush scope a b 1 2
+(integer) 4
+127.0.0.1:6379> LRANGE scope  0 -1
+1) "2"
+2) "1"
+3) "b"
+4) "a"
+127.0.0.1:6379> RPOP scope
+"a"
+127.0.0.1:6379> LRANGE scope  0 -1
+1) "2"
+2) "1"
+3) "b"
+127.0.0.1:6379> lindex scope 2
+"b"
+```
+
+#### 5.3 性能总结
+
+- 它是一个字符串链表，left、right都可以插入添加；
+- 如果键不存在，创建新的链表；
+- 如果键已存在，新增内容；
+- 如果值全移除，对应的键也就消失了。
+- 链表的操作无论是头和尾效率都极高，但假如是对中间元素进行操作，效率就很惨淡了。
 
