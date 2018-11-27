@@ -175,24 +175,30 @@
 
 ![cap](img/cap.png)
 
--  CAP理论的核心是：一个分布式系统不可能同时很好的满足一致性，可用性和分区容错性这三个需求，最多只能同时较好的满足两个。
+- CAP理论的核心是：一个分布式系统不可能同时很好的满足一致性，可用性和分区容错性这三个需求，最多只能同时较好的满足两个。
 
--  因此，根据 CAP 原理将 NoSQL 数据库分成了满足 CA 原则、满足 CP 原则和满足 AP 原则三 大类：
+- 因此，根据 CAP 原理将 NoSQL 数据库分成了满足 CA 原则、满足 CP 原则和满足 AP 原则三 大类：
 
   - CA - 单点集群，满足一致性，可用性的系统，通常在可扩展性上不太强大。
+
   - CP - 满足一致性，分区容忍必的系统，通常性能不是特别高。
+
   - AP - 满足可用性，分区容忍性的系统，通常可能对一致性要求低一些。
 
--  BASE
+    
+
+#### 4.5 BASE
 
   - BASE就是为了解决关系数据库强一致性引起的问题而引起的可用性降低而提出的解决方案。
+
   - BASE其实是下面三个术语的缩写：
     - 基本可用（Basically Available）
     - 软状态（Soft state）
     - 最终一致（Eventually consistent）
+
   - 它的思想是通过让系统放松对某一时刻数据一致性的要求来换取系统整体伸缩性和性能上改观。为什么这么说呢，缘由就在于大型系统往往由于地域分布和极高性能的要求，不可能采用分布式事务来完成这些指标，要想获得这些指标，我们必须采用另外一种方式来完成，这里BASE就是解决这个问题的办法
 
--  分布式系统+集群
+#### 4.6 分布式系统+集群
 
   - 分布式系统（distributed system）
     - 由多台计算机和通信的软件组件通过计算机网络连接（本地网络或广域网）组成。分布式系统是建立在网络之上的软件系统。正是因为软件的特性，所以分布式系统具有高度的内聚性和透明性。因此，网络和分布式系统之间的区别更多的在于高层软件（特别是操作系统），而不是硬件。分布式系统可以应用在在不同的平台上如：Pc、工作站、局域网和广域网上等。
@@ -200,6 +206,171 @@
   - 简单来讲：
     - 分布式：不同的多台服务器上面部署不同的服务模块（工程），他们之间通过Rpc/Rmi之间通信和调用，对外提供服务和组内协作。
     - 集群：不同的多台服务器上面部署相同的服务模块，通过分布式调度软件进行统一的调度，对外提供服务和访问。
+
+## 二 Nosql入门
+
+### 1 入门概述
+
+#### 1.1 是什么 
+
+- Redis:REmote DIctionary Server(远程字典服务器)
+- 是完全开源免费的，用C语言编写的，遵守BSD协议，是一个高性能的(key/value)分布式内存数据库，基于内存运行并支持持久化的NoSQL数据库，是当前最热门的NoSql数据库之一,也被人们称为数据结构服务器
+- Redis 与其他 key - value 缓存产品有以下三个特点
+  - Redis支持数据的持久化，可以将内存中的数据保持在磁盘中，重启的时候可以再次加载进行使用
+  - Redis不仅仅支持简单的key-value类型的数据，同时还提供list，set，zset，hash等数据结构的存储
+  - Redis支持数据的备份，即master-slave模式的数据备份
+
+#### 1.2 能干嘛
+
+- 内存存储和持久化：redis支持异步将内存中的数据写到硬盘上，同时不影响继续服务
+- 取最新N个数据的操作，如：可以将最新的10条评论的ID放在Redis的List集合里面
+- 模拟类似于HttpSession这种需要设定过期时间的功能
+- 发布、订阅消息系统
+- 定时器、计数器
+
+#### 1.3 官网
+
+- http://redis.io/
+- http://www.redis.cn/
+
+#### 1.4 怎么玩
+
+- 数据类型、基本操作和配置
+- 持久化和复制，RDB/AOF
+- 事务的控制
+- 复制
+- .....
+
+### 2 Redis的安装
+
+#### 2.1 windows版安装
+
+- 下载地址：https://github.com/dmajkic/redis/downloads
+- 下载到的Redis支持32bit和64bit。根据自己实际情况选择，将64bit的内容cp到自定义盘符安装目录取名redis。 如 C:\reids
+- 打开一个cmd窗口 使用cd命令切换目录到 C:\redis 运行 redis-server.exe redis.conf 。
+- 如果想方便的话，可以把redis的路径加到系统的环境变量里，这样就省得再输路径了，后面的那个redis.conf可以省略，如果省略，会启用默认的。输入之后，会显示如下界面：
+- 这时候另启一个cmd窗口，原来的不要关闭，不然就无法访问服务端了。
+- 切换到redis目录下运行 redis-cli.exe -h 127.0.0.1 -p 6379 。
+- 测试
+  - 设置键值对 set myKey abc
+  - 取出键值对 get myKey
+
+#### 2.2 Linux版安装
+
+**由于企业里面做Redis开发，99%都是Linux版的运用和安装，几乎不会涉及到Windows版**
+
+##### 2.2.1 安装
+
+- 下载获得redis-x.x.x.tar.gz后将它放入我们的Linux目录/opt
+- /opt目录下，解压命令:tar -zxvf redis-x.x.x.tar.gz
+- 解压完成后出现文件夹：redis-x.x.x
+- 进入目录:cd redis-x.x.x
+- 在redis-x.x.x目录下执行make命令(需要gcc:yum install gcc-c++)
+- 如果make完成后继续执行make install
+
+```shell
+#安装
+# https://redis.io/download
+#下载，解压缩和编译Redis：
+wget http://download.redis.io/releases/redis-5.0.2.tar.gz
+tar xzf redis-5.0.2.tar.gz
+cd redis-5.0.2
+make
+#现在编译的二进制文件在src 目录中可用 。运行Redis：
+src/redis-server
+#您可以使用内置客户端与Redis进行交互：
+src/redis-cli
+redis> set foo bar
+OK
+redis> get foo
+"bar"
+```
+
+##### 2.2.2 查看默认安装目录：usr/local/bin
+
+```shell
+[root@xxxmmm ~]# cd /usr/local/bin/
+[root@xxxmmm bin]# ll
+total 32636
+-rwxr-xr-x 1 root root 4365264 Nov 26 21:52 redis-benchmark
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-check-aof
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-check-rdb
+-rwxr-xr-x 1 root root 4782296 Nov 26 21:52 redis-cli
+lrwxrwxrwx 1 root root      12 Nov 26 21:52 redis-sentinel -> redis-server
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-server
+```
+
+- redis-benchmark:性能测试工具，可以在自己本子运行，看看自己本子性能如何
+- redis-check-aof：修复有问题的AOF文件，rdb和aof后面讲
+- redis-check-dump(redis-check-rdb**?**)：修复有问题的dump.rdb文件
+- redis-cli：客户端，操作入口
+- redis-sentinel：redis集群使用
+- redis-server：Redis服务器启动命令
+
+##### 2.2.3 启动
+
+- 修改redis.conf文件将里面的daemonize no 改成 yes，让服务在后台启动
+- 将默认的redis.conf拷贝到自己定义好的一个路径下，比如/myconf
+- /usr/local/bin目录下运行redis-server，运行拷贝出存放了自定义conf文件目录下的redis.conf文件
+
+```shell
+redis-server /hanguixian/myredis/redis.conf 
+```
+
+- 单实例关闭：redis-cli shutdown
+- 多实例关闭，指定端口关闭:redis-cli -p 6379 shutdown
+
+```shell
+[root@xxxmmm bin]# redis-server /hanguixian/myredis/redis.conf 
+14788:C 27 Nov 2018 15:59:21.466 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+14788:C 27 Nov 2018 15:59:21.466 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=14788, just started
+14788:C 27 Nov 2018 15:59:21.466 # Configuration loaded
+[root@xxxmmm bin]# redis-cli -p 6379
+127.0.0.1:6379> 
+[root@xxxmmm bin]# ps -ef|grep redis
+root     12151     1  0 Nov25 ?        00:02:37 ./redis-server 127.0.0.1:6379
+root     14797 14738  0 16:00 pts/0    00:00:00 grep --color=auto redis
+[root@xxxmmm bin]# redis-cli 
+127.0.0.1:6379> SHUTDOWN
+not connected> exit
+[root@xxxmmm bin]# redis-cli -p 6379
+Could not connect to Redis at 127.0.0.1:6379: Connection refused
+not connected> exit
+[root@xxxmmm bin]# ps -ef|grep redis
+root     14819 14738  0 16:02 pts/0    00:00:00 grep --color=auto redis
+[root@xxxmmm bin]# redis-server /hanguixian/myredis/redis.conf 
+14820:C 27 Nov 2018 16:02:44.066 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+14820:C 27 Nov 2018 16:02:44.066 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=14820, just started
+14820:C 27 Nov 2018 16:02:44.066 # Configuration loaded
+[root@xxxmmm bin]# ps -ef|grep redis
+root     14821     1  0 16:02 ?        00:00:00 redis-server 127.0.0.1:6379
+root     14826 14738  0 16:02 pts/0    00:00:00 grep --color=auto redis
+[root@xxxmmm bin]# redis-cli shutdown
+[root@xxxmmm bin]# ps -ef|grep redis
+root     14829 14738  0 16:03 pts/0    00:00:00 grep --color=auto redis
+```
+
+
+
+#### 2.3 Redis启动后杂项基础知识
+
+##### 2.3.1 单进程
+
+- 单进程模型来处理客户端的请求。对读写等事件的响应是通过对epoll函数的包装来做到的。Redis的实际处理速度完全依靠主进程的执行效率
+- epoll是Linux内核为处理大批量文件描述符而作了改进的epoll，是Linux下多路复用IO接口select/poll的增强版本，
+  它能显著提高程序在大量并发连接中只有少量活跃的情况下的系统CPU利用率。
+- 默认16个数据库，类似数组下表从零开始，初始默认使用零号库
+- select命令切换数据库
+- dbsize查看当前数据库的key的数量
+- flushdb：清空当前库
+- Flushall；通杀全部库
+- 统一密码管理，16个库都是同样密码，要么都OK要么一个也连接不上
+  - 设置数据库的数量，默认数据库为0，可以使用SELECT `<dbid>`命令在连接上指定数据库iddatabases 16
+- Redis索引都是从零开始
+- 为什么默认端口是6379
+  - 6379在是手机按键上MERZ对应的号码，而MERZ取自意大利歌女[Alessia Merz](http://it.wikipedia.org/wiki/Alessia_Merz)的名字。MERZ长期以来被antirez及其朋友当作愚蠢的代名词。 
+
+
 
 
 
