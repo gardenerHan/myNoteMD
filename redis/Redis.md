@@ -586,27 +586,27 @@ OK
 #### 5.1 常用命令
 
 -  lpush/rpush/lrange
-  - lpush：将一个或多个值 `value` 插入到列表 `key` 的表头 
-  - rpush：将一个或多个值 `value` 插入到列表 `key` 的表尾(最右边)。 
-  - lrange：返回列表 `key` 中指定区间内的元素，区间以偏移量 `start` 和 `stop` 指定。 
+     - lpush：将一个或多个值 `value` 插入到列表 `key` 的表头 
+     -  rpush：将一个或多个值 `value` 插入到列表 `key` 的表尾(最右边)。 
+     -  lrange：返回列表 `key` 中指定区间内的元素，区间以偏移量 `start` 和 `stop` 指定。 
 -  lpop/rpop
-  - lpop：移除并返回列表 `key` 的头元素。 
-  - rpop：移除并返回列表 `key` 的尾元素。 
+     -  lpop：移除并返回列表 `key` 的头元素。 
+     -  rpop：移除并返回列表 `key` 的尾元素。 
 -  lindex，按照索引下标获得元素(从上到下)
-  - 返回列表 `key` 中，下标为 `index` 的元素。 
+     -  返回列表 `key` 中，下标为 `index` 的元素。 
 -  llen
-  - 返回列表 `key` 的长度。 
+     -  返回列表 `key` 的长度。 
 -  lrem key 删N个value
-  - 根据参数 `count` 的值，移除列表中与参数 `value` 相等的元素。 
+     -  根据参数 `count` 的值，移除列表中与参数 `value` 相等的元素。 
 -  ltrim key 开始index 结束index，截取指定范围的值后再赋值给key
-  - ltrim：截取指定索引区间的元素，格式是ltrim list的key 起始索引 结束索引
+     -  ltrim：截取指定索引区间的元素，格式是ltrim list的key 起始索引 结束索引
 -  rpoplpush 源列表 目的列表
-  - 移除列表的最后一个元素，并将该元素添加到另一个列表并返回
+     -  移除列表的最后一个元素，并将该元素添加到另一个列表并返回
 -  lset key index value
-  - 将列表 `key` 下标为 `index` 的元素的值设置为 `value` 。 
+     -  将列表 `key` 下标为 `index` 的元素的值设置为 `value` 。 
 -  linsert key  before/after 值1 值2
-  - 在list某个已有值的前后再添加具体值
-- 详情参考：http://redisdoc.com/list/index.html
+     -  在list某个已有值的前后再添加具体值
+-  详情参考：http://redisdoc.com/list/index.html
 
 #### 5.2 示例
 
