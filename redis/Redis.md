@@ -276,6 +276,7 @@ wget http://download.redis.io/releases/redis-5.0.2.tar.gz
 tar xzf redis-5.0.2.tar.gz
 cd redis-5.0.2
 make
+#make install(可选)
 #现在编译的二进制文件在src 目录中可用 。运行Redis：
 src/redis-server
 #您可以使用内置客户端与Redis进行交互：
