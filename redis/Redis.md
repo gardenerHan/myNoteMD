@@ -785,7 +785,7 @@ OK
 
 #### 8.2 示例
 
-```shell
+```redis
 127.0.0.1:6379> zadd student 100 lili 90 limei 70 lili
 (integer) 2
 127.0.0.1:6379> ZRANGE student 0 -1
