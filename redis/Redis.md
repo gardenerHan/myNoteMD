@@ -692,5 +692,108 @@ OK
 (integer) 5
 ```
 
+###  7 Redis哈希(Hash)
+
+- KV模式不变，但V是一个键值对
+
+#### 7.1 常用命令
+
+-   hset/hget/hmset/hmget/hgetall/hdel
+    -   hset：**HSET key field value** 
+        -   将哈希表 `key` 中的域 `field` 的值设为 `value` 。 
+    -   hget：**HGET key field**
+        -   返回哈希表 `key` 中给定域 `field` 的值。
+    -   hmset：**HMSET key field value [field value ...]** 
+        -   同时将多个 `field-value` (域-值)对设置到哈希表 `key` 中。 
+    -   hmget：**HMGET key field [field ...]**
+        -   返回哈希表 `key` 中，一个或多个给定域的值。
+    -   hgetall：**HGETALL key**
+        -   返回哈希表 `key` 中，所有的域和值。
+    -   hdel：**HDEL key field [field ...]**
+        -   删除哈希表 `key` 中的一个或多个指定域，不存在的域将被忽略。
+-   hlen
+    -   **HLEN key**
+    -   返回哈希表 `key` 中域的数量。
+-   hexists key 在key里面的某个值的key
+    -   **HEXISTS key field** 
+    -   查看哈希表 `key` 中，给定域 `field` 是否存在。 
+-   hkeys/hvals
+    -   hkeys：**HKEYS key**
+        -   返回哈希表 `key` 中的所有域
+    -   hvals：**HVALS key**
+        -   返回哈希表 `key` 中所有域的值。
+-   hincrby/hincrbyfloat
+    -   hincrby：**HINCRBY key field increment**
+        -   为哈希表 `key` 中的域 `field` 的值加上增量 `increment` 。
+    -   hincrbyfloat：**HINCRBY key field increment**
+        -   为哈希表 `key` 中的域 `field` 的值加上增量 `increment` 。
+-   hsetnx
+    -   **HSETNX key field value**
+    -   将哈希表 `key` 中的域 `field` 的值设置为 `value` ，当且仅当域 `field` 不存在。
+-   详情参考：http://redisdoc.com/hash/index.html
+
+#### 7.2 示例
+
+```shell
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+127.0.0.1:6379> KEYS *
+(empty list or set)
+127.0.0.1:6379> hset englishBook price 100
+(integer) 1
+127.0.0.1:6379> hget englishBook price
+"100"
+127.0.0.1:6379> hmset englishBook name youtube1 master 89
+OK
+127.0.0.1:6379> hmget englishBook name master
+1) "youtube1"
+2) "89"
+127.0.0.1:6379> HGETALL englishBook
+1) "price"
+2) "100"
+3) "name"
+4) "youtube1"
+5) "master"
+6) "89"
+127.0.0.1:6379> HEXISTS englishBook name
+(integer) 1
+127.0.0.1:6379> HEXISTS englishBook name1
+(integer) 0
+127.0.0.1:6379> HKEYS englishBook
+1) "price"
+2) "name"
+3) "master"
+127.0.0.1:6379> HVALS englishBook
+1) "100"
+2) "youtube1"
+3) "89"
+```
 
 
+
+### 8 Redis有序集合Zset(sorted set)
+
+ #### 8.1 常用命令
+
+-  zadd/zrange
+   -  zadd：**ZADD key score member [[score member][score member] ...]**
+      -  将一个或多个 `member` 元素及其 `score` 值加入到有序集 `key` 当中。
+   -  zrange：**ZRANGE key start stop [WITHSCORES]**
+      -  返回有序集 `key` 中，指定区间内的成员。
+-  zrangebyscore key 开始score 结束score
+   -  **ZRANGEBYSCORE key min max [WITHSCORES][LIMIT offset count]**
+   -  返回有序集 `key` 中，所有 `score` 值介于 `min` 和 `max` 之间(包括等于 `min` 或 `max` )的成员。有序集成员按 `score` 值递增(从小到大)次序排列。
+
+#### 8.2 示例
+
+```shell
+127.0.0.1:6379> zadd student 100 lili 90 limei 70 lili
+(integer) 2
+127.0.0.1:6379> ZRANGE student 0 -1
+1) "lili"
+2) "limei"
+127.0.0.1:6379> ZRANGE student 0 -1 WITHSCORES
+1) "lili"
+2) "70"
+3) "limei"
+4) "90"
+```
