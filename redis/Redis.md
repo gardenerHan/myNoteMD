@@ -3062,7 +3062,7 @@ replica-priority 100
 
     -  `masterauth <master-password>`
 
-14. 设置Redis连接密码，如果配置了连接密码，客户端在连接Redis时需要通过AUTH <password>命令提供密码，默认关闭
+14. 设置Redis连接密码，如果配置了连接密码，客户端在连接Redis时需要通过AUTH `<password>`命令提供密码，默认关闭
 
     -  **requirepass foobared**
 
@@ -3136,5 +3136,197 @@ replica-priority 100
 
 ## 五 redis的持久化
 
+- 官网介绍：https://redis.io/topics/persistence
 
+  -  RDB的优势（google翻译）
+
+       - RDB是Redis数据的一个非常紧凑的单文件时间点表示。RDB文件非常适合备份。例如，您可能希望在最近24小时内每小时归档您的RDB文件，并且每天保存RDB快照30天。这使您可以在发生灾难时轻松恢复不同版本的数据集。
+       -  RDB非常适合灾难恢复，可以将单个压缩文件传输到远端数据中心，也可以传输到Amazon S3（可能是加密的）。
+       -  RDB最大限度地提高了Redis的性能，因为Redis父进程为了坚持而需要做的唯一工作是分配一个将完成所有其余工作的孩子。父实例永远不会执行磁盘I / O或类似操作。
+       -  与AOF相比，RDB允许使用大数据集更快地重启。
+
+    -  RDB的缺点（google翻译）
+
+       -  如果您需要在Redis停止工作时（例如断电后）将数据丢失的可能性降至最低，则RDB并不好。您可以配置生成RDB的不同*保存点*（例如，在对数据集进行至少五分钟和100次写入之后，您可以拥有多个保存点）。但是，您通常每五分钟或更长时间创建一个RDB快照，因此如果Redis因任何原因停止工作而没有正确关闭，您应该准备丢失最新的数据分钟。
+       -  RDB经常需要fork（）才能使用子进程持久存储在磁盘上。如果数据集很大，Fork（）可能会很耗时，如果数据集非常大且CPU性能不佳，可能会导致Redis停止服务客户端几毫秒甚至一秒钟。AOF也需要fork（），但你可以调整你想要重写日志的频率，而不需要对耐久性进行任何权衡。
+
+### 1 RDB（Redis DataBase）
+
+#### 1.1 是什么
+
+- 在指定的时间间隔内将内存中的数据集快照写入磁盘，也就是行话讲的Snapshot快照，它恢复时是将快照文件直接读到内存里
+- Redis会单独创建（fork）一个子进程来进行持久化，会先将数据写入到一个临时文件中，待持久化过程都结束了，再用这个临时文件替换上次持久化好的文件。整个过程中，主进程是不进行任何IO操作的，这就确保了极高的性能。如果需要进行大规模数据的恢复，且对于数据恢复的完整性不是非常敏感，那RDB方式要比AOF方式更加的高效。RDB的缺点是最后一次持久化后的数据可能丢失。
+
+#### 1.2 Fork
+
+- fork的作用是复制一个与当前进程一样的进程。新进程的所有数据（变量、环境变量、程序计数器等）数值都和原进程一致，但是是一个全新的进程，并作为原进程的子进程
+
+#### 1.3 rdb的保存
+
+- rdb 保存的是dump.rdb文件
+- 配置位置：redis.conf的SNAPSHOTTING中
+
+#### 1.4 如何触发RDB快照
+
+- 冷拷贝后重新使用：可以cp dump.rdb dump_new.rdb
+- 命令save或者是bgsave
+  - Save：save时只管保存，其它不管，全部阻塞
+  - BGSAVE：Redis会在后台异步进行快照操作，快照同时还可以响应客户端请求。可以通过lastsave命令获取最后一次成功执行快照的时间
+- 执行flushall命令，也会产生dump.rdb文件，但里面是空的，无意义
+
+#### 1.5 如何恢复
+
+- 将备份文件 (dump.rdb) 移动到 redis 安装目录并启动服务即可
+- CONFIG GET dir获取目录
+
+#### 1.6 优势
+
+- 适合大规模的数据恢复
+- 对数据完整性和一致性要求不高
+
+#### 1.7 劣势
+
+- 在一定间隔时间做一次备份，所以如果redis意外down掉的话，就会丢失最后一次快照后的所有修改
+- fork的时候，内存中的数据被克隆了一份，大致2倍的膨胀性需要考虑
+
+#### 1.8 如何停止
+
+- 动态所有停止RDB保存规则的方法：redis-cli config set save ""
+
+#### 1.9 示例
+
+```shell
+[root@izuf64yofkbhpt8m0ackshz bin]# ll
+total 32636
+-rwxr-xr-x 1 root root 4365264 Nov 26 21:52 redis-benchmark
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-check-aof
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-check-rdb
+-rwxr-xr-x 1 root root 4782296 Nov 26 21:52 redis-cli
+lrwxrwxrwx 1 root root      12 Nov 26 21:52 redis-sentinel -> redis-server
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-server
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis.conf 
+7621:C 03 Dec 2018 17:56:23.248 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+7621:C 03 Dec 2018 17:56:23.248 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=7621, just started
+7621:C 03 Dec 2018 17:56:23.248 # Configuration loaded
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+127.0.0.1:6379> set k1 v1
+OK
+127.0.0.1:6379> set k2 v2
+OK
+127.0.0.1:6379> set k3 v3
+OK
+127.0.0.1:6379> set k4 v4
+OK
+127.0.0.1:6379> set k5 v5 
+OK
+127.0.0.1:6379> set k6 v6
+OK
+127.0.0.1:6379> set k7 v7
+OK
+127.0.0.1:6379> set k8 v8
+OK
+127.0.0.1:6379> set k9 v9
+OK
+127.0.0.1:6379> set k10 v10 
+OK
+127.0.0.1:6379> set k11 v11
+OK
+127.0.0.1:6379> save
+OK
+127.0.0.1:6379> SHUTDOWN
+not connected> exit
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis.conf 
+7627:C 03 Dec 2018 17:58:22.816 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+7627:C 03 Dec 2018 17:58:22.816 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=7627, just started
+7627:C 03 Dec 2018 17:58:22.816 # Configuration loaded
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+127.0.0.1:6379> KEYS *
+ 1) "k7"
+ 2) "k4"
+ 3) "k10"
+ 4) "k8"
+ 5) "k2"
+ 6) "k6"
+ 7) "k5"
+ 8) "k11"
+ 9) "k3"
+10) "k9"
+11) "k1"
+127.0.0.1:6379> SHUTDOWN
+not connected> exit
+[root@izuf64yofkbhpt8m0ackshz bin]# ll
+total 32640
+-rw-r--r-- 1 root root     178 Dec  3 17:58 dump.rdb
+-rwxr-xr-x 1 root root 4365264 Nov 26 21:52 redis-benchmark
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-check-aof
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-check-rdb
+-rwxr-xr-x 1 root root 4782296 Nov 26 21:52 redis-cli
+lrwxrwxrwx 1 root root      12 Nov 26 21:52 redis-sentinel -> redis-server
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-server
+[root@izuf64yofkbhpt8m0ackshz bin]# cp dump.rdb dump_new.rdb 
+[root@izuf64yofkbhpt8m0ackshz bin]# rm dump.rdb 
+rm: remove regular file ‘dump.rdb’? y
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis.conf 
+7636:C 03 Dec 2018 17:59:15.810 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+7636:C 03 Dec 2018 17:59:15.810 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=7636, just started
+7636:C 03 Dec 2018 17:59:15.810 # Configuration loaded
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+127.0.0.1:6379> keys *
+(empty list or set)
+127.0.0.1:6379> SHUTDOWN
+not connected> exit
+[root@izuf64yofkbhpt8m0ackshz bin]# cp dump_new.rdb dump 
+dump_new.rdb  dump.rdb      
+[root@izuf64yofkbhpt8m0ackshz bin]# ll 
+total 32644
+-rw-r--r-- 1 root root     178 Dec  3 17:58 dump_new.rdb
+-rw-r--r-- 1 root root      92 Dec  3 17:59 dump.rdb
+-rwxr-xr-x 1 root root 4365264 Nov 26 21:52 redis-benchmark
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-check-aof
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-check-rdb
+-rwxr-xr-x 1 root root 4782296 Nov 26 21:52 redis-cli
+lrwxrwxrwx 1 root root      12 Nov 26 21:52 redis-sentinel -> redis-server
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-server
+[root@izuf64yofkbhpt8m0ackshz bin]# rm -f dump.rdb 
+[root@izuf64yofkbhpt8m0ackshz bin]# cp dump_new.rdb dump.rdb 
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis.conf 
+7650:C 03 Dec 2018 18:00:29.051 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+7650:C 03 Dec 2018 18:00:29.051 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=7650, just started
+7650:C 03 Dec 2018 18:00:29.051 # Configuration loaded
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+127.0.0.1:6379> KEYS *
+ 1) "k2"
+ 2) "k6"
+ 3) "k4"
+ 4) "k5"
+ 5) "k10"
+ 6) "k8"
+ 7) "k11"
+ 8) "k7"
+ 9) "k1"
+10) "k9"
+11) "k3"
+127.0.0.1:6379> CONFIG GET dir
+1) "dir"
+2) "/usr/local/bin"
+```
+
+
+
+### 2 AOF（Append Only File）
+
+- 官网介绍：https://redis.io/topics/persistence
+
+ - AOF优势
+
+   - 使用AOF Redis更持久：您可以使用不同的fsync策略：根本没有fsync，每秒fsync，每次查询都有fsync。使用fsync的默认策略，每秒写入性能仍然很好（fsync使用后台线程执行，主线程将在没有fsync正在进行时努力执行写入。）但是您只能丢失一秒的写入。
+   - AOF日志是仅附加日志，因此如果停电则没有搜索，也没有腐败问题。即使日志由于某种原因（磁盘已满或其他原因）以半写命令结束，redis-check-aof工具也能够轻松修复它。
+   - 当Redis太大时，Redis能够在后台自动重写AOF。重写是完全安全的，因为当Redis继续附加到旧文件时，使用创建当前数据集所需的最小操作集生成一个全新的文件，并且一旦第二个文件准备就绪，Redis将切换两个并开始附加到新的那一个。
+   - AOF以易于理解和解析的格式一个接一个地包含所有操作的日志。您甚至可以轻松导出AOF文件。例如，即使您使用FLUSHALL命令刷新了所有错误，如果在此期间未执行日志重写，您仍然可以保存数据集，只需停止服务器，删除最新命令，然后再次重新启动Redis。
+
+ - AOF的缺点
+
+   - AOF文件通常比同一数据集的等效RDB文件大。
+   - 根据确切的fsync策略，AOF可能比RDB慢。通常将fsync设置为*每秒*性能仍然非常高，并且在禁用fsync的情况下，即使在高负载下，它也应该与RDB一样快。即使在大量写入负载的情况下，RDB仍能够提供有关最大延迟的更多保证。
+   - 在过去，我们遇到了特定命令中的罕见错误（例如，有一个涉及阻塞命令，如BRPOPLPUSH）导致生成的AOF在重新加载时不会重现完全相同的数据集。这个错误很少见，我们在测试套件中进行测试，自动创建随机复杂数据集并重新加载它们以检查一切是否正常，但RDB持久性几乎不可能出现这种错误。为了更清楚地说明这一点：Redis AOF逐步更新现有状态，如MySQL或MongoDB，而RDB快照一次又一次地创建所有内容，这在概念上更加健壮。但是 - 1）应该注意的是，每次通过Redis重写AOF时，都会从数据集中包含的实际数据开始重新创建，与总是附加的AOF文件（或者重写旧的AOF而不是读取内存中的数据）相比，对bug的抵抗力更强。2）我们从未向用户提供过关于在现实世界中检测到的AOF损坏的单一报告。
 
