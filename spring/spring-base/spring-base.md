@@ -2559,7 +2559,7 @@ public class SpringHibernateTest {
 
 #### 7.2.3 小总结
 
-Spring 如何在 WEB 应用中使用 ?
+1.Spring 如何在 WEB 应用中使用 ?
 
 1). 需要额外加入的 jar 包:
 
@@ -2605,7 +2605,9 @@ spring-webmvc-x.x.x.RELEASE.jar
 </listener>
 ```
 
-2. Spring 如何整合 Struts2 ?
+
+
+2.Spring 如何整合 Struts2 ?
 
 1). 整合目标 ? 使 IOC 容器来管理 Struts2 的 Action!
 
