@@ -3044,11 +3044,11 @@ replica-priority 100
 
 9. 指定存储至本地数据库时是否压缩数据，默认为yes，Redis采用LZF压缩，如果为了节省CPU时间，可以关闭该选项，但会导致数据库文件变的巨大
 
-   -  **rdbcompression yes**
+    -  **rdbcompression yes**
 
 10. 指定本地数据库文件名，默认值为dump.rdb
 
-   -  **dbfilename dump.rdb**
+    -  **dbfilename dump.rdb**
 
 11. 指定本地数据库存放目录
 
