@@ -1204,7 +1204,7 @@ public class LoggingAspect {}
 	public void declareJointPointExpression(){}
 	
 	/**
-	 * 在 com.atguigu.spring.aop.ArithmeticCalculator 接口的每一个实现类的每一个方法开始之前执行一段代码
+	 * 在 com.xxx.spring.aop.ArithmeticCalculator 接口的每一个实现类的每一个方法开始之前执行一段代码
 	 */
 	@Before("declareJointPointExpression()")
 	public void beforeMethod(JoinPoint joinPoint){
@@ -1577,7 +1577,7 @@ public class JDBCTest {
 		
 		Map<String, Object> paramMap = new HashMap<>();
 		paramMap.put("ln", "FF");
-		paramMap.put("email", "ff@atguigu.com");
+		paramMap.put("email", "ff@xxx.com");
 		paramMap.put("deptid", 2);
 		
 		namedParameterJdbcTemplate.update(sql, paramMap);
@@ -1645,11 +1645,11 @@ public class JDBCTest {
 		
 		List<Object[]> batchArgs = new ArrayList<>();
 		
-		batchArgs.add(new Object[]{"AA", "aa@atguigu.com", 1});
-		batchArgs.add(new Object[]{"BB", "bb@atguigu.com", 2});
-		batchArgs.add(new Object[]{"CC", "cc@atguigu.com", 3});
-		batchArgs.add(new Object[]{"DD", "dd@atguigu.com", 3});
-		batchArgs.add(new Object[]{"EE", "ee@atguigu.com", 2});
+		batchArgs.add(new Object[]{"AA", "aa@xxx.com", 1});
+		batchArgs.add(new Object[]{"BB", "bb@xxx.com", 2});
+		batchArgs.add(new Object[]{"CC", "cc@xxx.com", 3});
+		batchArgs.add(new Object[]{"DD", "dd@xxx.com", 3});
+		batchArgs.add(new Object[]{"EE", "ee@xxx.com", 2});
 		
 		jdbcTemplate.batchUpdate(sql, batchArgs);
 	}
