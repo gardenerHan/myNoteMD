@@ -3328,5 +3328,249 @@ lrwxrwxrwx 1 root root      12 Nov 26 21:52 redis-sentinel -> redis-server
 
    - AOF文件通常比同一数据集的等效RDB文件大。
    - 根据确切的fsync策略，AOF可能比RDB慢。通常将fsync设置为*每秒*性能仍然非常高，并且在禁用fsync的情况下，即使在高负载下，它也应该与RDB一样快。即使在大量写入负载的情况下，RDB仍能够提供有关最大延迟的更多保证。
-   - 在过去，我们遇到了特定命令中的罕见错误（例如，有一个涉及阻塞命令，如BRPOPLPUSH）导致生成的AOF在重新加载时不会重现完全相同的数据集。这个错误很少见，我们在测试套件中进行测试，自动创建随机复杂数据集并重新加载它们以检查一切是否正常，但RDB持久性几乎不可能出现这种错误。为了更清楚地说明这一点：Redis AOF逐步更新现有状态，如MySQL或MongoDB，而RDB快照一次又一次地创建所有内容，这在概念上更加健壮。但是 - 1）应该注意的是，每次通过Redis重写AOF时，都会从数据集中包含的实际数据开始重新创建，与总是附加的AOF文件（或者重写旧的AOF而不是读取内存中的数据）相比，对bug的抵抗力更强。2）我们从未向用户提供过关于在现实世界中检测到的AOF损坏的单一报告。
+   - 在过去，我们遇到了特定命令中的罕见错误（例如，有一个涉及阻塞命令，如BRPOPLPUSH）导致生成的AOF在重新加载时不会重现完全相同的数据集。这个错误很少见，我们在测试套件中进行测试，自动创建随机复杂数据集并重新加载它们以检查一切是否正常，但RDB持久性几乎不可能出现这种错误。为了更清楚地说明这一点：Redis AOF逐步更新现有状态，如MySQL或MongoDB，而RDB快照一次又一次地创建所有内容，这在概念上更加健壮。
+     - 1）应该注意的是，每次通过Redis重写AOF时，都会从数据集中包含的实际数据开始重新创建，与总是附加的AOF文件（或者重写旧的AOF而不是读取内存中的数据）相比，对bug的抵抗力更强。
+     - 2）我们从未向用户提供过关于在现实世界中检测到的AOF损坏的单一报告。
 
+#### 2.1  是什么
+
+- 以日志的形式来记录每个写操作，将Redis执行过的所有写指令记录下来(读操作不记录)，只许追加文件但不可以改写文件，redis启动之初会读取该文件重新构建数据，换言之，redis重启的话就根据日志文件的内容将写指令从前到后执行一次以完成数据的恢复工作
+
+#### 2.2 AOF的保存
+
+- Aof保存的是appendonly.aof文件
+- 配置位置：redis.conf的APPEND ONLY MODE模块
+
+#### 2.3 AOF启动/修复/恢复
+
+##### 2.3.1 正常恢复
+
+- 启动：设置Yes
+  - 修改默认的appendonly no，改为yes
+- 将有数据的aof文件复制一份保存到对应目录(config get dir)
+- 恢复：重启redis然后重新加载
+
+```shell
+#前置：设置redis.conf的appendonly yes
+#操作
+[root@izuf64yofkbhpt8m0ackshz bin]# ps -ef|grep redis
+root      8869  8563  0 15:34 pts/2    00:00:00 grep --color=auto redis
+[root@izuf64yofkbhpt8m0ackshz bin]# rm -f dump.rdb 
+[root@izuf64yofkbhpt8m0ackshz bin]# rm -f dump_new.rdb 
+[root@izuf64yofkbhpt8m0ackshz bin]# ll
+total 32636
+-rwxr-xr-x 1 root root 4365264 Nov 26 21:52 redis-benchmark
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-check-aof
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-check-rdb
+-rwxr-xr-x 1 root root 4782296 Nov 26 21:52 redis-cli
+lrwxrwxrwx 1 root root      12 Nov 26 21:52 redis-sentinel -> redis-server
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-server
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_aof.conf 
+8874:C 04 Dec 2018 15:35:28.588 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+8874:C 04 Dec 2018 15:35:28.588 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=8874, just started
+8874:C 04 Dec 2018 15:35:28.588 # Configuration loaded
+[root@izuf64yofkbhpt8m0ackshz bin]# ll
+total 32636
+-rw-r--r-- 1 root root       0 Dec  4 15:35 appendonly.aof
+-rwxr-xr-x 1 root root 4365264 Nov 26 21:52 redis-benchmark
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-check-aof
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-check-rdb
+-rwxr-xr-x 1 root root 4782296 Nov 26 21:52 redis-cli
+lrwxrwxrwx 1 root root      12 Nov 26 21:52 redis-sentinel -> redis-server
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-server
+[root@izuf64yofkbhpt8m0ackshz bin]# vim appendonly.aof 
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+127.0.0.1:6379> keys *
+(empty list or set)
+127.0.0.1:6379> set k1 v2
+OK
+127.0.0.1:6379> set k2 22
+OK
+127.0.0.1:6379> set k3 v3
+OK
+127.0.0.1:6379> set k4 v4
+OK
+127.0.0.1:6379> SHUTDOWN
+not connected> exit
+[root@izuf64yofkbhpt8m0ackshz bin]# cp appendonly.aof appendonly_bk.aof 
+[root@izuf64yofkbhpt8m0ackshz bin]# ll
+total 32648
+-rw-r--r-- 1 root root     139 Dec  4 15:36 appendonly.aof
+-rw-r--r-- 1 root root     139 Dec  4 15:39 appendonly_bk.aof
+-rw-r--r-- 1 root root     124 Dec  4 15:36 dump.rdb
+-rwxr-xr-x 1 root root 4365264 Nov 26 21:52 redis-benchmark
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-check-aof
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-check-rdb
+-rwxr-xr-x 1 root root 4782296 Nov 26 21:52 redis-cli
+lrwxrwxrwx 1 root root      12 Nov 26 21:52 redis-sentinel -> redis-server
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-server
+[root@izuf64yofkbhpt8m0ackshz bin]# rm -f appendonly.aof 
+[root@izuf64yofkbhpt8m0ackshz bin]# rm -f dump.rdb 
+[root@izuf64yofkbhpt8m0ackshz bin]# ps -ef|grep redis
+root      8895  8563  0 15:40 pts/2    00:00:00 grep --color=auto redis
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_aof.conf 
+8896:C 04 Dec 2018 15:40:40.025 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+8896:C 04 Dec 2018 15:40:40.025 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=8896, just started
+8896:C 04 Dec 2018 15:40:40.025 # Configuration loaded
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+127.0.0.1:6379> keys *
+(empty list or set)
+127.0.0.1:6379> SHUTDOWN
+not connected> EXIT
+[root@izuf64yofkbhpt8m0ackshz bin]# cp appendonly_bk.aof appendonly.aof 
+cp: overwrite ‘appendonly.aof’? y
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_aof.conf 
+8903:C 04 Dec 2018 15:41:50.717 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+8903:C 04 Dec 2018 15:41:50.717 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=8903, just started
+8903:C 04 Dec 2018 15:41:50.717 # Configuration loaded
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+127.0.0.1:6379> keys *
+1) "k1"
+2) "k3"
+3) "k2"
+4) "k4"
+```
+
+##### 2.3.2 异常恢复
+
+- 启动：设置Yes
+  - 修改默认的appendonly no，改为yes
+- 备份被写坏的AOF文件
+- 修复：redis-check-aof --fix进行修复
+- 恢复：重启redis然后重新加载
+
+```shell
+#当发生异常，appendonly.aof 损坏，模拟：人为的在后面添加乱七八糟的东西
+*2
+$6
+SELECT
+$1
+0
+*3
+$3
+set
+$2
+k1
+$2
+v2
+*3
+$3
+set
+$2
+k2
+$2
+22
+*3
+$3
+set
+$2
+k3
+$2
+v3
+*3
+$3
+set
+$2
+k4
+$2
+v4
+sdjkfkhsfsd oipj er3r4r asod /psdcfg s
+odwe s ogy70d rhesdb dfg es; hp g7es lhse rghe rkh irjhs eriokg
+```
+
+- appendonly.aof 损坏，redis启动失败，同时可以看出dump.rdb，appendonly.aof同时存在的情况下，appendonly.aof优先
+
+```shell
+[root@izuf64yofkbhpt8m0ackshz bin]# ps -ef|grep redis
+root      8916  8563  0 15:54 pts/2    00:00:00 grep --color=auto redis
+[root@izuf64yofkbhpt8m0ackshz bin]# ll
+total 32648
+-rw-r--r-- 1 root root     139 Dec  4 15:41 appendonly.aof
+-rw-r--r-- 1 root root     139 Dec  4 15:39 appendonly_bk.aof
+-rw-r--r-- 1 root root     124 Dec  4 15:54 dump.rdb
+-rwxr-xr-x 1 root root 4365264 Nov 26 21:52 redis-benchmark
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-check-aof
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-check-rdb
+-rwxr-xr-x 1 root root 4782296 Nov 26 21:52 redis-cli
+lrwxrwxrwx 1 root root      12 Nov 26 21:52 redis-sentinel -> redis-server
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-server
+[root@izuf64yofkbhpt8m0ackshz bin]# vim appendonly.aof
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_aof.conf 
+8919:C 04 Dec 2018 15:55:52.439 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+8919:C 04 Dec 2018 15:55:52.439 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=8919, just started
+8919:C 04 Dec 2018 15:55:52.439 # Configuration loaded
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+Could not connect to Redis at 127.0.0.1:6379: Connection refused
+not connected> exit
+```
+
+- appendonly.aof修复
+
+```shell
+[root@izuf64yofkbhpt8m0ackshz bin]# ps -ef|grep redis
+root      8916  8563  0 15:54 pts/2    00:00:00 grep --color=auto redis
+[root@izuf64yofkbhpt8m0ackshz bin]# ll
+total 32648
+-rw-r--r-- 1 root root     139 Dec  4 15:41 appendonly.aof
+-rw-r--r-- 1 root root     139 Dec  4 15:39 appendonly_bk.aof
+-rw-r--r-- 1 root root     124 Dec  4 15:54 dump.rdb
+-rwxr-xr-x 1 root root 4365264 Nov 26 21:52 redis-benchmark
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-check-aof
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-check-rdb
+-rwxr-xr-x 1 root root 4782296 Nov 26 21:52 redis-cli
+lrwxrwxrwx 1 root root      12 Nov 26 21:52 redis-sentinel -> redis-server
+-rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-server
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_aof.conf 
+8919:C 04 Dec 2018 15:55:52.439 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+8919:C 04 Dec 2018 15:55:52.439 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=8919, just started
+8919:C 04 Dec 2018 15:55:52.439 # Configuration loaded
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+Could not connect to Redis at 127.0.0.1:6379: Connection refused
+not connected> exit
+[root@izuf64yofkbhpt8m0ackshz bin]# vim appendonly.aof 
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-check-aof --fix appendonly.aof 
+0x              8b: Expected prefix '*', got: 's'
+AOF analyzed: size=244, ok_up_to=139, diff=105
+This will shrink the AOF from 244 bytes, with 105 bytes, to 139 bytes
+Continue? [y/N]: y
+Successfully truncated AOF
+[root@izuf64yofkbhpt8m0ackshz bin]# vim appendonly.aof 
+```
+
+- 修复后的appendonly.aof
+
+```shell
+*2
+$6
+SELECT
+$1
+0
+*3
+$3
+set
+$2
+k1
+$2
+v2
+*3
+$3
+set
+$2
+k2
+$2
+22
+*3
+$3
+set
+$2
+k3
+$2
+v3
+*3
+$3
+set
+$2
+k4
+$2
+v4 
+```
