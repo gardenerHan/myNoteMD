@@ -3858,9 +3858,60 @@ QUEUED
 
 
 
+## 七 Redis的发布订阅
 
+### 1 是什么
 
+- 官网
+  - 中文:http://www.redis.cn/topics/pubsub.html
+  - 英文:https://redis.io/topics/pubsub
 
+- 进程间的一种消息通信模式：发送者(pub)发送消息，订阅者(sub)接收消.
 
+### 2 使用
 
+#### 2.1 命令
+
+- [PSUBSCRIBE](https://redis.io/commands/psubscribe):订阅一个或多个符合给定模式的频道
+- [PUBLISH](https://redis.io/commands/publish):将信息发送到指定的频道
+- [PUBSUB](https://redis.io/commands/pubsub):查看订阅与发布系统状态
+- [PUNSUBSCRIBE](https://redis.io/commands/punsubscribe):退订所有给定模式的频道
+- [SUBSCRIBE](https://redis.io/commands/subscribe):订阅给定的一个或多个频道的信息
+- [UNSUBSCRIBE](https://redis.io/commands/unsubscribe):指退订给定的频道
+
+#### 2.2 示例
+
+- 1 先订阅后发布后才能收到消息，可以一次性订阅多个，SUBSCRIBE c1 c2 c3
+- 2 消息发布，PUBLISH c2 hello-redis
+- 3 订阅多个，通配符`*`， PSUBSCRIBE new*``
+- 4 收取消息， PUBLISH new1 redis2015
+
+```shell
+##终端1##
+127.0.0.1:6379> SUBSCRIBE c1 c2 c3
+Reading messages... (press Ctrl-C to quit)
+1) "subscribe"
+2) "c1"
+3) (integer) 1
+1) "subscribe"
+2) "c2"
+3) (integer) 2
+1) "subscribe"
+2) "c3"
+3) (integer) 3
+1) "message"
+2) "c2"
+3) "hahaha"
+1) "message"
+2) "c2"
+3) "hahahaggg"
+```
+
+```shell
+##终端2##
+127.0.0.1:6379> PUBLISH c2 hahaha
+(integer) 1
+127.0.0.1:6379> PUBLISH c2 hahahaggg
+(integer) 1
+```
 
