@@ -3915,3 +3915,329 @@ Reading messages... (press Ctrl-C to quit)
 (integer) 1
 ```
 
+
+
+## 八 Redis的复制(Master/Slave)
+
+### 1 是什么
+
+- 官网
+  - 英文：https://redis.io/topics/replication
+  - 中文：http://www.redis.cn/topics/replication.html
+- 就是我们所说的主从复制，主机数据更新后根据配置和策略，自动同步到备机的master/slaver机制，Master以写为主，Slave以读为主
+
+### 2 能干嘛
+
+- 读写分离
+- 容灾恢复
+
+### 3 使用
+
+- 配从(库)不配主(库)
+- 从库配置：slaveof 主库IP 主库端口
+  - 每次与master断开之后，都需要重新连接，除非你配置进redis.conf文件
+  - info replication
+- 修改配置文件细节操作
+  - 拷贝多个redis.conf文件
+  - 开启daemonize yes
+  - pid文件名字
+  - 指定端口
+  - log文件名字
+  - dump.rdb名字
+
+```shell
+pidfile /var/run/redis_6380.pid
+port 6380
+logfile "6380.log"
+dbfilename dump6380.rdb
+appendfilename "appendonly6380.aof"
+```
+
+
+
+- 三种方式
+  - 一主二仆
+    - 一个Master两个Slave
+    - 日志查看
+      - 主机日志
+      - 备机日志
+      -  info replication
+  - 薪火相传
+    - 上一个Slave可以是下一个slave的Master，Slave同样可以接收其他slaves的连接和同步请求，那么该slave作为了链条中下一个的master,可以有效减轻master的写压力
+    - 中途变更转向:会清除之前的数据，重新建立拷贝最新的
+    - slaveof 新主库IP 新主库端口、
+  - 反客为主
+    - SLAVEOF no one
+      - 使当前数据库停止与其他数据库的同步，转成主数据库
+
+
+
+### 4 示例
+
+#### 4.1 一主二仆
+
+```shell
+##端口:6379##
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_6379.conf 
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6379
+127.0.0.1:6379> info replication
+# Replication
+##############启动起来是master################################
+role:master
+connected_slaves:0
+master_replid:d33a8a6e37b2f0ca28ab7557c12acc8bf1d58751
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:0
+second_repl_offset:-1
+repl_backlog_active:0
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:0
+repl_backlog_histlen:0
+127.0.0.1:6379> KEYS *
+(empty list or set)
+127.0.0.1:6379> set k1 v1
+OK
+127.0.0.1:6379> set k2 v2
+OK
+127.0.0.1:6379> info replication
+# Replication
+role:master
+###################配置了两个从库#######################################
+connected_slaves:2
+slave0:ip=127.0.0.1,port=6380,state=online,offset=70,lag=0
+slave1:ip=127.0.0.1,port=6381,state=online,offset=70,lag=1
+master_replid:458473b6141ebd0012dd6698913afe6be6b75c7d
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:70
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:1
+repl_backlog_histlen:70
+127.0.0.1:6379> set k3 v3
+OK
+127.0.0.1:6379> SHUTDOWN
+not connected> exit
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_6379.conf 
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6379
+127.0.0.1:6379> keys *
+1) "k1"
+2) "k3"
+3) "k2"
+127.0.0.1:6379> set k4 v4
+OK
+127.0.0.1:6379> info replication
+# Replication
+role:master
+connected_slaves:1
+slave0:ip=127.0.0.1,port=6381,state=online,offset=192,lag=1
+master_replid:568ced83b66508a1bd5ab472ea60a81242f3141e
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:192
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:1
+repl_backlog_histlen:192
+
+###############################################################################
+###端口：6380###
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_6380.conf 
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6380
+127.0.0.1:6380> info replication
+# Replication
+role:master
+###############启动起来都是master###############################
+connected_slaves:0
+master_replid:b25d2d448e71cce4aba5168560f874715be8e67c
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:0
+second_repl_offset:-1
+repl_backlog_active:0
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:0
+repl_backlog_histlen:0
+127.0.0.1:6380> keys *
+(empty list or set)
+####################从库配置######################################
+127.0.0.1:6380> SLAVEOF 127.0.0.1 6379
+OK
+127.0.0.1:6380> info replication
+# Replication
+####################从库配置后变成了slave##########################
+role:slave
+master_host:127.0.0.1
+master_port:6379
+#########################连接状态up#################################
+master_link_status:up
+master_last_io_seconds_ago:2
+master_sync_in_progress:0
+slave_repl_offset:14
+slave_priority:100
+slave_read_only:1
+connected_slaves:0
+master_replid:458473b6141ebd0012dd6698913afe6be6b75c7d
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:14
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:1
+repl_backlog_histlen:14
+127.0.0.1:6380> keys *
+1) "k1"
+2) "k2"
+127.0.0.1:6380> keys *
+1) "k3"
+2) "k1"
+3) "k2"
+#####################从库默认不可写#####################################
+127.0.0.1:6380> set k666 v666
+(error) READONLY You can't write against a read only replica.
+127.0.0.1:6380> info replication
+# Replication
+###################主库挂了后，salve没有变成master#######################
+role:slave
+master_host:127.0.0.1
+master_port:6379
+#######################主库挂了后，连接断开################################
+master_link_status:down
+master_last_io_seconds_ago:-1
+master_sync_in_progress:0
+slave_repl_offset:276
+master_link_down_since_seconds:9
+slave_priority:100
+slave_read_only:1
+connected_slaves:0
+master_replid:458473b6141ebd0012dd6698913afe6be6b75c7d
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:276
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:1
+repl_backlog_histlen:276
+127.0.0.1:6380> keys *
+1) "k3"
+2) "k1"
+3) "k2"
+127.0.0.1:6380> info replication
+# Replication
+role:slave
+master_host:127.0.0.1
+master_port:6379
+##################主库重新启动后，连接状态up########################################
+master_link_status:up
+master_last_io_seconds_ago:7
+master_sync_in_progress:0
+slave_repl_offset:14
+slave_priority:100
+slave_read_only:1
+connected_slaves:0
+master_replid:568ced83b66508a1bd5ab472ea60a81242f3141e
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:14
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:1
+repl_backlog_histlen:14
+127.0.0.1:6380> keys *
+1) "k3"
+2) "k4"
+3) "k1"
+4) "k2"
+127.0.0.1:6380> SHUTDOWN
+not connected> exit
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_6380.conf 
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6380
+127.0.0.1:6380> keys *
+1) "k4"
+2) "k2"
+3) "k1"
+4) "k3"
+127.0.0.1:6380> info replication
+# Replication
+##################从库断开重连后，变成了master########################
+role:master
+connected_slaves:0
+master_replid:97e8893dcd75b4a4a0af650dd09a13a37b8f6923
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:0
+second_repl_offset:-1
+repl_backlog_active:0
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:0
+repl_backlog_histlen:0
+########################需要重新配置##################################
+127.0.0.1:6380> SLAVEOF 127.0.0.1 6379
+OK
+127.0.0.1:6380> keys *
+1) "k2"
+2) "k1"
+3) "k4"
+4) "k3"
+
+
+##########################################################################
+###端口：6381###
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_6381.conf 
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6381
+127.0.0.1:6381> KEYS *
+(empty list or set)
+127.0.0.1:6381> info repalication
+127.0.0.1:6381> info replication
+# Replication
+role:master
+connected_slaves:0
+master_replid:d1d3fc86699f0947975c1d7986c95e0d3a846602
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:0
+second_repl_offset:-1
+repl_backlog_active:0
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:0
+repl_backlog_histlen:0
+127.0.0.1:6381> SLAVEOF 127.0.0.1 6379
+OK
+127.0.0.1:6381> keys *
+1) "k1"
+2) "k2"
+127.0.0.1:6381> info replication
+# Replication
+role:slave
+master_host:127.0.0.1
+master_port:6379
+master_link_status:down
+master_last_io_seconds_ago:-1
+master_sync_in_progress:0
+slave_repl_offset:276
+master_link_down_since_seconds:20
+slave_priority:100
+slave_read_only:1
+connected_slaves:0
+master_replid:458473b6141ebd0012dd6698913afe6be6b75c7d
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:276
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:57
+repl_backlog_histlen:220
+127.0.0.1:6381> keys *
+1) "k1"
+2) "k4"
+3) "k2"
+
+##########################################################################
+###端口查看###
+[root@izuf64yofkbhpt8m0ackshz bin]# ps -ef|grep redis
+root     17162     1  0 21:59 ?        00:00:00 redis-server 127.0.0.1:6379
+root     17171 17116  0 22:00 pts/0    00:00:00 redis-cli -p 6379
+root     17248     1  0 22:07 ?        00:00:00 redis-server 127.0.0.1:6380
+root     17252 17174  0 22:07 pts/1    00:00:00 redis-cli -p 6380
+root     17254     1  0 22:07 ?        00:00:00 redis-server 127.0.0.1:6381
+root     17258 17222  0 22:08 pts/2    00:00:00 redis-cli -p 6381
+root     17290 17261  0 22:10 pts/3    00:00:00 grep --color=auto redis
+```
+
