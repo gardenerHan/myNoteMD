@@ -3965,7 +3965,7 @@ appendfilename "appendonly6380.aof"
   - 薪火相传
     - 上一个Slave可以是下一个slave的Master，Slave同样可以接收其他slaves的连接和同步请求，那么该slave作为了链条中下一个的master,可以有效减轻master的写压力
     - 中途变更转向:会清除之前的数据，重新建立拷贝最新的
-    - slaveof 新主库IP 新主库端口、
+    - slaveof 新主库IP 新主库端口
   - 反客为主
     - SLAVEOF no one
       - 使当前数据库停止与其他数据库的同步，转成主数据库
@@ -4240,4 +4240,274 @@ root     17254     1  0 22:07 ?        00:00:00 redis-server 127.0.0.1:6381
 root     17258 17222  0 22:08 pts/2    00:00:00 redis-cli -p 6381
 root     17290 17261  0 22:10 pts/3    00:00:00 grep --color=auto redis
 ```
+
+
+
+#### 4.2 薪火相传 
+
+```shell
+###################端口：6379##########################
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6379
+127.0.0.1:6379> info replication
+# Replication
+role:master
+connected_slaves:2
+slave0:ip=127.0.0.1,port=6381,state=online,offset=119626,lag=0
+slave1:ip=127.0.0.1,port=6380,state=online,offset=119626,lag=1
+master_replid:568ced83b66508a1bd5ab472ea60a81242f3141e
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:119626
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:1
+repl_backlog_histlen:119626
+127.0.0.1:6379> set kuu vuu
+OK
+127.0.0.1:6379> info replication
+# Replication
+role:master
+connected_slaves:1
+slave0:ip=127.0.0.1,port=6380,state=online,offset=120030,lag=1
+master_replid:568ced83b66508a1bd5ab472ea60a81242f3141e
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:120030
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:1
+repl_backlog_histlen:120030
+
+###################端口：6380##########################
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6380
+127.0.0.1:6380> info replication
+# Replication
+role:slave
+master_host:127.0.0.1
+master_port:6379
+master_link_status:up
+master_last_io_seconds_ago:1
+master_sync_in_progress:0
+slave_repl_offset:119710
+slave_priority:100
+slave_read_only:1
+connected_slaves:0
+master_replid:568ced83b66508a1bd5ab472ea60a81242f3141e
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:119710
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:221
+repl_backlog_histlen:119490
+127.0.0.1:6380> keys *
+1) "k2"
+2) "k1"
+3) "k4"
+4) "k3"
+127.0.0.1:6380> info replication
+# Replication
+role:slave
+master_host:127.0.0.1
+master_port:6379
+master_link_status:up
+master_last_io_seconds_ago:6
+master_sync_in_progress:0
+slave_repl_offset:119850
+slave_priority:100
+slave_read_only:1
+connected_slaves:1
+slave0:ip=127.0.0.1,port=6381,state=online,offset=119850,lag=1
+master_replid:568ced83b66508a1bd5ab472ea60a81242f3141e
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:119850
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:221
+repl_backlog_histlen:119630
+127.0.0.1:6380> keys *
+1) "k2"
+2) "k1"
+3) "k4"
+4) "k3"
+127.0.0.1:6380> set km vm11
+(error) READONLY You can't write against a read only replica.
+127.0.0.1:6380> keys *
+1) "k4"
+2) "k1"
+3) "k2"
+4) "kuu"
+5) "k3"
+
+###################端口：6381##########################
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6381
+127.0.0.1:6381> info replication
+# Replication
+role:slave
+master_host:127.0.0.1
+master_port:6379
+master_link_status:up
+master_last_io_seconds_ago:3
+master_sync_in_progress:0
+slave_repl_offset:119780
+slave_priority:100
+slave_read_only:1
+connected_slaves:0
+master_replid:568ced83b66508a1bd5ab472ea60a81242f3141e
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:119780
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:1
+repl_backlog_histlen:119780
+127.0.0.1:6381> keys *
+1) "k1"
+2) "k4"
+3) "k2"
+4) "k3"
+127.0.0.1:6381> SLAVEOF 127.0.0.1 6380
+OK
+127.0.0.1:6381> keys *
+1) "k1"
+2) "k4"
+3) "k2"
+4) "k3"
+127.0.0.1:6381> info replication
+# Replication
+role:slave
+master_host:127.0.0.1
+master_port:6380
+master_link_status:up
+master_last_io_seconds_ago:8
+master_sync_in_progress:0
+slave_repl_offset:119836
+slave_priority:100
+slave_read_only:1
+connected_slaves:0
+master_replid:568ced83b66508a1bd5ab472ea60a81242f3141e
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:119836
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:1
+repl_backlog_histlen:119836
+127.0.0.1:6381> keys *
+1) "k3"
+2) "k2"
+3) "k4"
+4) "k1"
+5) "kuu"
+```
+
+
+
+#### 4.3 反客为主  
+
+```shell
+#################端口：6379########################################
+127.0.0.1:6379> info replication
+# Replication
+role:master
+connected_slaves:1
+slave0:ip=127.0.0.1,port=6380,state=online,offset=120030,lag=1
+master_replid:568ced83b66508a1bd5ab472ea60a81242f3141e
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:120030
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:1
+repl_backlog_histlen:120030
+127.0.0.1:6379> info replication
+# Replication
+role:master
+connected_slaves:0
+master_replid:568ced83b66508a1bd5ab472ea60a81242f3141e
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:120744
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:1
+repl_backlog_histlen:120744
+
+#################端口：6380########################################
+127.0.0.1:6380> SLAVEOF no one
+OK
+127.0.0.1:6380> info replication
+# Replication
+role:master
+connected_slaves:1
+slave0:ip=127.0.0.1,port=6381,state=online,offset=120786,lag=1
+master_replid:d411a5594443b42429ae25d38c3269e28c743d27
+master_replid2:568ced83b66508a1bd5ab472ea60a81242f3141e
+master_repl_offset:120786
+second_repl_offset:120745
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:221
+repl_backlog_histlen:120566
+127.0.0.1:6380> keys *
+1) "k4"
+2) "k1"
+3) "k2"
+4) "kuu"
+5) "k3"
+###############端口：6381########################################
+127.0.0.1:6381> info replication
+# Replication
+role:slave
+master_host:127.0.0.1
+master_port:6380
+master_link_status:up
+master_last_io_seconds_ago:2
+master_sync_in_progress:0
+slave_repl_offset:120842
+slave_priority:100
+slave_read_only:1
+connected_slaves:0
+master_replid:d411a5594443b42429ae25d38c3269e28c743d27
+master_replid2:568ced83b66508a1bd5ab472ea60a81242f3141e
+master_repl_offset:120842
+second_repl_offset:120745
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:1
+repl_backlog_histlen:120842
+
+```
+
+
+
+### 5 复制原理
+
+- slave启动成功连接到master后会发送一个sync命令
+- Master接到命令启动后台的存盘进程，同时收集所有接收到的用于修改数据集命令，在后台进程执行完毕之后，master将传送整个数据文件到slave,以完成一次完全同步
+- 全量复制：而slave服务在接收到数据库文件数据后，将其存盘并加载到内存中。
+- 增量复制：Master继续将新的所有收集到的修改命令依次传给slave,完成同步
+- 但是只要是重新连接master,一次完全同步（全量复制)将被自动执行
+
+
+
+### 6 哨兵模式(sentinel)
+
+#### 6.1 是什么
+ - 反客为主的自动版，能够后台监控主机是否故障，如果故障了根据投票数自动将从库转换为主库
+
+#### 6.2 使用
+
+- 1 调整结构，6379带着80、81
+- 2 自定义的/myredis目录下新建sentinel.conf文件，名字绝不能错
+- 3 配置哨兵,填写内容
+  - sentinel monitor 被监控数据库名字(自己起名字) 127.0.0.1 6379 1
+  - 上面最后一个数字1，表示主机挂掉后salve投票看让谁接替成为主机，得票数多少后成为主机
+- 4 启动哨兵
+  - redis-sentinel /myredis/sentinel.conf 
+
+
+
+
 
