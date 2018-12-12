@@ -4507,6 +4507,215 @@ repl_backlog_histlen:120842
 - 4 启动哨兵
   - redis-sentinel /myredis/sentinel.conf 
 
+```shell
+####端口：6379###
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6379
+127.0.0.1:6379> info replication
+# Replication
+role:master
+connected_slaves:2
+slave0:ip=127.0.0.1,port=6381,state=online,offset=120814,lag=0
+slave1:ip=127.0.0.1,port=6380,state=online,offset=120814,lag=1
+master_replid:75a7031ef8688d571732a359971c32ccbe8cccbe
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:120814
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:120745
+repl_backlog_histlen:70
+127.0.0.1:6379> SHUTDOWN
+not connected> exit
+[root@izuf64yofkbhpt8m0ackshz bin]# ps -ef|grep redis
+root     17254     1  0 Dec10 ?        00:02:18 redis-server 127.0.0.1:6381
+root     17338     1  0 Dec10 ?        00:02:16 redis-server 127.0.0.1:6380
+root     20022 20004  0 22:39 pts/1    00:00:00 redis-cli -p 6380
+root     20042 20025  0 22:39 pts/2    00:00:00 redis-cli -p 6381
+root     20075 20054  0 22:44 pts/3    00:00:00 redis-sentinel *:26379 [sentinel]
+root     20082 19980  0 22:46 pts/0    00:00:00 grep --color=auto redis
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_63
+redis_6379.conf  redis_6380.conf  redis_6381.conf  
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_6379.conf 
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6379
+127.0.0.1:6379> info replication
+# Replication
+role:slave
+master_host:127.0.0.1
+master_port:6381
+master_link_status:up
+master_last_io_seconds_ago:1
+master_sync_in_progress:0
+slave_repl_offset:191974
+slave_priority:100
+slave_read_only:1
+connected_slaves:0
+master_replid:989c58ab7281d1858cb244f0e12ea18f50c8e3cd
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:191974
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:189945
+repl_backlog_histlen:2030
+
+###############端口:6380#####################
+127.0.0.1:6380> SLAVEOF 127.0.0.1 6379
+OK
+127.0.0.1:6380> info replication
+# Replication
+role:slave
+master_host:127.0.0.1
+master_port:6379
+master_link_status:up
+master_last_io_seconds_ago:1
+master_sync_in_progress:0
+slave_repl_offset:120800
+slave_priority:100
+slave_read_only:1
+connected_slaves:0
+master_replid:75a7031ef8688d571732a359971c32ccbe8cccbe
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:120800
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:120801
+repl_backlog_histlen:0
+127.0.0.1:6380> info replication
+# Replication
+role:slave
+master_host:127.0.0.1
+master_port:6381
+master_link_status:up
+master_last_io_seconds_ago:0
+master_sync_in_progress:0
+slave_repl_offset:126927
+slave_priority:100
+slave_read_only:1
+connected_slaves:0
+master_replid:989c58ab7281d1858cb244f0e12ea18f50c8e3cd
+master_replid2:75a7031ef8688d571732a359971c32ccbe8cccbe
+master_repl_offset:126927
+second_repl_offset:123836
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:120801
+repl_backlog_histlen:6127
+
+######################端口：6381######################################
+127.0.0.1:6381> SLAVEOF 127.0.0.1 6379
+OK
+127.0.0.1:6381> info replication
+# Replication
+role:slave
+master_host:127.0.0.1
+master_port:6379
+master_link_status:up
+master_last_io_seconds_ago:0
+master_sync_in_progress:0
+slave_repl_offset:120758
+slave_priority:100
+slave_read_only:1
+connected_slaves:0
+master_replid:75a7031ef8688d571732a359971c32ccbe8cccbe
+master_replid2:0000000000000000000000000000000000000000
+master_repl_offset:120758
+second_repl_offset:-1
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:120745
+repl_backlog_histlen:14
+127.0.0.1:6381> KEYS *
+1) "k2"
+2) "k3"
+3) "k4"
+4) "k1"
+5) "kuu"
+127.0.0.1:6381> info replication
+# Replication
+role:master
+connected_slaves:1
+slave0:ip=127.0.0.1,port=6380,state=online,offset=127320,lag=1
+master_replid:989c58ab7281d1858cb244f0e12ea18f50c8e3cd
+master_replid2:75a7031ef8688d571732a359971c32ccbe8cccbe
+master_repl_offset:127320
+second_repl_offset:123836
+repl_backlog_active:1
+repl_backlog_size:1048576
+repl_backlog_first_byte_offset:120745
+repl_backlog_histlen:6576
+```
+
+```shell
+###############编写：sentinel.conf####################################
+sentinel monitor my6379 127.0.0.1 6379 1
+##################运行###############################################
+[root@izuf64yofkbhpt8m0ackshz bin]# redis-sentinel /hanguixian/myredis/sentinel.conf 
+20075:X 12 Dec 2018 22:44:52.701 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
+20075:X 12 Dec 2018 22:44:52.701 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=20075, just started
+20075:X 12 Dec 2018 22:44:52.701 # Configuration loaded
+                _._                                                  
+           _.-``__ ''-._                                             
+      _.-``    `.  `_.  ''-._           Redis 5.0.0 (00000000/0) 64 bit
+  .-`` .-```.  ```\/    _.,_ ''-._                                   
+ (    '      ,       .-`  | `,    )     Running in sentinel mode
+ |`-._`-...-` __...-.``-._|'` _.-'|     Port: 26379
+ |    `-._   `._    /     _.-'    |     PID: 20075
+  `-._    `-._  `-./  _.-'    _.-'                                   
+ |`-._`-._    `-.__.-'    _.-'_.-'|                                  
+ |    `-._`-._        _.-'_.-'    |           http://redis.io        
+  `-._    `-._`-.__.-'_.-'    _.-'                                   
+ |`-._`-._    `-.__.-'    _.-'_.-'|                                  
+ |    `-._`-._        _.-'_.-'    |                                  
+  `-._    `-._`-.__.-'_.-'    _.-'                                   
+      `-._    `-.__.-'    _.-'                                       
+          `-._        _.-'                                           
+              `-.__.-'                                               
+
+20075:X 12 Dec 2018 22:44:52.703 # WARNING: The TCP backlog setting of 511 cannot be enforced because /proc/sys/net/core/somaxconn is set to the lower value of 128.
+20075:X 12 Dec 2018 22:44:52.728 # Sentinel ID is 26709d9a12e01632f557b0310533f3fc8806e57c
+20075:X 12 Dec 2018 22:44:52.728 # +monitor master my6379 127.0.0.1 6379 quorum 1
+20075:X 12 Dec 2018 22:44:52.729 * +slave slave 127.0.0.1:6381 127.0.0.1 6381 @ my6379 127.0.0.1 6379
+20075:X 12 Dec 2018 22:44:52.748 * +slave slave 127.0.0.1:6380 127.0.0.1 6380 @ my6379 127.0.0.1 6379
+20075:X 12 Dec 2018 22:46:04.764 # +sdown master my6379 127.0.0.1 6379
+20075:X 12 Dec 2018 22:46:04.764 # +odown master my6379 127.0.0.1 6379 #quorum 1/1
+20075:X 12 Dec 2018 22:46:04.764 # +new-epoch 1
+20075:X 12 Dec 2018 22:46:04.764 # +try-failover master my6379 127.0.0.1 6379
+20075:X 12 Dec 2018 22:46:04.793 # +vote-for-leader 26709d9a12e01632f557b0310533f3fc8806e57c 1
+20075:X 12 Dec 2018 22:46:04.793 # +elected-leader master my6379 127.0.0.1 6379
+20075:X 12 Dec 2018 22:46:04.793 # +failover-state-select-slave master my6379 127.0.0.1 6379
+20075:X 12 Dec 2018 22:46:04.855 # +selected-slave slave 127.0.0.1:6381 127.0.0.1 6381 @ my6379 127.0.0.1 6379
+20075:X 12 Dec 2018 22:46:04.855 * +failover-state-send-slaveof-noone slave 127.0.0.1:6381 127.0.0.1 6381 @ my6379 127.0.0.1 6379
+20075:X 12 Dec 2018 22:46:04.917 * +failover-state-wait-promotion slave 127.0.0.1:6381 127.0.0.1 6381 @ my6379 127.0.0.1 6379
+20075:X 12 Dec 2018 22:46:05.915 # +promoted-slave slave 127.0.0.1:6381 127.0.0.1 6381 @ my6379 127.0.0.1 6379
+20075:X 12 Dec 2018 22:46:05.915 # +failover-state-reconf-slaves master my6379 127.0.0.1 6379
+20075:X 12 Dec 2018 22:46:05.970 * +slave-reconf-sent slave 127.0.0.1:6380 127.0.0.1 6380 @ my6379 127.0.0.1 6379
+20075:X 12 Dec 2018 22:46:06.909 * +slave-reconf-inprog slave 127.0.0.1:6380 127.0.0.1 6380 @ my6379 127.0.0.1 6379
+20075:X 12 Dec 2018 22:46:06.909 * +slave-reconf-done slave 127.0.0.1:6380 127.0.0.1 6380 @ my6379 127.0.0.1 6379
+20075:X 12 Dec 2018 22:46:06.974 # +failover-end master my6379 127.0.0.1 6379
+20075:X 12 Dec 2018 22:46:06.974 # +switch-master my6379 127.0.0.1 6379 127.0.0.1 6381
+20075:X 12 Dec 2018 22:46:06.974 * +slave slave 127.0.0.1:6380 127.0.0.1 6380 @ my6379 127.0.0.1 6381
+20075:X 12 Dec 2018 22:46:06.974 * +slave slave 127.0.0.1:6379 127.0.0.1 6379 @ my6379 127.0.0.1 6381
+20075:X 12 Dec 2018 22:46:36.998 # +sdown slave 127.0.0.1:6379 127.0.0.1 6379 @ my6379 127.0.0.1 6381
+20075:X 12 Dec 2018 23:02:41.759 # -sdown slave 127.0.0.1:6379 127.0.0.1 6379 @ my6379 127.0.0.1 6381
+20075:X 12 Dec 2018 23:02:51.689 * +convert-to-slave slave 127.0.0.1:6379 127.0.0.1 6379 @ my6379 127.0.0.1 6381
+
+###########################再次查看sentinel.conf##########################################
+sentinel myid 26709d9a12e01632f557b0310533f3fc8806e57c
+# Generated by CONFIG REWRITE
+port 26379
+dir "/usr/local/bin"
+sentinel deny-scripts-reconfig yes
+sentinel monitor my6379 127.0.0.1 6381 1
+sentinel config-epoch my6379 1
+sentinel leader-epoch my6379 1
+sentinel known-replica my6379 127.0.0.1 6379
+sentinel known-replica my6379 127.0.0.1 6380
+sentinel current-epoch 1
+
+
+```
+
 
 
 
