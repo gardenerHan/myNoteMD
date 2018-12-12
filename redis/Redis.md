@@ -438,11 +438,11 @@ root     14829 14738  0 16:03 pts/0    00:00:00 grep --color=auto redis
 #### 3.2 示例
 
 ```shell
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis.conf 
+[root@xxxmmm bin]# redis-server /hanguixian/myredis/redis.conf 
 14897:C 27 Nov 2018 17:32:46.353 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
 14897:C 27 Nov 2018 17:32:46.353 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=14897, just started
 14897:C 27 Nov 2018 17:32:46.353 # Configuration loaded
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+[root@xxxmmm bin]# redis-cli 
 127.0.0.1:6379> FLUSHDB 
 OK
 127.0.0.1:6379> keys *
@@ -527,11 +527,11 @@ set
 #### 4.2 示例
 
 ```shell
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis.conf 
+[root@xxxmmm bin]# redis-server /hanguixian/myredis/redis.conf 
 15038:C 27 Nov 2018 19:49:09.640 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
 15038:C 27 Nov 2018 19:49:09.640 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=15038, just started
 15038:C 27 Nov 2018 19:49:09.640 # Configuration loaded
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+[root@xxxmmm bin]# redis-cli 
 127.0.0.1:6379> FLUSHDB
 OK
 127.0.0.1:6379> keys *
@@ -736,7 +736,7 @@ OK
 #### 7.2 示例
 
 ```shell
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+[root@xxxmmm bin]# redis-cli 
 127.0.0.1:6379> KEYS *
 (empty list or set)
 127.0.0.1:6379> hset englishBook price 100
@@ -809,7 +809,7 @@ OK
 - 位置：解压目录下：
 
 ```shell
-[root@izuf64yofkbhpt8m0ackshz redis-5.0.0]# ll
+[root@xxxmmm redis-5.0.0]# ll
 total 232
 -rw-rw-r--  1 root root 75104 Oct 17 23:31 00-RELEASENOTES
 -rw-rw-r--  1 root root    53 Oct 17 23:31 BUGS
@@ -3196,7 +3196,7 @@ replica-priority 100
 #### 1.9 示例
 
 ```shell
-[root@izuf64yofkbhpt8m0ackshz bin]# ll
+[root@xxxmmm bin]# ll
 total 32636
 -rwxr-xr-x 1 root root 4365264 Nov 26 21:52 redis-benchmark
 -rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-check-aof
@@ -3204,11 +3204,11 @@ total 32636
 -rwxr-xr-x 1 root root 4782296 Nov 26 21:52 redis-cli
 lrwxrwxrwx 1 root root      12 Nov 26 21:52 redis-sentinel -> redis-server
 -rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-server
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis.conf 
+[root@xxxmmm bin]# redis-server /hanguixian/myredis/redis.conf 
 7621:C 03 Dec 2018 17:56:23.248 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
 7621:C 03 Dec 2018 17:56:23.248 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=7621, just started
 7621:C 03 Dec 2018 17:56:23.248 # Configuration loaded
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+[root@xxxmmm bin]# redis-cli 
 127.0.0.1:6379> set k1 v1
 OK
 127.0.0.1:6379> set k2 v2
@@ -3235,11 +3235,11 @@ OK
 OK
 127.0.0.1:6379> SHUTDOWN
 not connected> exit
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis.conf 
+[root@xxxmmm bin]# redis-server /hanguixian/myredis/redis.conf 
 7627:C 03 Dec 2018 17:58:22.816 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
 7627:C 03 Dec 2018 17:58:22.816 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=7627, just started
 7627:C 03 Dec 2018 17:58:22.816 # Configuration loaded
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+[root@xxxmmm bin]# redis-cli 
 127.0.0.1:6379> KEYS *
  1) "k7"
  2) "k4"
@@ -3254,7 +3254,7 @@ not connected> exit
 11) "k1"
 127.0.0.1:6379> SHUTDOWN
 not connected> exit
-[root@izuf64yofkbhpt8m0ackshz bin]# ll
+[root@xxxmmm bin]# ll
 total 32640
 -rw-r--r-- 1 root root     178 Dec  3 17:58 dump.rdb
 -rwxr-xr-x 1 root root 4365264 Nov 26 21:52 redis-benchmark
@@ -3263,21 +3263,21 @@ total 32640
 -rwxr-xr-x 1 root root 4782296 Nov 26 21:52 redis-cli
 lrwxrwxrwx 1 root root      12 Nov 26 21:52 redis-sentinel -> redis-server
 -rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-server
-[root@izuf64yofkbhpt8m0ackshz bin]# cp dump.rdb dump_new.rdb 
-[root@izuf64yofkbhpt8m0ackshz bin]# rm dump.rdb 
+[root@xxxmmm bin]# cp dump.rdb dump_new.rdb 
+[root@xxxmmm bin]# rm dump.rdb 
 rm: remove regular file ‘dump.rdb’? y
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis.conf 
+[root@xxxmmm bin]# redis-server /hanguixian/myredis/redis.conf 
 7636:C 03 Dec 2018 17:59:15.810 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
 7636:C 03 Dec 2018 17:59:15.810 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=7636, just started
 7636:C 03 Dec 2018 17:59:15.810 # Configuration loaded
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+[root@xxxmmm bin]# redis-cli 
 127.0.0.1:6379> keys *
 (empty list or set)
 127.0.0.1:6379> SHUTDOWN
 not connected> exit
-[root@izuf64yofkbhpt8m0ackshz bin]# cp dump_new.rdb dump 
+[root@xxxmmm bin]# cp dump_new.rdb dump 
 dump_new.rdb  dump.rdb      
-[root@izuf64yofkbhpt8m0ackshz bin]# ll 
+[root@xxxmmm bin]# ll 
 total 32644
 -rw-r--r-- 1 root root     178 Dec  3 17:58 dump_new.rdb
 -rw-r--r-- 1 root root      92 Dec  3 17:59 dump.rdb
@@ -3287,13 +3287,13 @@ total 32644
 -rwxr-xr-x 1 root root 4782296 Nov 26 21:52 redis-cli
 lrwxrwxrwx 1 root root      12 Nov 26 21:52 redis-sentinel -> redis-server
 -rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-server
-[root@izuf64yofkbhpt8m0ackshz bin]# rm -f dump.rdb 
-[root@izuf64yofkbhpt8m0ackshz bin]# cp dump_new.rdb dump.rdb 
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis.conf 
+[root@xxxmmm bin]# rm -f dump.rdb 
+[root@xxxmmm bin]# cp dump_new.rdb dump.rdb 
+[root@xxxmmm bin]# redis-server /hanguixian/myredis/redis.conf 
 7650:C 03 Dec 2018 18:00:29.051 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
 7650:C 03 Dec 2018 18:00:29.051 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=7650, just started
 7650:C 03 Dec 2018 18:00:29.051 # Configuration loaded
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+[root@xxxmmm bin]# redis-cli 
 127.0.0.1:6379> KEYS *
  1) "k2"
  2) "k6"
@@ -3353,11 +3353,11 @@ lrwxrwxrwx 1 root root      12 Nov 26 21:52 redis-sentinel -> redis-server
 ```shell
 #前置：设置redis.conf的appendonly yes
 #操作
-[root@izuf64yofkbhpt8m0ackshz bin]# ps -ef|grep redis
+[root@xxxmmm bin]# ps -ef|grep redis
 root      8869  8563  0 15:34 pts/2    00:00:00 grep --color=auto redis
-[root@izuf64yofkbhpt8m0ackshz bin]# rm -f dump.rdb 
-[root@izuf64yofkbhpt8m0ackshz bin]# rm -f dump_new.rdb 
-[root@izuf64yofkbhpt8m0ackshz bin]# ll
+[root@xxxmmm bin]# rm -f dump.rdb 
+[root@xxxmmm bin]# rm -f dump_new.rdb 
+[root@xxxmmm bin]# ll
 total 32636
 -rwxr-xr-x 1 root root 4365264 Nov 26 21:52 redis-benchmark
 -rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-check-aof
@@ -3365,11 +3365,11 @@ total 32636
 -rwxr-xr-x 1 root root 4782296 Nov 26 21:52 redis-cli
 lrwxrwxrwx 1 root root      12 Nov 26 21:52 redis-sentinel -> redis-server
 -rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-server
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_aof.conf 
+[root@xxxmmm bin]# redis-server /hanguixian/myredis/redis_aof.conf 
 8874:C 04 Dec 2018 15:35:28.588 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
 8874:C 04 Dec 2018 15:35:28.588 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=8874, just started
 8874:C 04 Dec 2018 15:35:28.588 # Configuration loaded
-[root@izuf64yofkbhpt8m0ackshz bin]# ll
+[root@xxxmmm bin]# ll
 total 32636
 -rw-r--r-- 1 root root       0 Dec  4 15:35 appendonly.aof
 -rwxr-xr-x 1 root root 4365264 Nov 26 21:52 redis-benchmark
@@ -3378,8 +3378,8 @@ total 32636
 -rwxr-xr-x 1 root root 4782296 Nov 26 21:52 redis-cli
 lrwxrwxrwx 1 root root      12 Nov 26 21:52 redis-sentinel -> redis-server
 -rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-server
-[root@izuf64yofkbhpt8m0ackshz bin]# vim appendonly.aof 
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+[root@xxxmmm bin]# vim appendonly.aof 
+[root@xxxmmm bin]# redis-cli 
 127.0.0.1:6379> keys *
 (empty list or set)
 127.0.0.1:6379> set k1 v2
@@ -3392,8 +3392,8 @@ OK
 OK
 127.0.0.1:6379> SHUTDOWN
 not connected> exit
-[root@izuf64yofkbhpt8m0ackshz bin]# cp appendonly.aof appendonly_bk.aof 
-[root@izuf64yofkbhpt8m0ackshz bin]# ll
+[root@xxxmmm bin]# cp appendonly.aof appendonly_bk.aof 
+[root@xxxmmm bin]# ll
 total 32648
 -rw-r--r-- 1 root root     139 Dec  4 15:36 appendonly.aof
 -rw-r--r-- 1 root root     139 Dec  4 15:39 appendonly_bk.aof
@@ -3404,26 +3404,26 @@ total 32648
 -rwxr-xr-x 1 root root 4782296 Nov 26 21:52 redis-cli
 lrwxrwxrwx 1 root root      12 Nov 26 21:52 redis-sentinel -> redis-server
 -rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-server
-[root@izuf64yofkbhpt8m0ackshz bin]# rm -f appendonly.aof 
-[root@izuf64yofkbhpt8m0ackshz bin]# rm -f dump.rdb 
-[root@izuf64yofkbhpt8m0ackshz bin]# ps -ef|grep redis
+[root@xxxmmm bin]# rm -f appendonly.aof 
+[root@xxxmmm bin]# rm -f dump.rdb 
+[root@xxxmmm bin]# ps -ef|grep redis
 root      8895  8563  0 15:40 pts/2    00:00:00 grep --color=auto redis
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_aof.conf 
+[root@xxxmmm bin]# redis-server /hanguixian/myredis/redis_aof.conf 
 8896:C 04 Dec 2018 15:40:40.025 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
 8896:C 04 Dec 2018 15:40:40.025 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=8896, just started
 8896:C 04 Dec 2018 15:40:40.025 # Configuration loaded
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+[root@xxxmmm bin]# redis-cli 
 127.0.0.1:6379> keys *
 (empty list or set)
 127.0.0.1:6379> SHUTDOWN
 not connected> EXIT
-[root@izuf64yofkbhpt8m0ackshz bin]# cp appendonly_bk.aof appendonly.aof 
+[root@xxxmmm bin]# cp appendonly_bk.aof appendonly.aof 
 cp: overwrite ‘appendonly.aof’? y
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_aof.conf 
+[root@xxxmmm bin]# redis-server /hanguixian/myredis/redis_aof.conf 
 8903:C 04 Dec 2018 15:41:50.717 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
 8903:C 04 Dec 2018 15:41:50.717 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=8903, just started
 8903:C 04 Dec 2018 15:41:50.717 # Configuration loaded
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+[root@xxxmmm bin]# redis-cli 
 127.0.0.1:6379> keys *
 1) "k1"
 2) "k3"
@@ -3481,9 +3481,9 @@ odwe s ogy70d rhesdb dfg es; hp g7es lhse rghe rkh irjhs eriokg
 - appendonly.aof 损坏，redis启动失败，同时可以看出dump.rdb，appendonly.aof同时存在的情况下，appendonly.aof优先
 
 ```shell
-[root@izuf64yofkbhpt8m0ackshz bin]# ps -ef|grep redis
+[root@xxxmmm bin]# ps -ef|grep redis
 root      8916  8563  0 15:54 pts/2    00:00:00 grep --color=auto redis
-[root@izuf64yofkbhpt8m0ackshz bin]# ll
+[root@xxxmmm bin]# ll
 total 32648
 -rw-r--r-- 1 root root     139 Dec  4 15:41 appendonly.aof
 -rw-r--r-- 1 root root     139 Dec  4 15:39 appendonly_bk.aof
@@ -3494,12 +3494,12 @@ total 32648
 -rwxr-xr-x 1 root root 4782296 Nov 26 21:52 redis-cli
 lrwxrwxrwx 1 root root      12 Nov 26 21:52 redis-sentinel -> redis-server
 -rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-server
-[root@izuf64yofkbhpt8m0ackshz bin]# vim appendonly.aof
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_aof.conf 
+[root@xxxmmm bin]# vim appendonly.aof
+[root@xxxmmm bin]# redis-server /hanguixian/myredis/redis_aof.conf 
 8919:C 04 Dec 2018 15:55:52.439 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
 8919:C 04 Dec 2018 15:55:52.439 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=8919, just started
 8919:C 04 Dec 2018 15:55:52.439 # Configuration loaded
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+[root@xxxmmm bin]# redis-cli 
 Could not connect to Redis at 127.0.0.1:6379: Connection refused
 not connected> exit
 ```
@@ -3507,9 +3507,9 @@ not connected> exit
 - appendonly.aof修复
 
 ```shell
-[root@izuf64yofkbhpt8m0ackshz bin]# ps -ef|grep redis
+[root@xxxmmm bin]# ps -ef|grep redis
 root      8916  8563  0 15:54 pts/2    00:00:00 grep --color=auto redis
-[root@izuf64yofkbhpt8m0ackshz bin]# ll
+[root@xxxmmm bin]# ll
 total 32648
 -rw-r--r-- 1 root root     139 Dec  4 15:41 appendonly.aof
 -rw-r--r-- 1 root root     139 Dec  4 15:39 appendonly_bk.aof
@@ -3520,21 +3520,21 @@ total 32648
 -rwxr-xr-x 1 root root 4782296 Nov 26 21:52 redis-cli
 lrwxrwxrwx 1 root root      12 Nov 26 21:52 redis-sentinel -> redis-server
 -rwxr-xr-x 1 root root 8086264 Nov 26 21:52 redis-server
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_aof.conf 
+[root@xxxmmm bin]# redis-server /hanguixian/myredis/redis_aof.conf 
 8919:C 04 Dec 2018 15:55:52.439 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
 8919:C 04 Dec 2018 15:55:52.439 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=8919, just started
 8919:C 04 Dec 2018 15:55:52.439 # Configuration loaded
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli 
+[root@xxxmmm bin]# redis-cli 
 Could not connect to Redis at 127.0.0.1:6379: Connection refused
 not connected> exit
-[root@izuf64yofkbhpt8m0ackshz bin]# vim appendonly.aof 
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-check-aof --fix appendonly.aof 
+[root@xxxmmm bin]# vim appendonly.aof 
+[root@xxxmmm bin]# redis-check-aof --fix appendonly.aof 
 0x              8b: Expected prefix '*', got: 's'
 AOF analyzed: size=244, ok_up_to=139, diff=105
 This will shrink the AOF from 244 bytes, with 105 bytes, to 139 bytes
 Continue? [y/N]: y
 Successfully truncated AOF
-[root@izuf64yofkbhpt8m0ackshz bin]# vim appendonly.aof 
+[root@xxxmmm bin]# vim appendonly.aof 
 ```
 
 - 修复后的appendonly.aof
@@ -3780,7 +3780,7 @@ QUEUED
 127.0.0.1:6379> WATCH balance
 OK
 ######################在另外一个终端执行########################
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6379
+[root@xxxmmm bin]# redis-cli -p 6379
 127.0.0.1:6379> get balance
 "80"
 127.0.0.1:6379> set balance 800
@@ -3978,8 +3978,8 @@ appendfilename "appendonly6380.aof"
 
 ```shell
 ##端口:6379##
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_6379.conf 
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6379
+[root@xxxmmm bin]# redis-server /hanguixian/myredis/redis_6379.conf 
+[root@xxxmmm bin]# redis-cli -p 6379
 127.0.0.1:6379> info replication
 # Replication
 ##############启动起来是master################################
@@ -4018,8 +4018,8 @@ repl_backlog_histlen:70
 OK
 127.0.0.1:6379> SHUTDOWN
 not connected> exit
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_6379.conf 
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6379
+[root@xxxmmm bin]# redis-server /hanguixian/myredis/redis_6379.conf 
+[root@xxxmmm bin]# redis-cli -p 6379
 127.0.0.1:6379> keys *
 1) "k1"
 2) "k3"
@@ -4042,8 +4042,8 @@ repl_backlog_histlen:192
 
 ###############################################################################
 ###端口：6380###
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_6380.conf 
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6380
+[root@xxxmmm bin]# redis-server /hanguixian/myredis/redis_6380.conf 
+[root@xxxmmm bin]# redis-cli -p 6380
 127.0.0.1:6380> info replication
 # Replication
 role:master
@@ -4149,8 +4149,8 @@ repl_backlog_histlen:14
 4) "k2"
 127.0.0.1:6380> SHUTDOWN
 not connected> exit
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_6380.conf 
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6380
+[root@xxxmmm bin]# redis-server /hanguixian/myredis/redis_6380.conf 
+[root@xxxmmm bin]# redis-cli -p 6380
 127.0.0.1:6380> keys *
 1) "k4"
 2) "k2"
@@ -4181,8 +4181,8 @@ OK
 
 ##########################################################################
 ###端口：6381###
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_6381.conf 
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6381
+[root@xxxmmm bin]# redis-server /hanguixian/myredis/redis_6381.conf 
+[root@xxxmmm bin]# redis-cli -p 6381
 127.0.0.1:6381> KEYS *
 (empty list or set)
 127.0.0.1:6381> info repalication
@@ -4231,7 +4231,7 @@ repl_backlog_histlen:220
 
 ##########################################################################
 ###端口查看###
-[root@izuf64yofkbhpt8m0ackshz bin]# ps -ef|grep redis
+[root@xxxmmm bin]# ps -ef|grep redis
 root     17162     1  0 21:59 ?        00:00:00 redis-server 127.0.0.1:6379
 root     17171 17116  0 22:00 pts/0    00:00:00 redis-cli -p 6379
 root     17248     1  0 22:07 ?        00:00:00 redis-server 127.0.0.1:6380
@@ -4247,7 +4247,7 @@ root     17290 17261  0 22:10 pts/3    00:00:00 grep --color=auto redis
 
 ```shell
 ###################端口：6379##########################
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6379
+[root@xxxmmm bin]# redis-cli -p 6379
 127.0.0.1:6379> info replication
 # Replication
 role:master
@@ -4279,7 +4279,7 @@ repl_backlog_first_byte_offset:1
 repl_backlog_histlen:120030
 
 ###################端口：6380##########################
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6380
+[root@xxxmmm bin]# redis-cli -p 6380
 127.0.0.1:6380> info replication
 # Replication
 role:slave
@@ -4341,7 +4341,7 @@ repl_backlog_histlen:119630
 5) "k3"
 
 ###################端口：6381##########################
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6381
+[root@xxxmmm bin]# redis-cli -p 6381
 127.0.0.1:6381> info replication
 # Replication
 role:slave
@@ -4509,7 +4509,7 @@ repl_backlog_histlen:120842
 
 ```shell
 ####端口：6379###
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6379
+[root@xxxmmm bin]# redis-cli -p 6379
 127.0.0.1:6379> info replication
 # Replication
 role:master
@@ -4526,17 +4526,17 @@ repl_backlog_first_byte_offset:120745
 repl_backlog_histlen:70
 127.0.0.1:6379> SHUTDOWN
 not connected> exit
-[root@izuf64yofkbhpt8m0ackshz bin]# ps -ef|grep redis
+[root@xxxmmm bin]# ps -ef|grep redis
 root     17254     1  0 Dec10 ?        00:02:18 redis-server 127.0.0.1:6381
 root     17338     1  0 Dec10 ?        00:02:16 redis-server 127.0.0.1:6380
 root     20022 20004  0 22:39 pts/1    00:00:00 redis-cli -p 6380
 root     20042 20025  0 22:39 pts/2    00:00:00 redis-cli -p 6381
 root     20075 20054  0 22:44 pts/3    00:00:00 redis-sentinel *:26379 [sentinel]
 root     20082 19980  0 22:46 pts/0    00:00:00 grep --color=auto redis
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_63
+[root@xxxmmm bin]# redis-server /hanguixian/myredis/redis_63
 redis_6379.conf  redis_6380.conf  redis_6381.conf  
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-server /hanguixian/myredis/redis_6379.conf 
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-cli -p 6379
+[root@xxxmmm bin]# redis-server /hanguixian/myredis/redis_6379.conf 
+[root@xxxmmm bin]# redis-cli -p 6379
 127.0.0.1:6379> info replication
 # Replication
 role:slave
@@ -4650,7 +4650,7 @@ repl_backlog_histlen:6576
 ###############编写：sentinel.conf####################################
 sentinel monitor my6379 127.0.0.1 6379 1
 ##################运行###############################################
-[root@izuf64yofkbhpt8m0ackshz bin]# redis-sentinel /hanguixian/myredis/sentinel.conf 
+[root@xxxmmm bin]# redis-sentinel /hanguixian/myredis/sentinel.conf 
 20075:X 12 Dec 2018 22:44:52.701 # oO0OoO0OoO0Oo Redis is starting oO0OoO0OoO0Oo
 20075:X 12 Dec 2018 22:44:52.701 # Redis version=5.0.0, bits=64, commit=00000000, modified=0, pid=20075, just started
 20075:X 12 Dec 2018 22:44:52.701 # Configuration loaded
