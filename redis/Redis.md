@@ -197,7 +197,6 @@
 
   - AP - 满足可用性，分区容忍性的系统，通常可能对一致性要求低一些。
 
-    
 
 #### 4.5 BASE
 
@@ -4712,11 +4711,38 @@ sentinel leader-epoch my6379 1
 sentinel known-replica my6379 127.0.0.1 6379
 sentinel known-replica my6379 127.0.0.1 6380
 sentinel current-epoch 1
-
-
 ```
 
 
 
+#### 九 Jredis 
 
+- 使用gradle引入Jredis的jar包
+
+```gradle
+// https://mvnrepository.com/artifact/redis.clients/jedis
+    compile group: 'redis.clients', name: 'jedis', version: '3.0.0'
+```
+
+- java代码
+
+```java
+package com.hgx.redis;
+
+import redis.clients.jedis.Jedis;
+
+public class RedisTest {
+    public static void main(String[] args) {
+        Jedis jedis = new Jedis("127.0.0.1",6379) ;
+        String ping  = jedis.ping() ;
+        System.out.println("ping result:"+ping);
+        jedis.set("k2","v2") ;
+        System.out.println(jedis.keys("*"));
+        System.out.println("k1:"+jedis.get("k1")+" k2:"+jedis.get("k2"));
+    }
+}
+//ping result:PONG
+//[k1, k2]
+//k1:v1 k2:v2
+```
 
