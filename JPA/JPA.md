@@ -2,7 +2,7 @@
 
 <font color="green">*@Author:hanguixian*</font> 
 
-<font color="green">*@Email:hn_hanguixian@163.com*<font>   
+<font color="green">*@Email:hn_hanguixian@163.com*</font>   
 
 -----
 
