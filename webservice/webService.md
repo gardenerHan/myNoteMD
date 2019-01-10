@@ -342,5 +342,5 @@ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
 - 负责将网络通信地址赋给一个具体的绑定 
 
-![wsdl:service](img/wsdl-service .png)
+![wsdl:service](img/wsdl-service.png)
 
