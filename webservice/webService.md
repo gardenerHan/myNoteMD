@@ -1183,7 +1183,7 @@ public class CustomerService {
 
 - 结果
 
-![spring整合cxf](F:\myNoteMD\webservice\img\spring整合cxf.png)
+![spring整合cxf](img/spring整合cxf.png)
 
 
 
