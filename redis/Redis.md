@@ -3881,9 +3881,9 @@ QUEUED
 #### 2.2 示例
 
 - 1 先订阅后发布后才能收到消息，可以一次性订阅多个，SUBSCRIBE c1 c2 c3
-- 2 消息发布，PUBLISH c2 hello-redis
-- 3 订阅多个，通配符`*`， PSUBSCRIBE new*``
-- 4 收取消息， PUBLISH new1 redis2015
+- 2 消息发布，`PUBLISH c2 hello-redis`
+- 3 订阅多个，通配符`*`， `PSUBSCRIBE new*`
+- 4 收取消息， `PUBLISH new1 redis2015`
 
 ```shell
 ##终端1##
