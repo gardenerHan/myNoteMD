@@ -110,7 +110,7 @@ Green Page包含关于该企业所提供的Web Service的技术信息，其形�
   - 2)建ClientTest调用对外暴露的服务，编码测试(JaxWsProxyFactoryBean)
 - （包及工具）下载地址：http://cxf.apache.org/download.html
 
-#### 3.2 demo详细（maven项目）
+#### 3.1.2 demo详细（maven项目）
 
 - 项目结构
 
@@ -194,5 +194,153 @@ public class MainClient {
 
 
 
+## 四 Soap协议+TCP/IPMoniter监控 
 
+ ###  4.1 SOAP协议是什么？
+
+- 简单对象访问协议（Simple Object Access Protocol，SOAP）是一种轻量的、简单的、基于XML的协议，它被设计成在WEB上交换结构化的和固化的信息。
+- SOAP 是基于 XML 的简易协议，可使应用程序在 HTTP 之上进行信息交换。
+
+### 4.2  SOAP协议什么样？
+
+**一条 SOAP 消息就是一个普通的 XML 文档，包含下列元素**：
+
+- Envelope 元素，必有，可把此 XML 文档标识为一条 SOAP 消息
+- Header 元素，可选，包含头部信息
+- Body 元素，必有，包含所有的调用和响应信息
+- Fault 元素，可选，提供有关在处理此消息所发生错误的信息
+
+```xml
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+	<soap:Body>
+		<soap:Fault>
+			<faultcode>soap:Server</faultcode>
+			<faultstring>
+				No binding operation info while invoking unknown method with params unknown.
+			</faultstring>
+		</soap:Fault>
+	</soap:Body>
+</soap:Envelope>
+```
+
+### 4.3 SOAP消息的调试抓取 
+
+![monitor抓取soap](img/monitor抓取soap.png)
+
+- request
+
+```xml
+<soapenv:Envelope 
+xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" 
+xmlns:q0="http://test.cxf.hgx.com/" 
+xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+   <soapenv:Body> 
+     <q0:sayhello>
+         <arg0>Jack</arg0> 
+         <arg1>16</arg1> 
+     </q0:sayhello>
+  </soapenv:Body>
+</soapenv:Envelope>
+```
+
+- response   
+
+```xml
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <ns2:sayhelloResponse xmlns:ns2="http://test.cxf.hgx.com/">
+      <return>Hello, Jack(16 years old)</return>
+    </ns2:sayhelloResponse>
+  </soap:Body>
+</soap:Envelope>
+```
+
+  
+
+## 五 WSDL文件解析
+
+### 5.1 WSDL报文总体概述 
+
+![wsdl报文](img/wsdl报文.png)
+
+```xml
+<definitions>
+	<types>
+	  	定义 web service 使用的数据类型
+	</types>
+	<message>
+		每个消息均由一个或多个部件组成。可以把它当做java中一个函数调用的参数。
+	</message>
+
+	<portType>
+		它类似Java中的一个函数库（或一个模块、或一个类）
+	</portType>
+
+	<binding>
+		为每个端口定义消息格式和协议细节。
+    </binding>
+</definitions>
+```
+
+
+
+### 5.2  WSDL报文之wsdl:definitions 
+
+```xml
+<wsdl:definitions 
+		xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+		xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" 
+		xmlns:tns="http://service.hgx.com/" 
+		xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" 
+		xmlns:ns1="http://schemas.xmlsoap.org/soap/http" 
+		name="HelloWorldImplService" 
+		targetNamespace="http://service.hgx.com/">
+</wsdl:definitions>
+```
+
+| 标签            | 描述                                                         |
+| --------------- | ------------------------------------------------------------ |
+| name            | 我们java程序中服务接口的实现类，SEI定义是:服务接口类+Service后缀，Service自动追加 |
+| targetNamespace | 命名空间：   相当于Java里面的package它刚好是和我们Java定义中的包名相反 |
+| 其它            | 不变化，不关心                                               |
+| xmlns:tns       | 相当于Java里面的import，   包名反转                          |
+
+
+
+### 5.4 WSDL报文之wsdl:types 
+
+- 我们java定义的服务接口中某方法的输入参数和返回值。 
+
+![WSDL报文之wsdl-types](img/WSDL报文之wsdl-types.png)
+
+### 5.5 WSDL报文之wsdl:message
+
+- 通信消息的数据结构的抽象类型化定义。使用Types所定义的类型来定义整个消息的数据结构。 
+
+![wsdl:message](img/wsdl-message.png)
+
+- WebService中每个方法包含两部分：
+  - 一个是方法的输入参数；另一个是方法的输出参数。
+  - 其实质都是基于SOAP协议将其封装为消息，所以每一个方法对应有两个消息，一个输入一个输出回应。简单而言，就是方法和Message的关系是N:2N的关系。一对二。
+  - Message中的具体内容是part,结合前面可知，message中的part内容请到前面定义过的types中去看，它会引用之前的type相关内容
+
+### 5.6 WSDL报文之wsdl:portType 
+
+- portType = 接口  
+- operation = 接口中定义的方法 
+
+![wsdl-portType](img/wsdl-portType.png)
+
+### 5.7 WSDL报文之wsdl:binding
+
+- 特定端口类型的具体协议和数据格式规范的绑定 
+
+![wsdl:binding](img/wsdl-binding.png)
+
+### 5.8 WSDL报文之wsdl:service 
+
+- 负责将网络通信地址赋给一个具体的绑定 
+
+![wsdl:service](img/wsdl-service .png)
 
