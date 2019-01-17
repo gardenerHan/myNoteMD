@@ -2,6 +2,12 @@
 
 
 
+<font color="green">*@Author:hanguixian*</font> 
+
+<font color="green">*@Email:hn_hanguixian@163.com*</font>
+
+
+
 ## 七  JAVA集合
 
 ### 1 概述
@@ -237,11 +243,112 @@ public class TestCollection {
 - 所有实现了Collection接口的集合类都有一个iterator()方法，用以返回一个实现了Iterator接口的对象。
 - Iterator 仅用于遍历集合，Iterator 本身并不提供承装对象的能力。如果需要创建 Iterator 对象，则必须有一个被迭代的集合。
 
+```java
+Iterator iterator = coll.iterator();
+while(iterator.hasNext()){
+    System.out.println(iterator.next());
+}
+```
+
+
+
 #### 2.5 使用 foreach 循环遍历集合元素 
 
 - Java 5 提供了 foreach 循环迭代访问 Collection 
 
+```java
+for(int a : intArr){
+    System.out.println(a) ;
+}
+```
 
+
+
+### 3 List 接口
+
+- Java中数组用来存储数据的局限性
+- List集合类中元素**有序**、且**可重复**，集合中的每个元素都有其对应的顺序索引。
+- List容器中的元素都对应一个整数型的序号记载其在容器中的位置，可以根据序号存取容器中的元素。
+- JDK API中List接口的实现类常用的有：ArrayList、LinkedList和Vector。
+
+
+
+#### 3.1 接口新方法
+
+lList 集合里添加了一些根据索引来操作集合元素的方法
+
+```java
+void add(int index, Object ele)
+boolean addAll(int index, Collection eles)
+Object get(int index)
+int indexOf(Object obj)
+int lastIndexOf(Object obj)
+Object remove(int index)
+Object set(int index, Object ele)
+List subList(int fromIndex, int toIndex)
+```
+
+
+
+#### 3.2 List实现类之一：ArrayList 
+
+- ArrayList 是 List 接口的典型实现类
+- 本质上，ArrayList是对象引用的一个变长数组
+- ArrayList 是<font color="red">线程不安全</font>的，而 Vector 是线程安全的，即使为保证 List 集合线程安全，也不推荐使用Vector
+- Arrays.asList(…) 方法返回的 List 集合既不是 ArrayList 实例，也不是 Vector 实例。 Arrays.asList(…)  返回值是一个固定长度的 List 集合
+
+
+
+#### 3.3 List实现类之二：LinkedList 
+
+- **对于频繁的插入或删除元素的操作，建议使用LinkedList类，效率较高**
+- 新增方法：
+
+```java
+void addFirst(Object obj)
+void addLast(Object obj)  
+Object getFirst()
+Object getLast()
+Object removeFirst()
+Object removeLast()
+```
+
+
+
+#### 3.4 List 实现类之三：Vector 
+
+- Vector 是一个古老的集合，JDK1.0就有了。大多数操作与ArrayList相同，区别之处在于Vector是<font color="red">线程安全</font>的。
+- 在各种list中，最好把ArrayList作为缺省选择。当插入、删除频繁时，使用LinkedList；Vector总是比ArrayList慢，所以**尽量避免使用**。
+- 新增方法：
+
+```java
+void addElement(Object obj)
+void insertElementAt(Object obj,int index)
+void setElementAt(Object obj,int index)
+void removeElement(Object obj)
+void removeAllElements()
+```
+
+
+
+#### 3.5 ListIterator接口
+
+- List 额外提供了一个 listIterator() 方法，该方法返回一个 ListIterator 对象， ListIterator 接口继承了 Iterator 接口，提供了专门操作 List 的方法：
+
+```java
+void add()
+boolean hasPrevious()
+Object previous()
+Boolean hasNext()
+Object next()
+```
+
+##### 3.5.1 Iterator和ListIterator主要区别
+
+- ListIterator和Iterator都有hasNext()和next()方法，可以实现顺序向后遍历。但是ListIterator有hasPrevious()和previous()方法，可以实现逆向（顺序向前）遍历。Iterator就不可以。
+- ListIterator可以定位当前的索引位置，nextIndex()和previousIndex()可以实现。Iterator 没有此功能。
+- ListIterator有add()方法，可以向List中插入对象，而Iterator不能。
+- 都可实现删除对象，但是ListIterator可以实现对象的修改，set()方法可以实现。Iterator仅能遍历，不能修改。因为ListIterator的这些功能，可以实现对LinkedList等List数据结构的操作。
 
 
 
