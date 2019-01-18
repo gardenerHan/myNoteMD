@@ -350,6 +350,500 @@ Object next()
 - ListIterator有add()方法，可以向List中插入对象，而Iterator不能。
 - 都可实现删除对象，但是ListIterator可以实现对象的修改，set()方法可以实现。Iterator仅能遍历，不能修改。因为ListIterator的这些功能，可以实现对LinkedList等List数据结构的操作。
 
+#### 示例代码
+
+```java
+import org.junit.Test;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * ArrayList：List的主要实现类
+ *
+ * List中相对于Collection，新增加的方法
+ *  void add(int index, Object ele):在指定的索引位置index添加元素ele
+ *  boolean addAll(int index, Collection eles)
+ *  Object get(int index):获取指定索引的元素
+ *  Object remove(int index):删除指定索引位置的元素
+ *  Object set(int index, Object ele):设置指定索引位置的元素为ele
+ *  int indexOf(Object obj):返回obj在集合中首次出现的位置。没有的话，返回-1
+ *  int lastIndexOf(Object obj)：返回obj在集合中最后一次出现的位置.没有的话，返回-1
+ *  List subList(int fromIndex, int toIndex):返回从fromIndex到toIndex结束的左闭右开一个子list
+ *
+ * List常用的方法：
+ * 增(add(Object obj)) 删(remove) 改(set(int index,Object obj))
+ * 查(get(int index)) 插(add(int index, Object ele)) 长度(size())
+ */
+public class TestList {
+
+    @Test
+    public void testList1() {
+        List list = new ArrayList();
+        list.add(123);
+        list.add(456);
+        list.add(new String("AA"));
+        list.add(new String("GG"));
+        System.out.println(list);
+        list.add(0, 555);
+        System.out.println(list);
+        Object obj = list.get(1);
+        System.out.println(obj);
+        list.remove(0);
+        System.out.println(list.get(0));
+        list.set(0, 111);
+        System.out.println(list.get(0));
+    }
+
+    @Test
+    public void testList2() {
+        List list = new ArrayList();
+        list.add(123);
+        list.add(456);
+        list.add(new String("AA"));
+        list.add(new String("GG"));
+        list.add(456);
+        System.out.println(list.indexOf(456));
+        System.out.println(list.lastIndexOf(456));
+        System.out.println(list.indexOf(123) == list.lastIndexOf(123));
+        System.out.println(list.indexOf(444));
+
+        List list1 = list.subList(0, 3);
+        System.out.println(list1);
+    }
+}
+```
+
+
+
+### 4 Set 接口 
+
+- Set接口是Collection的子接口，set接口没有提供额外的方法
+- Set 集合不允许包含相同的元素，如果试把两个相同的元素加入同一个 Set 集合中，则添加操作失败。
+- Set 判断两个对象是否相同不是使用 == 运算符，而是根据 equals 方法
+
+#### 4.1 Set实现类之一：HashSet 
+
+- HashSet 是 Set 接口的典型实现，大多数时候使用 Set 集合时都使用这个实现类。
+- HashSet 按 Hash 算法来存储集合中的元素，因此具有很好的存取和查找性能。
+- HashSet 具有以下特点：
+  - 不能保证元素的排列顺序
+  - HashSet 不是线程安全的
+  - 集合元素可以是 null
+- 当向 HashSet 集合中存入一个元素时，HashSet 会调用该对象的 **hashCode()** 方法来得到该对象的 hashCode 值，然后根据 hashCode 值决定该对象在 HashSet 中的存储位置。
+- HashSet 集合判断两个元素相等的标准：两个对象通过 hashCode() 方法比较相等，并且两个对象的 equals() 方法返回值也相等。
+
+#### 4.2 hashCode() 方法
+
+- 如果两个元素的 equals() 方法返回 true，但它们的 hashCode() 返回值不相等，hashSet 将会把它们存储在不同的位置，但依然可以添加成功。
+- **对于存放在Set容器中的对象，对应的类一定要重写equals()和hashCode(Object obj)方法，以实现对象相等规则。**
+- 重写 hashCode() 方法的基本原则
+  - 在程序运行时，同一个对象多次调用 hashCode() 方法应该返回相同的值
+  - 当两个对象的 equals() 方法比较返回 true 时，这两个对象的 hashCode() 方法的返回值也应相等
+  - 对象中用作 equals() 方法比较的 Field，都应该用来计算 hashCode 值
+
+#### 4.3 Set 实现类之二：LinkedHashSet 
+
+- LinkedHashSet 是 HashSet 的子类
+- LinkedHashSet 根据元素的 hashCode 值来决定元素的存储位置，但它同时使用链表维护元素的次序，这使得元素看起来是以插入顺序保存的。
+- LinkedHashSet插入性能略低于 HashSet，但在迭代访问 Set 里的全部元素时有很好的性能。
+- LinkedHashSet 不允许集合元素重复。
+
+#### 4.4 Set实现类之三：TreeSet
+
+-  TreeSet 是 SortedSet 接口的实现类，TreeSet 可以确保集合元素处于排序状态。
+- TreeSet 两种排序方法：自然排序和定制排序。默认情况下，TreeSet 采用自然排序。
+- 方法
+
+```java
+Comparator comparator()
+Object first()
+Object last()
+Object lower(Object e)
+Object higher(Object e)
+SortedSet subSet(fromElement, toElement)
+SortedSet headSet(toElement)
+SortedSet tailSet(fromElement)
+```
+
+#### 4.5 排序——自然排序 
+
+- 自然排序：TreeSet 会调用集合元素的 compareTo(Object obj) 方法来比较元素之间的大小关系，然后将集合元素按升序排列
+- 如果试图把一个对象添加到 TreeSet 时，则该对象的类必须实现 Comparable 接口。
+- 实现 Comparable 的类必须实现 compareTo(Object obj) 方法，两个对象即通过 compareTo(Object obj) 方法的返回值来比较大小。
+- Comparable 的典型实现：
+  - BigDecimal、BigInteger 以及所有的数值型对应的包装类：按它们对应的数值大小进行比较
+  - Character：按字符的 unicode值来进行比较
+  - Boolean：true 对应的包装类实例大于 false 对应的包装类实例
+  - String：按字符串中字符的 unicode 值进行比较
+  - Date、Time：后边的时间、日期比前面的时间、日期大
+- 向 TreeSet 中添加元素时，只有第一个元素无须比较compareTo()方法，后面添加的所有元素都会调用compareTo()方法进行比较。
+- 因为只有相同类的两个实例才会比较大小，所以向 TreeSet 中添加的应该是同一个类的对象
+- 对于 TreeSet 集合而言，它判断两个对象是否相等的唯一标准是：两个对象通过 compareTo(Object obj) 方法比较返回值
+- 当需要把一个对象放入 TreeSet 中，重写该对象对应的 equals() 方法时，应保证该方法与 compareTo(Object obj) 方法有一致的结果：如果两个对象通过 equals() 方法比较返回 true，则通过 compareTo(Object obj) 方法比较应返回 0
+
+#### 4.6 排序——定制排序 
+
+- TreeSet的自然排序是根据集合元素的大小，进行元素升序排列。如果需要定制排序，比如降序排列，可通过Comparator接口的帮助。需要重写`compare(T o1,T o2)`方法。
+- 利用`int compare(T o1,T o2)`方法，比较o1和o2的大小：如果方法返回正整数，则表示o1大于o2；如果返回0，表示相等；返回负整数，表示o1小于o2。
+- 要实现定制排序，需要将实现Comparator接口的实例作为形参传递给TreeSet的构造器。
+- 此时，仍然只能向TreeSet中添加类型相同的对象。否则发生ClassCastException异常。
+- 使用定制排序判断两个元素相等的标准是：通过Comparator比较两个元素返回了0。
+
+#### 4.7 代码示例
+
+- Customer.java
+
+```java
+public class Customer {
+    private String name;
+    private Integer id;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public Customer(String name, Integer id) {
+        super();
+        this.name = name;
+        this.id = id;
+    }
+
+    public Customer() {
+        super();
+    }
+
+    @Override
+    public String toString() {
+        return "Customer [name=" + name + ", id=" + id + "]";
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((id == null) ? 0 : id.hashCode());
+        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Customer other = (Customer) obj;
+        if (id == null) {
+            if (other.id != null)
+                return false;
+        } else if (!id.equals(other.id))
+            return false;
+        if (name == null) {
+            if (other.name != null)
+                return false;
+        } else if (!name.equals(other.name))
+            return false;
+        return true;
+    }
+
+}
+```
+
+- Person.java
+
+```java
+public class Person implements Comparable {
+    private String name;
+    private Integer age;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
+    }
+
+    public Person() {
+        super();
+    }
+
+    public Person(String name, Integer age) {
+        super();
+        this.name = name;
+        this.age = age;
+    }
+
+    @Override
+    public String toString() {
+        return "Person [name=" + name + ", age=" + age + "]";
+    }
+
+    //static int init = 1000;
+    @Override
+    public int hashCode() {//return age.hashCode() + name.hashCode();没下述的健壮性好。
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((age == null) ? 0 : age.hashCode());
+        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        return result;
+        //return init++;//不能这样用
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Person other = (Person) obj;
+        if (age == null) {
+            if (other.age != null)
+                return false;
+        } else if (!age.equals(other.age))
+            return false;
+        if (name == null) {
+            if (other.name != null)
+                return false;
+        } else if (!name.equals(other.name))
+            return false;
+        return true;
+    }
+
+    //当向TreeSet中添加Person类的对象时，依据此方法，确定按照哪个属性排列。
+    @Override
+    public int compareTo(Object o) {
+        if (o instanceof Person) {
+            Person p = (Person) o;
+            //return this.name.compareTo(p.name);
+            //return -this.age.compareTo(p.age);
+            int i = this.age.compareTo(p.age);
+            if (i == 0) {
+                return this.name.compareTo(p.name);
+            } else {
+                return i;
+            }
+        }
+        return 0;
+    }
+}
+```
+
+- TestSet
+
+```java
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.TreeSet;
+
+import org.junit.Test;
+
+/**
+ * Collection接口 ：
+ * 		|------List接口：
+ * 			|------ArrayList（主要的实现类）、
+ * 			|------LinkedList（对于频繁的插入、删除操作）、
+ * 			|------Vector（古老的实现类、线程安全的，但效率要低于ArrayList）
+ * 		|------Set接口：存储无序的，不可重复的元素.Set中常用的方法都是Collection下定义的。
+ *     				|------HashSet(主要实现类)
+ *                 |------LinkedHashSet
+ *                |------TreeSet
+ */
+@SuppressWarnings("all")
+public class TestSet {
+
+	/**
+	 * Set:存储的元素是无序的，不可重复的！
+	 *  1.无序性：无序性！= 随机性。真正的无序性，指的是元素在底层存储的位置是无序的。
+	 * 2.不可重复性：当向Set中添加进相同的元素的时候，后面的这个不能添加进去。
+	 *
+	 * 说明：要求添加进Set中的元素所在的类，一定要重写equals()和hashCode()方法。 进而保证Set中元素的不可重复性！
+	 *
+	 * Set中的元素时如何存储的呢？使用了哈希算法。
+	 * 当向Set中添加对象时，首先调用此对象所在类的hashCode()方法，计算此对象的哈希值，此哈希值
+	 * 决定了此对象在Set中的存储位置。若此位置之前没有对象存储，则这个对象直接存储到此位置。若此位置
+	 * 已有对象存储，再通过equals()比较这两个对象是否相同。如果相同，后一个对象就不能再添加进来。 万一返回false呢，都存储。（不建议如此）
+	 * >要求：hashCode()方法要与equals()方法一致。
+	 */
+	@Test
+	public void testHashSet() {
+		Set set = new HashSet();
+		set.add(123);
+		set.add(456);
+		set.add(new String("AA"));
+		set.add(new String("AA"));
+		set.add("BB");
+		set.add(null);
+		Person p1 = new Person("GG", 23);
+		Person p2 = new Person("GG", 23);
+		System.out.println(p1.equals(p2));
+		System.out.println(p1.hashCode());
+		System.out.println(p2.hashCode());
+		set.add(p1);
+		set.add(p2);
+		System.out.println(set.size());
+		System.out.println(set);
+	}
+
+
+	/*
+	 * LinkedHashSet:使用链表维护了一个添加进集合中的顺序。导致当我们遍历LinkedHashSet集合
+	 * 元素时，是按照添加进去的顺序遍历的！
+	 *
+	 * LinkedHashSet插入性能略低于 HashSet，但在迭代访问 Set 里的全部元素时有很好的性能。
+	 */
+	@Test
+	public void testLinkedHashSet() {
+		Set set = new LinkedHashSet();
+		set.add(123);
+		set.add(456);
+		set.add(new String("AA"));
+		set.add(new String("AA"));
+		set.add("BB");
+		set.add(null);
+
+		Iterator iterator = set.iterator();
+		while (iterator.hasNext()) {
+			System.out.println(iterator.next());
+		}
+
+	}
+
+	/**
+	 * TreeSet: 1.向TreeSet中添加的元素必须是同一个类的。
+	 * 2.可以按照添加进集合中的元素的指定的顺序遍历。像String，包装类等默认按照从小到大的顺序遍历。
+	 * 3.当向TreeSet中添加自定义类的对象时，有两种排序方法：①自然排序②定制排序
+	 * 4.自然排序：要求自定义类实现java.lang.Comparable接口并重写其compareTo(Object obj)的抽象方法
+	 * 在此方法中，指明按照自定义类的哪个属性进行排序。
+	 *
+	 * 5.向TreeSet中添加元素时，首先按照compareTo()进行比较，一旦返回0，虽然仅是两个对象的此
+	 * 属性值相同，但是程序会认为这两个对象是相同的，进而后一个对象就不能添加进来。
+	 *
+	 * >compareTo()与hashCode()以及equals()三者保持一致！
+	 */
+	@Test
+	public void testTreeSet1() {
+		Set set = new TreeSet();
+		// set.add(new String("AA"));
+		// set.add(new String("AA"));
+		// set.add("JJ");
+		// set.add("GG");
+		// set.add("MM");
+		// 当Person类没有实现Comparable接口时，当向TreeSet中添加Person对象时，报ClassCastException
+		set.add(new Person("CC", 23));
+		set.add(new Person("MM", 21));
+		set.add(new Person("GG", 25));
+		set.add(new Person("JJ", 24));
+		set.add(new Person("KK", 20));
+		set.add(new Person("DD", 20));
+		// set.add("AA");
+
+		for (Object str : set) {
+			System.out.println(str);
+		}
+
+	}
+
+	/**
+	 * TreeSet的定制排序： 见下面的步骤 compare()与hashCode()以及equals()三者保持一致！
+	 */
+	@Test
+	public void testTreeSet2() {
+		// 1.创建一个实现了Comparator接口的类对象
+		Comparator com = new Comparator() {
+			// 向TreeSet中添加Customer类的对象，在此compare()方法中，指明是按照Customer
+			// 的哪个属性排序的。
+			@Override
+			public int compare(Object o1, Object o2) {
+				if (o1 instanceof Customer && o2 instanceof Customer) {
+					Customer c1 = (Customer) o1;
+					Customer c2 = (Customer) o2;
+					int i = c1.getId().compareTo(c2.getId());
+					if (i == 0) {
+						return c1.getName().compareTo(c2.getName());
+					}
+					return i;
+				}
+				return 0;
+			}
+		};
+		// 2.将此对象作为形参传递给TreeSet的构造器中
+		TreeSet set = new TreeSet(com);
+		// 3.向TreeSet中添加Comparator接口中的compare方法中涉及的类的对象。
+		set.add(new Customer("AA", 1003));
+		set.add(new Customer("BB", 1002));
+		set.add(new Customer("GG", 1004));
+		set.add(new Customer("CC", 1001));
+		set.add(new Customer("DD", 1001));
+
+		for (Object str : set) {
+			System.out.println(str);
+		}
+	}
+
+	@Test
+	public void testTreeSet3() {
+
+		TreeSet set = new TreeSet(new Comparator() {
+			public int compare(Object o1, Object o2) {
+				if (o1 instanceof Customer && o2 instanceof Customer) {
+					Customer c1 = (Customer) o1;
+					Customer c2 = (Customer) o2;
+					int i = c1.getId().compareTo(c2.getId());
+					if (i == 0) {
+						return c1.getName().compareTo(c2.getName());
+					}
+					return i;
+				}
+				return 0;
+			}
+		});
+		set.add(new Customer("AA", 1003));
+		set.add(new Customer("BB", 1002));
+		set.add(new Customer("GG", 1004));
+		set.add(new Customer("CC", 1001));
+		set.add(new Customer("DD", 1001));
+
+		for (Object str : set) {
+			System.out.println(str);
+		}
+	}
+
+}
+
+```
+
+
+
+
+
 
 
 ## 十 IO流
