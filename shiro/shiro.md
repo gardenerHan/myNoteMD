@@ -51,7 +51,7 @@ Apache Shiro是一个具有许多功能的综合应用程序安全框架。
 
 **从外部来看Shiro ，即从应用程序角度的来观察如何使用 Shiro完成工作，Shiro的架构有3个主要概念：`Subject`，`SecurityManager`和`Realms`。**
 
-![ShiroBasicArchitecture](/img/ShiroBasicArchitecture.png)
+![ShiroBasicArchitecture](img/ShiroBasicArchitecture.png)
 
 -  Subject：应用代码直接交互的对象是 Subject，也就是说 Shiro 的对外 API 核心就是 Subject。Subject 代表了当前“用户”， 这个用户不一定 是一个具体的人，与当前应用交互的任何东西都是 Subject，如网络爬虫， 机器人等；与 Subject  的所有交互都会委托给 SecurityManager； Subject 其实是一个门面，SecurityManager 才是实际的执行者；
 - SecurityManager：安全管理器；即所有与安全有关的操作都会与 SecurityManager 交互；且其管理着所有 Subject；可以看出它是 Shiro 的核心，它负责与 Shiro 的其他组件进行交互，它相当于 SpringMVC 中 DispatcherServlet 的角色
@@ -59,7 +59,7 @@ Apache Shiro是一个具有许多功能的综合应用程序安全框架。
 
 ### 2.2 [详细的架构](http://shiro.apache.org/architecture.html#detailed-architecture)
 
-![ShiroArchitecture.png](/img/ShiroArchitecture.png)
+![ShiroArchitecture.png](img/ShiroArchitecture.png)
 
 - Subject：任何可以与应用交互的“用户”； 
 - SecurityManager ：相当于SpringMVC 中的 DispatcherServlet；是 Shiro 的心脏； 所有具体的交互都通过 SecurityManager 进行控制；它管理着所有 Subject、且负责进 行认证、授权、会话及缓存的管理。 
@@ -76,7 +76,7 @@ Apache Shiro是一个具有许多功能的综合应用程序安全框架。
 
 - 项目结构图
 
-![helloWorld项目结构.png](/img/helloWorld项目结构.png)
+![helloWorld项目结构.png](img/helloWorld项目结构.png)
 
 - maven：pom.xml
 
