@@ -887,17 +887,17 @@ public class ShiroRealm implements Realm {
 
 ### 4.3 shiro中默认的过滤器
 
-|    过滤器名称     |                           过滤器类                           | 描述                                                         |                             例子                             |
-| :---------------: | :----------------------------------------------------------: | :----------------------------------------------------------- | :----------------------------------------------------------: |
-|       anon        |      org.apache.shiro.web.filter.authc.AnonymousFilter       | 没有参数，表示可以匿名访问                                   |                       /admins/**=anon                        |
-|       authc       |  org.apache.shiro.web.filter.authc.FormAuthenticationFilter  | 没有参数，表示需要认证(登录)才能使用                         |                        /user/**=authc                        |
-|    authcBasic     | org.apache.shiro.web.filter.authc.BasicHttpAuthenticationFilter | 没有参数，表示需要通过httpBasic验证，如果不通过，跳转到登陆页面 |                     /user/**=authcBasic                      |
+|    过滤器名称     |                           过滤器类                           | 描述                                                         | 例子                                                         |
+| :---------------: | :----------------------------------------------------------: | :----------------------------------------------------------- | :----------------------------------------------------------- |
+|       anon        |      org.apache.shiro.web.filter.authc.AnonymousFilter       | 没有参数，表示可以匿名访问                                   | /admins/**=anon                                              |
+|       authc       |  org.apache.shiro.web.filter.authc.FormAuthenticationFilter  | 没有参数，表示需要认证(登录)才能使用                         | /user/**=authc                                               |
+|    authcBasic     | org.apache.shiro.web.filter.authc.BasicHttpAuthenticationFilter | 没有参数，表示需要通过httpBasic验证，如果不通过，跳转到登陆页面 | /user/**=authcBasic                                          |
 |      logout       |        org.apache.shiro.web.filter.authc.LogoutFilter        | 注销登陆的时候，完成一定的功能：任何现有的Session都将失效，而且任何身份都将回失去关联（在web应用程序中，RememberMe cookie 也将被删除） |                                                              |
 | noSessionCreation | org.apache.shiro.web.filter.session.NoSessionCreationFilter  | 阻止在请求期间创建新的会话。以保证无状态的体验               |                                                              |
 |       perms       | org.apache.shiro.web.filter.authz.PermissionsAuthorizationFilter | 参数可以写多个，多个时必须加上引号，并且在参数之间用逗号分隔。当有多个参数时必须每个参数都通过才能通过，相当于isPermitedAll() | `/admins/**=perms[user:*]`,`/admins/**=perms["user:add:*,user:modify:*"]` |
-|       port        |         org.apache.shiro.web.filter.authz.PortFilter         | 指定请求访问端口。如果不匹配则跳转到登录页面                 |                    /admins/**=port[8081]                     |
+|       port        |         org.apache.shiro.web.filter.authz.PortFilter         | 指定请求访问端口。如果不匹配则跳转到登录页面                 | /admins/**=port[8081]                                        |
 |       rest        | org.apache.shiro.web.filter.authz.HttpMethodPermissionFilter | 根据请求的方法                                               | admins/user/**=perms[user.method]，其中method为post，get，delete等 |
-|       roles       |  org.apache.shiro.web.filter.authz.RolesAuthorizationFilter  | 角色过滤器,判断当前用户是否指定角色。参数可以写多个，多个时必须加上引号，并且参数之间用逗号分隔，当有多个参数,每个参数通过才算通过，相当于hasAllRoles()` |                admins/**=roles["admin,guest"]                |
+|       roles       |  org.apache.shiro.web.filter.authz.RolesAuthorizationFilter  | 角色过滤器,判断当前用户是否指定角色。参数可以写多个，多个时必须加上引号，并且参数之间用逗号分隔，当有多个参数,每个参数通过才算通过，相当于hasAllRoles() | admins/**=roles["admin,guest"]                               |
 |        ssl        |         org.apache.shiro.web.filter.authz.SslFilter          | 没有参数，表示安全的url请求，协议为https                     |                                                              |
 |       user        |         org.apache.shiro.web.filter.authc.UserFilter         | 没有参数表示必须存在用户                                     |                                                              |
 
@@ -907,9 +907,9 @@ public class ShiroRealm implements Realm {
 
 - url 模式使用 Ant 风格模式 
 - Ant 路径通配符支持 ?、*、**，注意通配符匹配不 包括目录分隔符“/” 
-  - ?：匹配一个字符，如 /admin? 将匹配 /admin1，但不 匹配 /admin 或 /admin/； 
-  - *：匹配零个或多个字符串，如 /admin 将匹配 /admin、 /admin123，但不匹配 /admin/1； 
-  - ：匹配路径中的零个或多个路径，如 /admin/** 将匹 配 /admin/a 或 /admin/a/b
+  - `?`：匹配一个字符，如 /admin? 将匹配 /admin1，但不 匹配 /admin 或 /admin/； 
+  - `*`：匹配零个或多个字符串，如 /admin 将匹配 /admin、 /admin123，但不匹配 /admin/1； 
+  - `**`：匹配路径中的零个或多个路径，如 /admin/** 将匹 配 /admin/a 或 /admin/a/b
 
 #### 4.4.2 URL 匹配顺序
 
