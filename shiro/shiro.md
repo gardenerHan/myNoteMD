@@ -47,7 +47,7 @@ Apache Shiro是一个具有许多功能的综合应用程序安全框架。
 
 ## 二 Shiro 架构
 
-### 2.1 高级概述
+### 2.1 简单概述
 
 **从外部来看Shiro ，即从应用程序角度的来观察如何使用 Shiro完成工作，Shiro的架构有3个主要概念：`Subject`，`SecurityManager`和`Realms`。**
 
@@ -360,4 +360,568 @@ schwartz = lightsaber:*
 # license plate 'eagle5' (instance specific id)
 goodguy = winnebago:drive:eagle5
 ```
+
+
+
+## 四 集成 Spring
+
+### 4.1 框架基本整合
+
+- maven依赖：pom.xml
+
+```xml
+<!-- 依赖的jar包 -->
+<dependencies>
+    <!-- https://mvnrepository.com/artifact/org.apache.shiro/shiro-spring -->
+    <dependency>
+        <groupId>org.apache.shiro</groupId>
+        <artifactId>shiro-spring</artifactId>
+        <version>1.4.0</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.apache.shiro/shiro-ehcache -->
+    <dependency>
+        <groupId>org.apache.shiro</groupId>
+        <artifactId>shiro-ehcache</artifactId>
+        <version>1.4.0</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/net.sf.ehcache/ehcache-core -->
+    <dependency>
+        <groupId>net.sf.ehcache</groupId>
+        <artifactId>ehcache-core</artifactId>
+        <version>2.6.11</version>
+    </dependency>
+
+    <!-- configure logging -->
+    <!-- https://mvnrepository.com/artifact/org.slf4j/jcl-over-slf4j -->
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>jcl-over-slf4j</artifactId>
+        <version>1.7.25</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-log4j12 -->
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-log4j12</artifactId>
+        <version>1.7.25</version>
+        <!--<scope>test</scope>-->
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/log4j/log4j -->
+    <dependency>
+        <groupId>log4j</groupId>
+        <artifactId>log4j</artifactId>
+        <version>1.2.17</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.springframework/spring-context -->
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-context</artifactId>
+        <version>5.1.4.RELEASE</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.springframework/spring-web -->
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-web</artifactId>
+        <version>5.1.4.RELEASE</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.springframework/spring-webmvc -->
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-webmvc</artifactId>
+        <version>5.1.4.RELEASE</version>
+    </dependency>
+
+    <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.11</version>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+```
+
+- web.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+         version="3.1">
+
+    <!-- 配置 Spring 配置文件的名称和位置 -->
+    <context-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>classpath:applicationContext.xml</param-value>
+    </context-param>
+
+    <!-- Bootstraps the root web application context before servlet initialization -->
+    <listener>
+        <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+    </listener>
+
+
+    <!-- 启动 IOC 容器的 ServletContextListener -->
+    <servlet>
+        <servlet-name>springMVC</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <init-param>
+            <param-name>contextConfigLocation</param-name>
+            <param-value>classpath:spring-servlet.xml</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <!-- Map all requests to the DispatcherServlet for handling -->
+    <servlet-mapping>
+        <servlet-name>springMVC</servlet-name>
+        <url-pattern>/</url-pattern>
+    </servlet-mapping>
+
+
+    <!-- ==================================================================
+         Filters
+         ================================================================== -->
+    <!-- Shiro Filter is defined in the spring application context: -->
+
+    <!-- Shiro Filter is defined in the spring application context: -->
+    <!--
+    1. 配置  Shiro 的 shiroFilter.
+    2. DelegatingFilterProxy 实际上是 Filter 的一个代理对象. 默认情况下, Spring 会到 IOC 容器中查找和
+    <filter-name> 对应的 filter bean. 也可以通过 targetBeanName 的初始化参数来配置 filter bean 的 id.
+    -->
+    <filter>
+        <filter-name>shiroFilter</filter-name>
+        <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+        <init-param>
+            <param-name>targetFilterLifecycle</param-name>
+            <param-value>true</param-value>
+        </init-param>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>shiroFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+</web-app>
+```
+
+- spring配置文件：applicationContext.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!-- =========================================================
+         Shiro Core Components - Not Spring Specific
+         ========================================================= -->
+    <!-- Shiro's main business-tier object for web-enabled applications
+         (use DefaultSecurityManager instead when there is no web environment)-->
+    <!--
+    1. 配置 SecurityManager!
+    -->
+    <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <property name="cacheManager" ref="cacheManager"/>
+        <property name="realm" ref="jdbcRealm"></property>
+    </bean>
+
+    <!-- Let's use some enterprise caching support for better performance.  You can replace this with any enterprise
+         caching framework implementation that you like (Terracotta+Ehcache, Coherence, GigaSpaces, etc -->
+    <!--
+    2. 配置 CacheManager.
+    2.1 需要加入 ehcache 的 jar 包及配置文件.
+    -->
+    <bean id="cacheManager" class="org.apache.shiro.cache.ehcache.EhCacheManager">
+        <!-- Set a net.sf.ehcache.CacheManager instance here if you already have one.  If not, a new one
+             will be creaed with a default config:
+             <property name="cacheManager" ref="ehCacheManager"/> -->
+        <!-- If you don't have a pre-built net.sf.ehcache.CacheManager instance to inject, but you want
+             a specific Ehcache configuration to be used, specify that here.  If you don't, a default
+             will be used.: -->
+        <property name="cacheManagerConfigFile" value="classpath:ehcache.xml"/>
+    </bean>
+
+    <bean id="authenticator"
+          class="org.apache.shiro.authc.pam.ModularRealmAuthenticator">
+        <property name="authenticationStrategy">
+            <bean class="org.apache.shiro.authc.pam.AtLeastOneSuccessfulStrategy"></bean>
+        </property>
+    </bean>
+
+    <!-- Used by the SecurityManager to access security data (users, roles, etc).
+         Many other realm implementations can be used too (PropertiesRealm,
+         LdapRealm, etc. -->
+    <!--
+    	3. 配置 Realm
+    	3.1 直接配置实现了 org.apache.shiro.realm.Realm 接口的 bean
+    -->
+    <bean id="jdbcRealm" class="com.hgx.shiro.spring.ShiroRealm"></bean>
+
+    <!-- =========================================================
+         Shiro Spring-specific integration
+         ========================================================= -->
+    <!-- Post processor that automatically invokes init() and destroy() methods
+         for Spring-configured Shiro objects so you don't have to
+         1) specify an init-method and destroy-method attributes for every bean
+            definition and
+         2) even know which Shiro objects require these methods to be
+            called. -->
+    <!--
+    4. 配置 LifecycleBeanPostProcessor. 可以自定的来调用配置在 Spring IOC 容器中 shiro bean 的生命周期方法.
+    -->
+    <bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>
+
+    <!-- Enable Shiro Annotations for Spring-configured beans.  Only run after
+         the lifecycleBeanProcessor has run: -->
+    <!--
+    5. 启用 IOC 容器中使用 shiro 的注解. 但必须在配置了 LifecycleBeanPostProcessor 之后才可以使用.
+    -->
+    <bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator"
+          depends-on="lifecycleBeanPostProcessor"/>
+    <bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+        <property name="securityManager" ref="securityManager"/>
+    </bean>
+
+    <!-- Define the Shiro Filter here (as a FactoryBean) instead of directly in web.xml -
+         web.xml uses the DelegatingFilterProxy to access this bean.  This allows us
+         to wire things with more control as well utilize nice Spring things such as
+         PropertiesPlaceholderConfigurer and abstract beans or anything else we might need: -->
+    <!--
+    6. 配置 ShiroFilter.
+    6.1 id 必须和 web.xml 文件中配置的 DelegatingFilterProxy 的 <filter-name> 一致.若不一致, 则会抛出: NoSuchBeanDefinitionException. 因为 Shiro 会来 IOC 容器中查找和 <filter-name> 名字对应的 filter bean.
+    -->
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+        <property name="securityManager" ref="securityManager"/>
+        <property name="loginUrl" value="/login.jsp"/>
+        <property name="successUrl" value="/list.jsp"/>
+        <property name="unauthorizedUrl" value="/unauthorized.jsp"/>
+        <!--
+        	配置哪些页面需要受保护.
+        	以及访问这些页面需要的权限.
+        	1). anon 可以被匿名访问
+        	2). authc 必须认证(即登录)后才可能访问的页面.
+        	3). logout 登出.
+        	4). roles 角色过滤器
+        -->
+        <property name="filterChainDefinitions">
+            <value>
+                /login.jsp = anon
+                # everything else requires authentication:
+                /** = authc
+            </value>
+        </property>
+    </bean>
+</beans>
+```
+
+- 缓存配置：ehcache.xml
+
+```xml
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+
+<!-- EhCache XML configuration file used for Shiro spring sample application -->
+<ehcache>
+
+    <!-- Sets the path to the directory where cache .data files are created.
+
+If the path is a Java System Property it is replaced by
+its value in the running VM.
+
+The following properties are translated:
+user.home - User's home directory
+user.dir - User's current working directory
+java.io.tmpdir - Default temp file path -->
+    <diskStore path="java.io.tmpdir/shiro-spring-sample"/>
+
+
+    <!--Default Cache configuration. These will applied to caches programmatically created through
+    the CacheManager.
+
+    The following attributes are required:
+
+    maxElementsInMemory            - Sets the maximum number of objects that will be created in memory
+    eternal                        - Sets whether elements are eternal. If eternal,  timeouts are ignored and the
+                                     element is never expired.
+    overflowToDisk                 - Sets whether elements can overflow to disk when the in-memory cache
+                                     has reached the maxInMemory limit.
+
+    The following attributes are optional:
+    timeToIdleSeconds              - Sets the time to idle for an element before it expires.
+                                     i.e. The maximum amount of time between accesses before an element expires
+                                     Is only used if the element is not eternal.
+                                     Optional attribute. A value of 0 means that an Element can idle for infinity.
+                                     The default value is 0.
+    timeToLiveSeconds              - Sets the time to live for an element before it expires.
+                                     i.e. The maximum time between creation time and when an element expires.
+                                     Is only used if the element is not eternal.
+                                     Optional attribute. A value of 0 means that and Element can live for infinity.
+                                     The default value is 0.
+    diskPersistent                 - Whether the disk store persists between restarts of the Virtual Machine.
+                                     The default value is false.
+    diskExpiryThreadIntervalSeconds- The number of seconds between runs of the disk expiry thread. The default value
+                                     is 120 seconds.
+    memoryStoreEvictionPolicy      - Policy would be enforced upon reaching the maxElementsInMemory limit. Default
+                                     policy is Least Recently Used (specified as LRU). Other policies available -
+                                     First In First Out (specified as FIFO) and Less Frequently Used
+                                     (specified as LFU)
+    -->
+
+    <defaultCache
+            maxElementsInMemory="10000"
+            eternal="false"
+            timeToIdleSeconds="120"
+            timeToLiveSeconds="120"
+            overflowToDisk="false"
+            diskPersistent="false"
+            diskExpiryThreadIntervalSeconds="120"
+            />
+
+    <!-- We want eternal="true" (with no timeToIdle or timeToLive settings) because Shiro manages session
+expirations explicitly.  If we set it to false and then set corresponding timeToIdle and timeToLive properties,
+ehcache would evict sessions without Shiro's knowledge, which would cause many problems
+(e.g. "My Shiro session timeout is 30 minutes - why isn't a session available after 2 minutes?"
+Answer - ehcache expired it due to the timeToIdle property set to 120 seconds.)
+
+diskPersistent=true since we want an enterprise session management feature - ability to use sessions after
+even after a JVM restart.  -->
+    <cache name="shiro-activeSessionCache"
+           maxElementsInMemory="10000"
+           eternal="true"
+           overflowToDisk="true"
+           diskPersistent="true"
+           diskExpiryThreadIntervalSeconds="600"/>
+
+    <cache name="org.apache.shiro.realm.SimpleAccountRealm.authorization"
+           maxElementsInMemory="100"
+           eternal="false"
+           timeToLiveSeconds="600"
+           overflowToDisk="false"/>
+
+</ehcache>
+```
+
+- 日志log4j配置：log4j.properties
+
+```properties
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+log4j.rootLogger=INFO, stdout
+
+log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+log4j.appender.stdout.layout.ConversionPattern=%d %p [%c] - %m %n
+
+# General Apache libraries
+log4j.logger.org.apache=WARN
+
+# Spring
+log4j.logger.org.springframework=WARN
+
+# Default Shiro logging
+log4j.logger.org.apache.shiro=TRACE
+
+# Disable verbose logging
+log4j.logger.org.apache.shiro.util.ThreadContext=WARN
+log4j.logger.org.apache.shiro.cache.ehcache.EhCache=WARN
+```
+
+- spring-servlet.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+    <context:component-scan base-package="com.hgx.shiro.spring"></context:component-scan>
+
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/"></property>
+        <property name="suffix" value=".jsp"></property>
+    </bean>
+    
+    <mvc:annotation-driven></mvc:annotation-driven>
+    <mvc:default-servlet-handler/>
+    
+</beans>
+```
+
+- ShiroRealm.java
+
+```java
+import org.apache.shiro.authc.AuthenticationException;
+import org.apache.shiro.authc.AuthenticationInfo;
+import org.apache.shiro.authc.AuthenticationToken;
+import org.apache.shiro.realm.Realm;
+
+public class ShiroRealm implements Realm {
+    @Override
+    public String getName() {
+        return null;
+    }
+
+    @Override
+    public boolean supports(AuthenticationToken authenticationToken) {
+        return false;
+    }
+
+    @Override
+    public AuthenticationInfo getAuthenticationInfo(AuthenticationToken authenticationToken) throws AuthenticationException {
+        return null;
+    }
+}
+
+```
+
+- xxx.jsp 页面: 对应上面的配置需要写三个jsp页面(list.jsp,login.jsp,unauthorized.jsp)
+
+```jsp
+<html>
+<body>
+<h2>Unauthorized page</h2>
+</body>
+</html>
+```
+
+
+
+**到此项目已经跑起来了，哒哒哒**
+
+
+
+### 4.2  ShiroFilter
+
+#### 4.2.1 与Web 集成 
+
+- Shiro 提供了与 Web 集成的支持，其通过一个 ShiroFilter 入口来拦截需要安全控制的URL，然后 进行相应的控制
+- ShiroFilter 类似于如 Strut2/SpringMVC 这种 web 框架的前端控制器，是安全控制的入口点，其 负责读取配置（如ini 配置文件），然后判断URL 是否需要登录/权限等工作。
+
+#### 4.2.2 ShiroFilter 的工作原理
+
+![ShiroFilter 的工作原理](img/ShiroFilter的工作原理.png)
+
+#### 4.2.3 web.xml 中shiroFilter的DelegatingFilterProxy  
+
+- DelegatingFilterProxy 作用是自动到 Spring 容器查找名 字为 shiroFilter（filter-name）的 bean 并把所有 Filter 的操作委托给它。
+
+```xml
+<!--
+    1. 配置  Shiro 的 shiroFilter.
+    2. DelegatingFilterProxy 实际上是 Filter 的一个代理对象. 默认情况下, Spring 会到 IOC 容器中查找和
+    <filter-name> 对应的 filter bean. 也可以通过 targetBeanName 的初始化参数来配置 filter bean 的 id.
+-->
+<filter>
+    <filter-name>shiroFilter</filter-name>
+    <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+    <init-param>
+        <param-name>targetFilterLifecycle</param-name>
+        <param-value>true</param-value>
+    </init-param>
+</filter>
+
+<filter-mapping>
+    <filter-name>shiroFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+</filter-mapping>
+```
+
+#### 4.2.4 spring配置中shiroFilter的filterChainDefinitions
+
+```xml
+<property name="filterChainDefinitions">
+    <value>
+        /login.jsp = anon
+        # everything else requires authentication:
+        /** = authc
+    </value>
+</property>
+```
+
+##### 4.2.4.1 细节 
+
+-  [urls] 部分的配置，其格式是： “url=拦截器[参数]，拦截 器[参数]”
+- 如果当前请求的 url 匹配 [urls] 部分的某个 url 模式，将会 执行其配置的拦截器。 
+- anon（anonymous） 拦截器表示匿名访问（即不需要登 录即可访问） 
+- authc （authentication）拦截器表示需要身份认证通过后 才能访问
+
+### 4.3 shiro中默认的过滤器
+
+|    过滤器名称     |                           过滤器类                           | 描述                                                         |                             例子                             |
+| :---------------: | :----------------------------------------------------------: | :----------------------------------------------------------- | :----------------------------------------------------------: |
+|       anon        |      org.apache.shiro.web.filter.authc.AnonymousFilter       | 没有参数，表示可以匿名访问                                   |                       /admins/**=anon                        |
+|       authc       |  org.apache.shiro.web.filter.authc.FormAuthenticationFilter  | 没有参数，表示需要认证(登录)才能使用                         |                        /user/**=authc                        |
+|    authcBasic     | org.apache.shiro.web.filter.authc.BasicHttpAuthenticationFilter | 没有参数，表示需要通过httpBasic验证，如果不通过，跳转到登陆页面 |                     /user/**=authcBasic                      |
+|      logout       |        org.apache.shiro.web.filter.authc.LogoutFilter        | 注销登陆的时候，完成一定的功能：任何现有的Session都将失效，而且任何身份都将回失去关联（在web应用程序中，RememberMe cookie 也将被删除） |                                                              |
+| noSessionCreation | org.apache.shiro.web.filter.session.NoSessionCreationFilter  | 阻止在请求期间创建新的会话。以保证无状态的体验               |                                                              |
+|       perms       | org.apache.shiro.web.filter.authz.PermissionsAuthorizationFilter | 参数可以写多个，多个时必须加上引号，并且在参数之间用逗号分隔。当有多个参数时必须每个参数都通过才能通过，相当于isPermitedAll() | `/admins/**=perms[user:*]`,`/admins/**=perms["user:add:*,user:modify:*"]` |
+|       port        |         org.apache.shiro.web.filter.authz.PortFilter         | 指定请求访问端口。如果不匹配则跳转到登录页面                 |                    /admins/**=port[8081]                     |
+|       rest        | org.apache.shiro.web.filter.authz.HttpMethodPermissionFilter | 根据请求的方法                                               | admins/user/**=perms[user.method]，其中method为post，get，delete等 |
+|       roles       |  org.apache.shiro.web.filter.authz.RolesAuthorizationFilter  | 角色过滤器,判断当前用户是否指定角色。参数可以写多个，多个时必须加上引号，并且参数之间用逗号分隔，当有多个参数,每个参数通过才算通过，相当于hasAllRoles()` |                admins/**=roles["admin,guest"]                |
+|        ssl        |         org.apache.shiro.web.filter.authz.SslFilter          | 没有参数，表示安全的url请求，协议为https                     |                                                              |
+|       user        |         org.apache.shiro.web.filter.authc.UserFilter         | 没有参数表示必须存在用户                                     |                                                              |
+
+### 4.4 URL 匹配
+
+#### 4.4.1 URL 匹配模式
+
+- url 模式使用 Ant 风格模式 
+- Ant 路径通配符支持 ?、*、**，注意通配符匹配不 包括目录分隔符“/” 
+  - ?：匹配一个字符，如 /admin? 将匹配 /admin1，但不 匹配 /admin 或 /admin/； 
+  - *：匹配零个或多个字符串，如 /admin 将匹配 /admin、 /admin123，但不匹配 /admin/1； 
+  - ：匹配路径中的零个或多个路径，如 /admin/** 将匹 配 /admin/a 或 /admin/a/b
+
+#### 4.4.2 URL 匹配顺序
+
+**URL 权限采取第一次匹配优先的方式，即从头开始 使用第一个匹配的 url 模式对应的拦截器链。** 
+
+- 如：
+
+```json
+/bb/**=filter1 
+/bb/aa=filter2 
+/**=filter3
+```
+
+- 如果请求的url是“/bb/aa”，因为按照声明顺序进行匹 配，那么将使用 filter1 进行拦截。
 
