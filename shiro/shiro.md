@@ -986,7 +986,9 @@ if (!currentUser.isAuthenticated()) {
 #### 5.3.1 AuthenticationException
 
 - 如果身份验证失败请捕获 AuthenticationException 或其子类 
-- 最好使用如“用户名/密码错误”而不是“用户名错误”/“密码错误”， 防止一些恶意用户非法扫描帐号库![AuthenticationException.png](img/AuthenticationException.png)
+- 最好使用如“用户名/密码错误”而不是“用户名错误”/“密码错误”， 防止一些恶意用户非法扫描帐号库
+
+![AuthenticationException.png](img/AuthenticationException.png)
 
 ### 5.4 认证流程
 
@@ -1015,7 +1017,9 @@ AuthenticationInfo getAuthenticationInfo(AuthenticationToken token) throws Authe
 ```
 
 -  一般继承 AuthorizingRealm（授权）即可；其继承了 AuthenticatingRealm（即身份验证），而且也间接继承了 CachingRealm（带有缓存实现）。 
-- Realm 的继承关系：![Realm继承关系](img/Realm继承关系.png)
+-  Realm 的继承关系：
+
+![Realm继承关系](img/Realm继承关系.png)
 
 ### 5.6 Authenticator
 
@@ -1036,8 +1040,6 @@ AuthenticationInfo getAuthenticationInfo(AuthenticationToken token) throws Authe
 - 项目结构
 
 ![认证项目结构](img/认证项目结构.png)
-
-
 
 - maven依赖pom.xml
 
