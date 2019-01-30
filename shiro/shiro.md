@@ -1,4 +1,6 @@
-# shiro
+# Shiro
+
+官方文档：http://shiro.apache.org/reference.html
 
 ## 一 Shiro 简介
 
@@ -66,7 +68,7 @@ Apache Shiro是一个具有许多功能的综合应用程序安全框架。
 - Authenticator：认证器，负责 Subject 认证，是一个扩展点，可以自定义实现；可以使用认证 策略（Authentication Strategy），即什么情况下算用户认证通过了； 
 - Authorizer：授权器、即访问控制器，用来决定主体是否有权限进行相应的操作；即控 制着用户能访问应用中的哪些功能； 
 - Realm：可以有 1 个或多个 Realm，可以认为是安全实体数据源，即用于获取安全实体 的；可以是JDBC 实现，也可以是内存实现等等；由用户提供；所以一般在应用中都需要 实现自己的 Realm； 
-- SessionManager：管理 Session 生命周期的组件；而 Shiro 并不仅仅可以用在 Web 环境，也可以用在如普通的 JavaSE 环境 
+- SessionManager：管理 Session 生命周期的组件；而且Shiro 并不仅仅可以用在 Web 环境，也可以用在如普通的 JavaSE 环境 
 - CacheManager：缓存控制器，来管理如用户、角色、权限等的缓存的；因为这些数据 基本上很少改变，放到缓存中后可以提高访问的性能 
 - Cryptography：密码模块，Shiro 提高了一些常见的加密组件用于如密码加密/解密。
 
@@ -925,3 +927,736 @@ public class ShiroRealm implements Realm {
 
 - 如果请求的url是“/bb/aa”，因为按照声明顺序进行匹 配，那么将使用 filter1 进行拦截。
 
+## 五 shiro认证
+
+**官方文档**：http://shiro.apache.org/authentication.html
+
+### 5.1 身份认证
+
+- 身份验证：一般需要提供如身份 ID 等一些标识信息来表明登录者的身 份，如提供 email，用户名/密码来证明。 
+- 在 shiro 中，用户需要提供 principals （身份）和 credentials（证 明）给 shiro，从而应用能验证用户身份： 
+- principals：身份，即主体的标识属性，可以是任何属性，如用户名、 邮箱等，唯一即可。一个主体可以有多个 principals，但只有一个 Primary principals，一般是用户名/邮箱/手机号。 
+- credentials：证明/凭证，即只有主体知道的安全值，如密码/数字证 书等。 
+- 最常见的 principals 和 credentials 组合就是用户名/密码了
+
+### 5.2 身份验证基本流程
+
+- 1、收集用户身份/凭证，即如用户名/密码
+- 2、调用Subject.login进行登录，如果失败将得到相应 的 AuthenticationException 异常，根据异常提示用户错误信息；否则登录成功 
+- 3、创建自定义的Realm类，继承org.apache.shiro.realm.AuthorizingRealm类，实现doGetAuthenticationInfo()方法
+
+### 5.3 身份验证示例
+
+#### 5.3.1 代码片段
+
+```java
+// 调动 Subject 的 isAuthenticated()，检测当前用户是否被认证
+if (!currentUser.isAuthenticated()) {
+    // 把用户名和密码封装为 UsernamePasswordToken 对象
+    UsernamePasswordToken token = new UsernamePasswordToken("lonestarr", "vespa");
+    // rememberme
+    token.setRememberMe(true);
+    try {
+        // 执行登录.
+        currentUser.login(token);
+    }
+    // 若没有指定的账户, 则 shiro 将会抛出 UnknownAccountException 异常.
+    catch (UnknownAccountException uae) {
+        log.info("----> There is no user with username of " + token.getPrincipal());
+        return;
+    }
+    // 若账户存在, 但密码不匹配, 则 shiro 会抛出 IncorrectCredentialsException 异常。
+    catch (IncorrectCredentialsException ice) {
+        log.info("----> Password for account " + token.getPrincipal() + " was incorrect!");
+        return;
+    }
+    // 用户被锁定的异常 LockedAccountException
+    catch (LockedAccountException lae) {
+        log.info("The account for username " + token.getPrincipal() + " is locked.  " +
+                 "Please contact your administrator to unlock it.");
+    }
+    // ... catch more exceptions here (maybe custom ones specific to your application?
+    // 所有认证时异常的父类.
+    catch (AuthenticationException ae) {
+        //unexpected condition?  error?
+    }
+}
+```
+
+#### 5.3.1 AuthenticationException
+
+- 如果身份验证失败请捕获 AuthenticationException 或其子类 
+- 最好使用如“用户名/密码错误”而不是“用户名错误”/“密码错误”， 防止一些恶意用户非法扫描帐号库![AuthenticationException.png](img/AuthenticationException.png)
+
+### 5.4 认证流程
+
+![ShiroAuthenticationSequence](img/ShiroAuthenticationSequence.png)
+
+**身份认证流程** 
+
+-  1、首先调用 Subject.login(token) 进行登录，其会自动委托给 SecurityManager 
+- 2、SecurityManager 负责真正的身份验证逻辑；它会委托给 Authenticator 进行身份验证； 
+- 3、Authenticator 才是真正的身份验证者，Shiro API 中核心的身份 认证入口点，此处可以自定义插入自己的实现； 
+- 4、Authenticator 可能会委托给相应的 AuthenticationStrategy 进 行多 Realm 身份验证，默认 ModularRealmAuthenticator 会调用 AuthenticationStrategy 进行多 Realm 身份验证； 
+- 5、Authenticator 会把相应的 token 传入 Realm，从 Realm 获取 身份验证信息，如果没有返回/抛出异常表示身份验证失败了。此处 可以配置多个Realm，将按照相应的顺序及策略进行访问。
+
+### 5.5 Realm
+
+- Realm：Shiro 从 Realm 获取安全数据（如用户、角色、 权限），即 SecurityManager 要验证用户身份，那么它需 要从 Realm 获取相应的用户进行比较以确定用户身份是否 合法；也需要从Realm得到用户相应的角色/权限进行验证 用户是否能进行操作 
+- Realm接口如下：
+
+```java
+//返回一个唯一的Realm名字
+String getName();
+//判断次此Realm是否支持此token
+boolean supports(AuthenticationToken token);
+//根据token获取获取认证信息
+AuthenticationInfo getAuthenticationInfo(AuthenticationToken token) throws AuthenticationException;
+```
+
+-  一般继承 AuthorizingRealm（授权）即可；其继承了 AuthenticatingRealm（即身份验证），而且也间接继承了 CachingRealm（带有缓存实现）。 
+- Realm 的继承关系：![Realm继承关系](img/Realm继承关系.png)
+
+### 5.6 Authenticator
+
+-  Authenticator 的职责是验证用户帐号，是 Shiro API 中身份验证核心的入口点：如果验证成功，将返回AuthenticationInfo验证信息；此信息中包含了身份及凭证；如果验证失败将抛出相应的AuthenticationException异常 
+- SecurityManager接口继承了Authenticator，另外还有一个ModularRealmAuthenticator实现，其委托给多个Realm 进行 验证，验证规则通过 AuthenticationStrategy 接口指定
+
+### 5.7 AuthenticationStrategy
+
+**AuthenticationStrategy 接口的默认实现**： 
+
+- FirstSuccessfulStrategy：只要有一个 Realm 验证成功即可，只返回第 一个 Realm 身份验证成功的认证信息，其他的忽略； 
+- AtLeastOneSuccessfulStrategy：只要有一个Realm验证成功即可，和 FirstSuccessfulStrategy 不同，将返回所有Realm身份验证成功的认证信 息； 
+- AllSuccessfulStrategy：所有Realm验证成功才算成功，且返回所有 Realm身份验证成功的认证信息，如果有一个失败就失败了。 
+- ModularRealmAuthenticator 默认是 AtLeastOneSuccessfulStrategy 策略
+
+### 5.8 代码示例
+
+- 项目结构
+
+![认证项目结构](img/认证项目结构.png)
+
+
+
+- maven依赖pom.xml
+
+```xml
+<!-- https://mvnrepository.com/artifact/org.apache.shiro/shiro-spring -->
+<dependency>
+    <groupId>org.apache.shiro</groupId>
+    <artifactId>shiro-spring</artifactId>
+    <version>1.4.0</version>
+</dependency>
+<!-- https://mvnrepository.com/artifact/org.apache.shiro/shiro-ehcache -->
+<dependency>
+    <groupId>org.apache.shiro</groupId>
+    <artifactId>shiro-ehcache</artifactId>
+    <version>1.4.0</version>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/net.sf.ehcache/ehcache-core -->
+<dependency>
+    <groupId>net.sf.ehcache</groupId>
+    <artifactId>ehcache-core</artifactId>
+    <version>2.6.11</version>
+</dependency>
+
+<!-- configure logging -->
+<!-- https://mvnrepository.com/artifact/org.slf4j/jcl-over-slf4j -->
+<dependency>
+    <groupId>org.slf4j</groupId>
+    <artifactId>jcl-over-slf4j</artifactId>
+    <version>1.7.25</version>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-log4j12 -->
+<dependency>
+    <groupId>org.slf4j</groupId>
+    <artifactId>slf4j-log4j12</artifactId>
+    <version>1.7.25</version>
+    <!--<scope>test</scope>-->
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/log4j/log4j -->
+<dependency>
+    <groupId>log4j</groupId>
+    <artifactId>log4j</artifactId>
+    <version>1.2.17</version>
+</dependency>
+
+<!-- https://mvnrepository.com/artifact/org.springframework/spring-context -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-context</artifactId>
+    <version>5.1.4.RELEASE</version>
+</dependency>
+<!-- https://mvnrepository.com/artifact/org.springframework/spring-web -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-web</artifactId>
+    <version>5.1.4.RELEASE</version>
+</dependency>
+<!-- https://mvnrepository.com/artifact/org.springframework/spring-webmvc -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-webmvc</artifactId>
+    <version>5.1.4.RELEASE</version>
+</dependency>
+<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
+<dependency>
+    <groupId>com.fasterxml.jackson.core</groupId>
+    <artifactId>jackson-databind</artifactId>
+    <version>2.9.8</version>
+</dependency>
+```
+
+- spring配置：applicationContext.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!--
+    1. 配置 SecurityManager!
+    -->
+    <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <property name="cacheManager" ref="cacheManager"/>
+        <!--<property name="realm" ref="jdbcRealm"></property>-->
+        <property name="authenticator" ref="authenticator"></property>
+    </bean>
+    
+    <!--
+    2. 配置 CacheManager.
+    2.1 需要加入 ehcache 的 jar 包及配置文件.
+    -->
+    <bean id="cacheManager" class="org.apache.shiro.cache.ehcache.EhCacheManager">
+        <property name="cacheManagerConfigFile" value="classpath:ehcache.xml"/>
+    </bean>
+
+    <bean id="authenticator"
+          class="org.apache.shiro.authc.pam.ModularRealmAuthenticator">
+        <!--认证策略-->
+        <property name="authenticationStrategy">
+            <bean class="org.apache.shiro.authc.pam.AtLeastOneSuccessfulStrategy"></bean>
+        </property>
+        <property name="realms">
+            <list>
+                <ref bean="jdbcRealm"></ref>
+                <ref bean="secondRealm"></ref>
+            </list>
+        </property>
+    </bean>
+
+    <!--
+    	3. 配置 Realm
+    	3.1 直接配置实现了 org.apache.shiro.realm.Realm 接口的 bean
+    -->
+    <bean id="jdbcRealm" class="com.hgx.shiro.spring.realm.ShiroRealm">
+        <property name="credentialsMatcher">
+            <bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
+                <property name="hashAlgorithmName" value="MD5"></property>
+                <property name="hashIterations" value="1024"></property>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="secondRealm" class="com.hgx.shiro.spring.realm.SecondRealm">
+        <property name="credentialsMatcher">
+            <bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
+                <property name="hashAlgorithmName" value="SHA1"></property>
+                <property name="hashIterations" value="1024"></property>
+            </bean>
+        </property>
+    </bean>
+    
+    <!--
+    4. 配置 LifecycleBeanPostProcessor. 可以自定的来调用配置在 Spring IOC 容器中 shiro bean 的生命周期方法.
+    -->
+    <bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>
+
+    <!--5. 启用 IOC 容器中使用 shiro 的注解. 但必须在配置了 LifecycleBeanPostProcessor 之后才可以使用.
+    -->
+    <bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator"
+          depends-on="lifecycleBeanPostProcessor"/>
+    <bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+        <property name="securityManager" ref="securityManager"/>
+    </bean>
+
+
+    <!--
+    6. 配置 ShiroFilter.
+    6.1 id 必须和 web.xml 文件中配置的 DelegatingFilterProxy 的 <filter-name> 一致.
+                      若不一致, 则会抛出: NoSuchBeanDefinitionException. 因为 Shiro 会来 IOC 容器中查找和 <filter-name> 名字对应的 filter bean.
+    -->
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+        <property name="securityManager" ref="securityManager"/>
+        <property name="loginUrl" value="/login.jsp"/>
+        <property name="successUrl" value="/list.jsp"/>
+        <property name="unauthorizedUrl" value="/unauthorized.jsp"/>
+        <!--
+        	配置哪些页面需要受保护.
+        	以及访问这些页面需要的权限.
+        	1). anon 可以被匿名访问
+        	2). authc 必须认证(即登录)后才可能访问的页面.
+        	3). logout 登出.
+        	4). roles 角色过滤器
+        -->
+        <property name="filterChainDefinitions">
+            <value>
+                /login.jsp = anon
+                /shiro/login = anon
+                /shiro/logout = logout
+                # everything else requires authentication:
+                /** = authc
+            </value>
+        </property>
+    </bean>
+</beans>
+```
+
+- 缓存配置：ehcache.xml
+
+```xml
+
+<ehcache>
+    
+    <diskStore path="java.io.tmpdir/shiro-spring-sample"/>
+    
+    <defaultCache
+            maxElementsInMemory="10000"
+            eternal="false"
+            timeToIdleSeconds="120"
+            timeToLiveSeconds="120"
+            overflowToDisk="false"
+            diskPersistent="false"
+            diskExpiryThreadIntervalSeconds="120"
+            />
+    
+    <cache name="shiro-activeSessionCache"
+           maxElementsInMemory="10000"
+           eternal="true"
+           overflowToDisk="true"
+           diskPersistent="true"
+           diskExpiryThreadIntervalSeconds="600"/>
+
+    <cache name="org.apache.shiro.realm.SimpleAccountRealm.authorization"
+           maxElementsInMemory="100"
+           eternal="false"
+           timeToLiveSeconds="600"
+           overflowToDisk="false"/>
+    
+</ehcache>
+```
+
+- 日志log4j配置：log4j.properties
+
+```properties
+log4j.rootLogger=INFO, stdout
+
+log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+log4j.appender.stdout.layout.ConversionPattern=%d %p [%c] - %m %n
+
+# General Apache libraries
+log4j.logger.org.apache=WARN
+
+# Spring
+log4j.logger.org.springframework=WARN
+
+# Default Shiro logging
+log4j.logger.org.apache.shiro=TRACE
+
+# Disable verbose logging
+log4j.logger.org.apache.shiro.util.ThreadContext=WARN
+log4j.logger.org.apache.shiro.cache.ehcache.EhCache=WARN
+```
+
+- spring-servlet.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+    <context:component-scan base-package="com.hgx.shiro.spring"></context:component-scan>
+
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/"></property>
+        <property name="suffix" value=".jsp"></property>
+    </bean>
+
+    <mvc:annotation-driven></mvc:annotation-driven>
+    <mvc:default-servlet-handler/>
+    
+</beans>
+```
+
+- web.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+         version="3.1">
+
+    <context-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>classpath:applicationContext.xml</param-value>
+    </context-param>
+
+    <listener>
+        <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+    </listener>
+
+
+    <!-- 启动 IOC 容器的 ServletContextListener -->
+    <servlet>
+        <servlet-name>springMVC</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+        <init-param>
+            <param-name>contextConfigLocation</param-name>
+            <param-value>classpath:spring-servlet.xml</param-value>
+        </init-param>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>springMVC</servlet-name>
+        <url-pattern>/</url-pattern>
+    </servlet-mapping>
+    
+    <!--
+    1. 配置  Shiro 的 shiroFilter.
+    2. DelegatingFilterProxy 实际上是 Filter 的一个代理对象. 默认情况下, Spring 会到 IOC 容器中查找和
+    <filter-name> 对应的 filter bean. 也可以通过 targetBeanName 的初始化参数来配置 filter bean 的 id.
+    -->
+    <filter>
+        <filter-name>shiroFilter</filter-name>
+        <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+        <init-param>
+            <param-name>targetFilterLifecycle</param-name>
+            <param-value>true</param-value>
+        </init-param>
+        <!--<init-param>-->
+            <!--<param-name>targetBeanName</param-name>-->
+            <!--<param-value>shiroFilter</param-value>-->
+        <!--</init-param>-->
+    </filter>
+
+    <filter-mapping>
+        <filter-name>shiroFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
+
+</web-app>
+```
+
+- ShiroController.java
+
+```java
+package com.hgx.shiro.spring.controller;
+
+import com.hgx.shiro.spring.request.LoginRequest;
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authc.AuthenticationException;
+import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.subject.Subject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+@Controller
+@RequestMapping("/shiro")
+public class ShiroController {
+
+    private Logger logger = LoggerFactory.getLogger(getClass());
+
+    @PostMapping("login")
+    public String login(LoginRequest loginRequest) {
+
+        logger.info("-------->loginRequest:{}", loginRequest);
+
+        Subject currentUser = SecurityUtils.getSubject();
+
+        if (!currentUser.isAuthenticated()) {
+            // 把用户名和密码封装为 UsernamePasswordToken 对象
+            UsernamePasswordToken token = new UsernamePasswordToken(loginRequest.getUserName(), loginRequest.getPassWord());
+
+            try {
+                System.out.println("1. " + token.hashCode());
+                // 执行登录.
+                currentUser.login(token);
+            }
+            // ... catch more exceptions here (maybe custom ones specific to your application?
+            // 所有认证时异常的父类.
+            catch (AuthenticationException ae) {
+                //unexpected condition?  error?
+                System.out.println("登录失败: " + ae.getMessage());
+            }
+        }
+        
+        return "redirect:/list.jsp";
+    }
+}
+```
+
+- ShiroRealm.java
+
+```java
+package com.hgx.shiro.spring.realm;
+
+import org.apache.shiro.authc.*;
+import org.apache.shiro.authz.AuthorizationInfo;
+import org.apache.shiro.crypto.hash.SimpleHash;
+import org.apache.shiro.realm.AuthorizingRealm;
+import org.apache.shiro.subject.PrincipalCollection;
+import org.apache.shiro.util.ByteSource;
+
+public class ShiroRealm extends AuthorizingRealm {
+
+    @Override
+    protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principalCollection) {
+        return null;
+    }
+
+    /**
+     * 认证
+     *
+     * @param authenticationToken token
+     * @return 认证信息
+     * @throws AuthenticationException 认证异常
+     */
+    @Override
+    protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken authenticationToken) throws AuthenticationException {
+
+        System.out.println("[FirstRealm] doGetAuthenticationInfo:authenticationToken hashCode:" + authenticationToken.hashCode());
+
+        //1. 把 AuthenticationToken 转换为 UsernamePasswordToken
+        UsernamePasswordToken upToken = (UsernamePasswordToken) authenticationToken;
+
+        //2. 从 UsernamePasswordToken 中来获取 username
+        String username = upToken.getUsername();
+
+        //3. 调用数据库的方法, 从数据库中查询 username 对应的用户记录
+        System.out.println("从数据库中获取 username: " + username + " 所对应的用户信息.");
+
+        //4. 若用户不存在, 则可以抛出 UnknownAccountException 异常
+        if ("unknown".equals(username)) {
+            throw new UnknownAccountException("用户不存在!");
+        }
+
+        //5. 根据用户信息的情况, 决定是否需要抛出其他的 AuthenticationException 异常.
+        if ("monster".equals(username)) {
+            throw new LockedAccountException("用户被锁定");
+        }
+
+        //6. 根据用户的情况, 来构建 AuthenticationInfo 对象并返回. 通常使用的实现类为: SimpleAuthenticationInfo
+        //以下信息是从数据库中获取的.
+        //1). principal: 认证的实体信息. 可以是 username, 也可以是数据表对应的用户的实体类对象.
+        Object principal = username;
+        //2). credentials: 密码.
+//        Object credentials = "123456";
+        //加密算法  密码   盐  加密次数
+        ByteSource salt = ByteSource.Util.bytes(username) ;
+        Object credentials = new SimpleHash("MD5", "123456", salt, 1024) ;
+        System.out.println(credentials);
+        //3). realmName: 当前 realm 对象的 name. 调用父类的 getName() 方法即可
+        String realmName = getName();
+
+//        SimpleAuthenticationInfo info = new SimpleAuthenticationInfo(principal, credentials, realmName);
+        SimpleAuthenticationInfo info = new SimpleAuthenticationInfo(principal,credentials,salt,realmName) ;
+        return info;
+
+    }
+
+    public static void main(String[] args) {
+
+        String hashAlgorithmName = "MD5";
+        Object credentials = "123456";
+        Object salt = null;
+        int hashIterations = 1024;
+        Object result = new SimpleHash(hashAlgorithmName, credentials, salt, hashIterations);
+        System.out.println(result);
+    }
+}
+```
+
+- SecondRealm.java
+
+```java
+package com.hgx.shiro.spring.realm;
+
+import org.apache.shiro.authc.*;
+import org.apache.shiro.authz.AuthorizationInfo;
+import org.apache.shiro.crypto.hash.SimpleHash;
+import org.apache.shiro.realm.AuthorizingRealm;
+import org.apache.shiro.subject.PrincipalCollection;
+import org.apache.shiro.util.ByteSource;
+
+public class SecondRealm extends AuthorizingRealm {
+
+    @Override
+    protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principalCollection) {
+        return null;
+    }
+
+    /**
+     * 认证
+     *
+     * @param authenticationToken token
+     * @return 认证信息
+     * @throws AuthenticationException 认证异常
+     */
+    @Override
+    protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken authenticationToken) throws AuthenticationException {
+
+        System.out.println("[SecondRealm] doGetAuthenticationInfo:authenticationToken hashCode:" + authenticationToken.hashCode());
+
+        //1. 把 AuthenticationToken 转换为 UsernamePasswordToken
+        UsernamePasswordToken upToken = (UsernamePasswordToken) authenticationToken;
+
+        //2. 从 UsernamePasswordToken 中来获取 username
+        String username = upToken.getUsername();
+
+        //3. 调用数据库的方法, 从数据库中查询 username 对应的用户记录
+        System.out.println("从数据库中获取 username: " + username + " 所对应的用户信息.");
+
+        //4. 若用户不存在, 则可以抛出 UnknownAccountException 异常
+        if ("unknown".equals(username)) {
+            throw new UnknownAccountException("用户不存在!");
+        }
+
+        //5. 根据用户信息的情况, 决定是否需要抛出其他的 AuthenticationException 异常.
+        if ("monster".equals(username)) {
+            throw new LockedAccountException("用户被锁定");
+        }
+
+        //6. 根据用户的情况, 来构建 AuthenticationInfo 对象并返回. 通常使用的实现类为: SimpleAuthenticationInfo
+        //以下信息是从数据库中获取的.
+        //1). principal: 认证的实体信息. 可以是 username, 也可以是数据表对应的用户的实体类对象.
+        Object principal = username;
+        //2). credentials: 密码.
+//        Object credentials = "123456";
+        //加密算法  密码   盐  加密次数
+        ByteSource salt = ByteSource.Util.bytes(username) ;
+        Object credentials = new SimpleHash("SHA1", "123456", salt, 1024) ;
+        System.out.println(credentials);
+        //3). realmName: 当前 realm 对象的 name. 调用父类的 getName() 方法即可
+        String realmName = getName();
+
+//        SimpleAuthenticationInfo info = new SimpleAuthenticationInfo(principal, credentials, realmName);
+        SimpleAuthenticationInfo info = new SimpleAuthenticationInfo(principal,credentials,salt,realmName) ;
+        return info;
+
+    }
+
+    public static void main(String[] args) {
+
+        String hashAlgorithmName = "SHA1";
+        Object credentials = "123456";
+        Object salt = null;
+        int hashIterations = 1024;
+        Object result = new SimpleHash(hashAlgorithmName, credentials, salt, hashIterations);
+        System.out.println(result);
+    }
+}
+```
+
+- login.jsp
+
+```jsp
+<html>
+<body>
+<h2>login page</h2>
+    
+<form action="/shiro/login" method="post">
+    userName: <input type="text" name="userName"/>
+    <br><br>
+    passWord: <input type="password" name="passWord"/>
+    <br><br>
+    <input type="submit" value="Submit">
+</form>
+</body>
+</html>
+```
+
+- list.jsp
+
+```jsp
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<html>
+<body>
+<h2>list page</h2>
+
+<a href="/shiro/logout">登出</a>
+</body>
+</html>
+```
+
+- unauthorized.jsp
+
+```jsp
+<html>
+<body>
+<h2>Unauthorized page</h2>
+</body>
+</html>
+```
+
+- LoginRequest.java
+
+```java
+package com.hgx.shiro.spring.request;
+
+/**
+ * 登录请求信息
+ */
+public class LoginRequest {
+
+    /**
+     * 登录名
+     */
+    private String userName;
+
+    /**
+     * 登录密码
+     */
+    private String passWord;
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getPassWord() {
+        return passWord;
+    }
+
+    public void setPassWord(String passWord) {
+        this.passWord = passWord;
+    }
+
+    @Override
+    public String toString() {
+        return "LoginRequest{" +
+                "userName='" + userName + '\'' +
+                ", passWord='" + passWord + '\'' +
+                '}';
+    }
+}
+```
+
+ 
