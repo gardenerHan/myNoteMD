@@ -2780,3 +2780,56 @@ public class ShiroService {
 </html>
 ```
 
+
+
+## 七 会话管理
+
+Shiro 提供了完整的企业级会话管理功能，不依赖于底层容 器（如web容器tomcat），不管 JavaSE 还是 JavaEE 环境 都可以使用，提供了会话管理、会话事件监听、会话存储/ 持久化、容器无关的集群、失效/过期支持、对Web 的透明 支持、SSO 单点登录的支持等特性。
+
+### 7.1 会话相关的 API
+
+-  `Subject.getSession()`：即可获取会话；其等价于 Subject.getSession(true)，即如果当前没有创建 Session 对象会创建 一个；Subject.getSession(false)，如果当前没有创建 Session 则返回 null 
+-  `session.getId()`：获取当前会话的唯一标识 
+- `session.getHost()`：获取当前Subject的主机地址 
+- `session.getTimeout()` & `session.setTimeout(毫秒)`：获取/设置当 前Session的过期时间 
+- `session.getStartTimestamp()` & `session.getLastAccessTime()`： 获取会话的启动时间及最后访问时间；如果是 JavaSE 应用需要自己定 期调用 session.touch() 去更新最后访问时间；如果是 Web 应用，每 次进入 ShiroFilter 都会自动调用 session.touch() 来更新最后访问时间。
+- `session.touch()` & `session.stop()`：更新会话最后访问时 间及销毁会话；当Subject.logout()时会自动调用 stop 方法 来销毁会话。如果在web中，调用 HttpSession. invalidate() 也会自动调用Shiro Session.stop 方法进行销毁Shiro 的会 话 
+- `session.setAttribute(key, val)` & `session.getAttribute(key)` & `session.removeAttribute(key)`：设置/获取/删除会话属 性；在整个会话范围内都可以对这些属性进行操作
+
+### 7.2 会话监听器 
+
+- 会话监听器用于监听会话创建、过期及停止事件
+
+```java
+package org.apache.shiro.session;
+
+public interface SessionListener {
+    void onStart(Session var1);
+
+    void onStop(Session var1);
+
+    void onExpiration(Session var1);
+}
+```
+
+### 7.3 代码示例
+
+```java
+//controller层中设置session属性
+@GetMapping("/testAnnotation")
+public String testShiroAnnotation(HttpSession httpSession ){
+    httpSession.setAttribute("key","value_1");
+    System.out.println(shiroService.getDate());
+    return "redirect:/list.jsp";
+}
+//service层中可以直接拿到
+@RequiresRoles(value = {"admin"})
+public Date getDate() {
+    Session session = SecurityUtils.getSubject().getSession();
+
+    System.out.println("session:" + session.getAttribute("key"));
+
+    return Date.from(Instant.now());
+}
+```
+
