@@ -1,5 +1,13 @@
 # Shiro
 
+
+
+<font color="green">*@Author:hanguixian*</font> 
+
+<font color="green">*@Email:hn_hanguixian@163.com*</font>
+
+
+
 官方文档：http://shiro.apache.org/reference.html
 
 ## 一 Shiro 简介
