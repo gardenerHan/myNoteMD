@@ -2833,3 +2833,114 @@ public Date getDate() {
 }
 ```
 
+## 八 SessionDao
+
+![sessionDao](img/sessionDao.png)
+
+- AbstractSessionDAO 提供了 SessionDAO 的基础实现， 如生成会话ID等 
+- CachingSessionDAO 提供了对开发者透明的会话缓存的 功能，需要设置相应的 CacheManager 
+- MemorySessionDAO 直接在内存中进行会话维护 
+- EnterpriseCacheSessionDAO 提供了缓存功能的会话维 护，默认情况下使用 MapCache 实现，内部使用 ConcurrentHashMap 保存缓存的会话。
+
+## 九 会话验证 
+
+- Shiro 提供了会话验证调度器，用于定期的验证会话是否 已过期，如果过期将停止会话。
+- 出于性能考虑，一般情况下都是获取会话时来验证会话是 否过期并停止会话的；但是如在 web 环境中，如果用户不 主动退出是不知道会话是否过期的，因此需要定期的检测 会话是否过期，Shiro 提供了会话验证调度SessionValidationScheduler
+- Shiro 也提供了使用Quartz会话验证调度器： QuartzSessionValidationScheduler
+
+## 十 缓存
+
+### 10.1 CacheManagerAware 接口
+
+Shiro 内部相应的组件（DefaultSecurityManager）会自动检测相应的对象（如Realm）是否实现了 CacheManagerAware 并自动注入相应的 CacheManager。
+
+### 10.2 Realm 缓存
+
+-  Shiro 提供了 CachingRealm，其实现了 CacheManagerAware 接口，提供了缓存的一些基础实现
+- AuthenticatingRealm 及 AuthorizingRealm 也分别提 供了对AuthenticationInfo 和 AuthorizationInfo 信息的缓 存。
+
+### 10.3 Session 缓存
+
+- 如 SecurityManager 实现了 SessionSecurityManager， 其会判断 SessionManager 是否实现了 CacheManagerAware 接口，如果实现了会把 CacheManager 设置给它。 
+- SessionManager 也会判断相应的 SessionDAO（如继承 自CachingSessionDAO）是否实现了 CacheManagerAware，如果实现了会把 CacheManager 设置给它 
+-  设置了缓存的 SessionManager，查询时会先查缓存，如 果找不到才查数据库。
+
+## 十一 RememberMe
+
+### 10.1 概述
+
+Shiro 提供了记住我（RememberMe）的功能，比如访问如淘宝 等一些网站时，关闭了浏览器，下次再打开时还是能记住你是谁， 下次访问时无需再登录即可访问，基本流程如下： 
+
+- 1、首先在登录页面选中 RememberMe 然后登录成功；如果是 浏览器登录，一般会把 RememberMe 的Cookie 写到客户端并 保存下来； 
+- 2、关闭浏览器再重新打开；会发现浏览器还是记住你的； 
+- 3、访问一般的网页服务器端还是知道你是谁，且能正常访问； 
+- 4、但是比如我们访问淘宝时，如果要查看我的订单或进行支付 时，此时还是需要再进行身份认证的，以确保当前用户还是你。
+
+### 10.2 认证和记住我
+
+- subject.isAuthenticated() 表示用户进行了身份验证登录的， 即使有 Subject.login 进行了登录； 
+- subject.isRemembered()：表示用户是通过记住我登录的， 此时可能并不是真正的你（如你的朋友使用你的电脑，或者 你的cookie 被窃取）在访问的 
+- 两者二选一，即 subject.isAuthenticated()==true，则 subject.isRemembered()==false；反之一样
+
+### 10.3 建议
+
+-  访问一般网页：如个人在主页之类的，我们使用user 拦截 器即可，user 拦截器只要用户登录 (isRemembered() || isAuthenticated())过即可访问成功； 
+- 访问特殊网页：如我的订单，提交订单页面，我们使用 authc 拦截器即可，authc 拦截器会判断用户是否是通过 Subject.login（isAuthenticated()==true）登录的，如 果是才放行，否则会跳转到登录页面叫你重新登录。
+
+### 10.4 实现
+
+-  如果要自己做RememeberMe，需要在登录之前这样创建Token： UsernamePasswordToken(用户名，密码，是否记住我)，且调用 UsernamePasswordToken 的：token.setRememberMe(true); 方法
+
+### 10.5 代码
+
+- 权限配置
+
+```java
+public class FilterChainDefinitionMapBuilder {
+
+    public LinkedHashMap<String, String> buildFilterChainDefinitionMap() {
+        LinkedHashMap<String, String> map = new LinkedHashMap<>();
+        map.put("/login.jsp", "anon");
+        map.put("/shiro/login", "anon");
+        map.put("/user.jsp", "authc,roles[user]");
+        map.put("/admin.jsp", "authc,roles[admin]");
+        map.put("/shiro/logout", "logout");
+        map.put("/list.jsp","user") ;
+        map.put("/**", "authc");
+
+        return map;
+    }
+}
+
+```
+
+- controller记住我代码块
+
+```java
+// 把用户名和密码封装为 UsernamePasswordToken 对象
+UsernamePasswordToken token = new UsernamePasswordToken(loginRequest.getUserName(), loginRequest.getPassWord());
+//记住我
+token.setRememberMe(true);
+```
+
+- securityManager下，配置过期时间
+
+```xml
+<--1. 配置 SecurityManager!-->
+<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+    <property name="cacheManager" ref="cacheManager"/>
+    <!--<property name="realm" ref="jdbcRealm"></property>-->
+    <property name="authenticator" ref="authenticator"></property>
+
+    <property name="realms">
+        <list>
+            <ref bean="jdbcRealm"></ref>
+            <ref bean="secondRealm"></ref>
+        </list>
+    </property>
+
+    <!--设置记住我的时间-->
+    <property name="rememberMeManager.cookie.maxAge" value="10"></property>
+</bean>
+```
+
