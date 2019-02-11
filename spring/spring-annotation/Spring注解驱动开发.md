@@ -936,4 +936,173 @@ initializeBean
 
 - bean赋值，注入其他组件，@Autowired，生命周期注解功能，@Async,xxx BeanPostProcessor
 
+## 三 属性赋值
+
+**@Value赋值**
+
+**@PropertySource加载外部配置文件**
+
+- javaBean:Person.java
+
+```java
+package com.ifox.hgx.spring.annotation.bean;
+
+
+import org.springframework.beans.factory.annotation.Value;
+
+import java.util.Date;
+
+public class Person {
+
+    /**
+     * 使用@Value赋值；
+     * 1、基本数值
+     * 2、可以写SpEL； #{}
+     * 3、可以写${}；取出配置文件【properties】中的值（在运行环境变量里面的值）
+     */
+
+    @Value("#{T(Math).random()*1000 -1 }")
+    private Integer id;
+    @Value("张三")
+    private String name;
+    @Value("${person.phoneNumber}")
+    private String phoneNumber;
+    @Value("#{nowDate}")
+    private Date birth;
+
+
+    public Person() {
+    }
+
+    public Person(String name, String phoneNumber) {
+        this.name = name;
+        this.phoneNumber = phoneNumber;
+    }
+
+    public Person(Integer id, String name, String phoneNumber, Date birth) {
+        this.id = id;
+        this.name = name;
+        this.phoneNumber = phoneNumber;
+        this.birth = birth;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public Date getBirth() {
+        return birth;
+    }
+
+    public void setBirth(Date birth) {
+        this.birth = birth;
+    }
+
+    @Override
+    public String toString() {
+        return "Person{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", phoneNumber='" + phoneNumber + '\'' +
+                ", birth=" + birth +
+                '}';
+    }
+}
+```
+
+- 配置类
+
+```java
+package com.ifox.hgx.spring.annotation.config;
+
+import com.ifox.hgx.spring.annotation.bean.Person;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+
+import java.time.Instant;
+import java.util.Date;
+
+/**
+ * 使用@PropertySource读取外部配置文件中的k/v保存到运行的环境变量中;加载完外部的配置文件以后使用${}取出配置文件的值
+ */
+@PropertySource(value = {"classpath:person.properties"})
+@Configuration
+public class MainConfigOfPropertyValues {
+
+    @Bean
+    public Person person() {
+        return new Person();
+    }
+
+    @Bean(value = "nowDate")
+    public Date date(){
+        return Date.from(Instant.now()) ;
+    }
+}
+```
+
+- person.properties
+
+ ```properties
+person.phoneNumber=129992929
+ ```
+
+- 测试
+
+```java
+package com.ifox.hgx.spring.annotation.test;
+
+import com.ifox.hgx.spring.annotation.bean.Person;
+import com.ifox.hgx.spring.annotation.config.MainConfigOfPropertyValues;
+import org.junit.Test;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.core.env.ConfigurableEnvironment;
+
+public class IOCTest_PropertyValue {
+    AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext(MainConfigOfPropertyValues.class);
+    @Test
+    public void test01(){
+        printBeans(applicationContext);
+        System.out.println("=============");
+
+        Person person = (Person) applicationContext.getBean("person");
+        System.out.println(person);
+
+
+        ConfigurableEnvironment environment = applicationContext.getEnvironment();
+        String property = environment.getProperty("person.phoneNumber");
+        System.out.println(property);
+        applicationContext.close();
+    }
+
+    private void printBeans(AnnotationConfigApplicationContext applicationContext){
+        String[] definitionNames = applicationContext.getBeanDefinitionNames();
+        for (String name : definitionNames) {
+            System.out.println(name);
+        }
+    }
+
+}
+```
 
