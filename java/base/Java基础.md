@@ -275,7 +275,7 @@ for(int a : intArr){
 
 #### 3.1 接口新方法
 
-lList 集合里添加了一些根据索引来操作集合元素的方法
+List 集合里添加了一些根据索引来操作集合元素的方法
 
 ```java
 void add(int index, Object ele)

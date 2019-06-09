@@ -95,7 +95,7 @@ Green Page包含关于该企业所提供的Web Service的技术信息，其形�
 - Apache CXF 的前身叫 Apache CeltiXfire，现在已经正式更名为 Apache CXF 了，以下简称为 CXF。CXF 继承了 Celtix 和 XFire 两大开源项目的精华，提供了对 JAX-WS 全面的支持，并且提供了多种 Binding 、DataBinding、Transport 以及各种 Format 的支持，并且可以根据实际项目的需要，采用代码优先（Code First）或者 WSDL 优先（WSDL First）来轻松地实现 Web Services 的发布和使用。Apache CXF已经是一个正式的Apache顶级项目。
 - 官网：http://cxf.apache.org/
 
-### 三 CXF 案例
+## 三 CXF 案例
 
 ### 3.1 Demo
 

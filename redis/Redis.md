@@ -5020,3 +5020,103 @@ public class Test01 {
 - minEvictableIdleTimeMills=60000
 - timeBetweenEvictionRunsMillis=30000
 - numTestsPerEvictionRun=-1
+
+
+
+## 十 redis应用案例
+
+### 1 springboot + redis 解决session共享 Demo
+
+- gradle
+
+```gradle
+dependencies {
+    implementation('org.springframework.boot:spring-boot-starter-data-redis')
+    implementation('org.springframework.boot:spring-boot-starter-web')
+    // https://mvnrepository.com/artifact/org.springframework.session/spring-session-data-redis
+    compile group: 'org.springframework.session', name: 'spring-session-data-redis', version: '2.1.2.RELEASE'
+    testImplementation('org.springframework.boot:spring-boot-starter-test')
+}
+```
+
+- config
+
+```java
+package com.hgx.nginx.swarmredis.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
+
+@Configuration
+@EnableRedisHttpSession
+public class HttpSessionConfig {
+
+}
+```
+
+- servlet
+
+```java
+package com.hgx.nginx.swarmredis.controller;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.util.Random;
+
+@WebServlet(name = "/hello", urlPatterns = "/hello")
+public class HelloWorldServlet extends HttpServlet {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        HttpSession session = request.getSession();
+        int port2 = request.getLocalPort();
+        if (session.getAttribute("userid") == null) {
+            String userid = String.valueOf(new Random().nextInt(100));
+            session.setAttribute("userid", userid);
+            System.out.println("userId:" + userid + " port:" + port2);
+            response.getWriter().append("Hello, " + userid + ",this is " + port2 + " port");
+        } else {
+            String userid = (String) session.getAttribute("userid");
+            System.out.println("userId:" + userid + " port:" + port2);
+            response.getWriter().append("Welcome back, " + userid + ", this is " + port2 + " port");
+        }
+
+    }
+}
+```
+
+- springboot启动类
+
+```java
+package com.hgx.nginx.swarmredis;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.servlet.ServletComponentScan;
+
+@SpringBootApplication
+@ServletComponentScan
+public class SwarmredisApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(SwarmredisApplication.class, args);
+    }
+}
+```
+
+- 配置：application.properties
+
+```properties
+######修改端口模拟#####
+server.port= 10091
+###############
+spring.redis.host=192.168.118.155
+spring.redis.port=6379
+spring.redis.password=123456
+```
+
+
+
