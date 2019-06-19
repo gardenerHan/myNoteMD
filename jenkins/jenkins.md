@@ -14,7 +14,10 @@ Jenkins文档：https://jenkins.io/zh/doc/
 
 
 
-## 一  Jenkins及自动化介绍
+## 一  Jenkins介绍
+
+- Jenkins是一款开源 CI&CD 软件，用于自动化各种任务，包括构建、测试和部署软件。
+- Jenkins 支持各种运行方式，可通过系统包、Docker 或者通过一个独立的 Java 程序。
 
 ### 1 Jenkins 和 Hudson 
 
@@ -47,5 +50,109 @@ Jenkins文档：https://jenkins.io/zh/doc/
 - 持续集成环境需要具备以下知识
   - Linux 基本操作命令和 VIM 编辑器使用
   - Maven 的项目构建管理 
-  -  GitHub 或 SVN 使用
+  - GitHub 或 SVN 使用
 
+##  二 Jenkins+SVN 持续集成环境搭建
+
+### 1 系统结构总述 
+
+- 基于Linux 系统 
+- 版本控制子系统 
+  - Subversion 服务器 
+  - 项目对应版本库 
+  - 版本库中钩子程序 
+- 持续集成子系统 
+  - JDK
+  - Tomcat
+  - Maven
+  - Jenkins
+    - 主体程序
+    - SVN插件
+    - Maven插件
+    - Deploy to Web Container插件
+- 应用发布子系统
+  - JDK
+  - Tomcat
+
+### 2 版本控制子系统 
+
+- 在linux系统中安装好SVN版本库，详细过程网络上很多，我的版本库的访问账号密码如下。
+
+```shell
+[users]
+subman=123123
+```
+
+- 特别提示：svnserve.conf 文件中anon-access一定要打开注释并设置为 none
+
+```sh
+[general]
+anon-access=none
+auth-access=write
+```
+
+### 3 应用发布子系统 
+
+- 安装好JDK和Tomcat的运行环境。安装详细可以参考如下：
+  - JDK：<https://blog.csdn.net/hgx_suiyuesusu/article/details/78368666> 
+  - Tomcat：<https://blog.csdn.net/hgx_suiyuesusu/article/details/78368997> 
+-  Tomcat 服务器的账号密码 如下，配置文件位置：/opt/tomcat/conf/tomcat-users.xml 
+
+```xml
+<rolerolename="manager-gui"/> 
+<rolerolename="manager-script"/> 
+<rolerolename="manager-jmx"/> 
+<rolerolename="manager-status"/>
+<user username="tomcat_user" password="123456" roles="manager-gui,manager-script,manager-jmx,manager-status"/>
+```
+
+### 4  Jenkins 主体程序安装配置
+
+#### 4.1 war+tomcat
+
+##### 4.1.1 安装JDK和Tomcat
+
+- JDK：<https://blog.csdn.net/hgx_suiyuesusu/article/details/78368666> 
+- Tomcat：<https://blog.csdn.net/hgx_suiyuesusu/article/details/78368997> 
+
+##### 4.1.2 安装Jenkins
+
+- 下载jenkins.war，下载地址：https://mirrors.tuna.tsinghua.edu.cn/jenkins/war-stable/2.176.1/jenkins.war
+- 将war包放到Tomcat 的webapps下，例如：/opt/apache-tomcat-8.5.42/webapps下
+- 启动tomcat，tomcat的bin目录下使用：`./startup.sh`
+- 访问host:8080/jenkins,会进入解锁界面。如:<http://192.168.118.155:8080/jenkins> 
+
+![jenkins+tomcat安装1](img/jenkins+tomcat安装1.png)
+
+- 依照提示，获取并输入管理密码，这里填入的密文同时也是 admin 账号的密码。 
+
+```shell
+[root@localhost webapps]# more /root/.jenkins/secrets/initialAdminPassword
+1d4fdbe149b24413946b1ae21f932acd
+```
+
+![jenkins+tomcat安装2.png](img/jenkins+tomcat安装2.png)
+
+- 选择哪种方式都不会对后续操作有太大影响。因为有需要的插件我们可以在后续有针对性的安装。在这里选择“安装推荐的插件”。 安装过程如下：
+
+![jenkins+tomcat安装3.png](img/jenkins+tomcat安装3.png)
+
+- 打×的插件是由于网络传输导致的安装失败，后面再重新安装即可。注意：这个步骤中如果选择了安装插件则 Linux 必须能够联网。 
+
+![jenkins+tomcat安装2.png](img/jenkins+tomcat安装4.png)
+
+- 新建账号或以管理员身份继续
+
+![jenkins+tomcat安装5](img/jenkins+tomcat安装5.png)
+
+- 使用admin账户继续，实例配置
+
+![jenkins+tomcat安装6.png](img/jenkins+tomcat安装6.png)
+
+- 开始使用jenkins
+
+![jenkins+tomcat安装7](img/jenkins+tomcat安装7.png)
+
+- Jenkins界面
+
+![Jenkins界面.png](img/Jenkins界面.png)
