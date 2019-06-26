@@ -52,70 +52,18 @@ Jenkins文档：https://jenkins.io/zh/doc/
   - Maven 的项目构建管理 
   - GitHub 或 SVN 使用
 
-##  二 Jenkins+SVN 持续集成环境搭建
+##  二 Jenkins安装与配置
 
-### 1 系统结构总述 
+### 1 Jenkins 主体程序安装配置
 
-- 基于Linux 系统 
-- 版本控制子系统 
-  - Subversion 服务器 
-  - 项目对应版本库 
-  - 版本库中钩子程序 
-- 持续集成子系统 
-  - JDK
-  - Tomcat
-  - Maven
-  - Jenkins
-    - 主体程序
-    - SVN插件
-    - Maven插件
-    - Deploy to Web Container插件
-- 应用发布子系统
-  - JDK
-  - Tomcat
+#### 1.1 war+tomcat
 
-### 2 版本控制子系统 
-
-- 在linux系统中安装好SVN版本库，详细过程网络上很多，我的版本库的访问账号密码如下。
-
-```shell
-[users]
-subman=123123
-```
-
-- 特别提示：svnserve.conf 文件中anon-access一定要打开注释并设置为 none
-
-```sh
-[general]
-anon-access=none
-auth-access=write
-```
-
-### 3 应用发布子系统 
-
-- 安装好JDK和Tomcat的运行环境。安装详细可以参考如下：
-  - JDK：<https://blog.csdn.net/hgx_suiyuesusu/article/details/78368666> 
-  - Tomcat：<https://blog.csdn.net/hgx_suiyuesusu/article/details/78368997> 
--  Tomcat 服务器的账号密码 如下，配置文件位置：/opt/tomcat/conf/tomcat-users.xml 
-
-```xml
-<rolerolename="manager-gui"/> 
-<rolerolename="manager-script"/> 
-<rolerolename="manager-jmx"/> 
-<rolerolename="manager-status"/>
-<user username="tomcat_user" password="123456" roles="manager-gui,manager-script,manager-jmx,manager-status"/>
-```
-
-### 4  Jenkins 主体程序安装配置
-
-#### 4.1 war+tomcat
-
-##### 4.1.1 安装JDK和Tomcat
+##### 1.1.1 安装JDK和Tomcat
 
 - JDK：<https://blog.csdn.net/hgx_suiyuesusu/article/details/78368666> 
 - Tomcat：<https://blog.csdn.net/hgx_suiyuesusu/article/details/78368997> 
 
-##### 4.1.2 安装Jenkins
+##### 1.1.2 安装Jenkins
 
 - 下载jenkins.war，下载地址：https://mirrors.tuna.tsinghua.edu.cn/jenkins/war-stable/2.176.1/jenkins.war
 - 将war包放到Tomcat 的webapps下，例如：/opt/apache-tomcat-8.5.42/webapps下
@@ -156,3 +104,122 @@ auth-access=write
 - Jenkins界面
 
 ![Jenkins界面.png](img/Jenkins界面.png)
+
+### 2 系统初始化配置   
+
+- 系统管理界面
+
+![系统管理界面](img/系统初始化配置1.png)
+
+- 全局安全配置：可以自己修改jenkins安全策略，一般情况下保持默认设置即可
+
+![全局安全配置](img/全局安全配置.png)
+
+- 全局工具配置：MavenConfiguration
+
+![全局工具配置](img/全局工具配置.png)
+
+**现在jenkins就基本配置好了。。。。**
+
+## 三 Jenkins+SVN 持续集成环境搭建
+
+### 1 系统结构总述 
+
+- 基于Linux 系统
+- 版本控制子系统 
+  - Subversion 服务器 
+  - 项目对应版本库 
+  - 版本库中钩子程序 
+- 持续集成子系统 
+  - JDK
+  - Tomcat
+  - Maven
+  - Jenkins
+    - 主体程序
+    - SVN插件
+    - Maven插件
+    - Deploy to Web Container插件
+- 应用发布子系统
+  - JDK
+  - Tomcat
+
+### 2 版本控制子系统 
+
+- 在linux系统中安装好SVN版本库，详细过程网络上很多，我的版本库的访问账号密码如下。
+
+```shell
+[users]
+subman=123123
+```
+
+- 特别提示：svnserve.conf 文件中anon-access一定要打开注释并设置为 none
+
+```sh
+[general]
+anon-access=none
+auth-access=write
+```
+
+### 3 应用发布子系统 
+
+- 安装好JDK和Tomcat的运行环境。安装详细可以参考如下：
+  - JDK：<https://blog.csdn.net/hgx_suiyuesusu/article/details/78368666> 
+  - Tomcat：<https://blog.csdn.net/hgx_suiyuesusu/article/details/78368997> 
+- Tomcat 服务器的账号密码 如下，配置文件位置：/opt/tomcat/conf/tomcat-users.xml 
+
+```xml
+<rolerolename="manager-gui"/> 
+<rolerolename="manager-script"/> 
+<rolerolename="manager-jmx"/> 
+<rolerolename="manager-status"/>
+<user username="tomcat_user" password="123456" roles="manager-gui,manager-script,manager-jmx,manager-status"/>
+```
+### 4  持续集成子系统  
+
+在配置好的基础上继续。。。
+
+
+
+## 四 Jenkins+git+docker+阿里云 持续集成
+
+### 1 系统结构总述
+
+- 基于Linux 系统
+- git仓库（gitee、github ...）
+  - 项目对应版本库 
+  - 钩子程序 /插件
+- 持续集成子系统 
+  - 方式（1）tomcat+jenkins
+    - JDK
+    - Tomcat
+    - Maven
+    - Jenkins
+      - 主体程序
+      - Maven插件
+  - 方式（2）docker容器
+- 应用发布子系统
+  - docker容器
+
+### 2 git仓库--gitee为例
+
+- 注册gitee，gitee地址：<https://gitee.com/> 
+- 建立仓库
+
+### 3  应用发布子系统 
+
+- docker相关，可参考：
+  - Docker简介:<https://blog.csdn.net/hgx_suiyuesusu/article/details/81748971>
+  - Docker安装:<https://blog.csdn.net/hgx_suiyuesusu/article/details/81775444> 
+  - Docker常用命令:<https://blog.csdn.net/hgx_suiyuesusu/article/details/81946313> 
+  - Docker镜像:<https://blog.csdn.net/hgx_suiyuesusu/article/details/82020188> 
+  - Docker容器数据卷:<https://blog.csdn.net/hgx_suiyuesusu/article/details/82115166> 
+  - DockerFile:<https://blog.csdn.net/hgx_suiyuesusu/article/details/82184871> 
+  - Docker常用安装:<https://blog.csdn.net/hgx_suiyuesusu/article/details/82491183> 
+  - 本地镜像发布到阿里云:<https://blog.csdn.net/hgx_suiyuesusu/article/details/82529270> 
+
+### 4  持续集成子系统 
+
+在配置好的基础上继续。。。
+
+
+
