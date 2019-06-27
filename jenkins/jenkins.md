@@ -221,4 +221,70 @@ auth-access=write
 
 在配置好的基础上继续。。。
 
+#### 4.1 操作步骤及细节
+
 ![gitee+阿里云](img/gitee+阿里云.png)
+
+#### 4.2 shell脚本
+
+```shell
+#### 镜像名称
+IMAGE_NAME='registry.cn-shanghai.aliyuncs.com/hanguixian/common-service:3.0.0'
+echo IMAGE_NAME=$IMAGE_NAME
+echo '================当前docker版本=============='
+echo `docker -v`
+##### 登录到阿里云
+docker login --username=xxxx --password=xxxx  registry.cn-shanghai.aliyuncs.com
+
+#### dockerFile 文本信息 编写docker容器
+echo "FROM registry.cn-shanghai.aliyuncs.com/hanguixian/java8:192" > Dockerfile 
+echo "MAINTAINER Author<hanguixianhn@163.com>" >> Dockerfile
+echo "COPY common-service-0.0.1-SNAPSHOT.jar /opt/work/common-service-0.0.1-SNAPSHOT.jar" >> Dockerfile
+echo "EXPOSE 8091" >> Dockerfile
+echo "ENTRYPOINT nohup java -Dfile.encoding=utf-8 -jar  /opt/work/common-service-0.0.1-SNAPSHOT.jar > /opt/work/common-nohup.out " >> Dockerfile
+
+echo '================开始创建镜像================'
+docker build --rm -t $IMAGE_NAME .
+echo '================开始推送镜像================'
+####账户及密码 登录阿里云
+docker login --username=xxxx --password=xxxx  registry.cn-shanghai.aliyuncs.com
+docker push $IMAGE_NAME
+echo '====================OK!================'
+
+### jenkins所在服务器ssh公钥，也可以直接在发布子系统，及docker所在主机配置好
+echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDx6K7o5chjnPWVphCfy3Db4UiykPB7VfwAf7jCML/bO/y68FLMVm9Om1WGCyRL7lU2V02Q+bEnPSrIXbWlVzPjeBY+TlQx4GHhFWqm2f0uQ+t3yfV/qim0+FCd0Qk8i/gw9w8ZmYJs35/DCm6WeZlik8oPxB9sxUSj8Ni+pTYjHgK0yuyG+xKIj/3AqHgBzWK+Gn1zniAeQnA6aOp0JRcfFXS1oBZ8wsiCk8fX4xfKxB7+QbJToMkd+huKielIyoEn0a5gfPKuz/X6QPThLjkyx+n2kRvWJ4E3qiVJ+0dhwGyuc3MbFTch9+GGoXbP2DyB+uKbtGSm9r3ur9sh9+xR root@a49563332eec" >> remotessh
+
+#### 登录docker所在主机
+ssh root@106.14.217.80 -tt << remotessh 
+
+####  执行jenkins.sh 脚本,停止带有common-service3的dokcer容器
+cd /home/han
+./jenkins.sh common-service3
+
+#### 删除 带有common-service3的dokcer容器
+docker rm -f $(docker ps |grep common-service|awk '{print $1}') 
+
+### 登录到阿里云
+docker login --username=xxx --password=xxx  registry.cn-shanghai.aliyuncs.com
+### 推送镜像到阿里云
+docker pull $IMAGE_NAME
+
+#### 运行容器
+docker run -d -p 8901:8091 --name=common-service3-`date +%Y-%m-%d` --restart=always $IMAGE_NAME
+echo "finished!"
+
+#####执行完毕
+
+exit  ###退出远程机器
+remotessh  ###结尾哦
+echo '================结束远程启动================'
+```
+
+- jenkins.sh 内容如下，注意 需要授予权限：chmod  777 jenkins.sh
+
+```sh
+sudo docker stop $(sudo docker ps | grep $1|awk '{print  $1}'|sed 's/%//g')
+```
+
+#### 4.3 提交代码自动触发构建
+
