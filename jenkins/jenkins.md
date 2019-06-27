@@ -221,5 +221,4 @@ auth-access=write
 
 在配置好的基础上继续。。。
 
-
-
+![gitee+阿里云](img/gitee+阿里云.png)
