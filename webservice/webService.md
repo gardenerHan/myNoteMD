@@ -1185,6 +1185,110 @@ public class CustomerService {
 
 ![spring整合cxf](img/spring整合cxf.png)
 
+## 十 提高
+### 10.1 JaxWsDynamicClientFactory
+ - 通过JaxWsDynamicClientFactory进行WebService 客户端只需要知道了WSDL地址就行了，不需要生成任何代码，这样，如果需要调用多个WebService服务的话，只需要创建多个Client即可。这样可以让代码更优雅。
+
+```java
+public static void main(String[] args) {
+		//wsdl地址
+        Client client = initClient("http://localhost:8080/spring_cxf_war/HelloWorld?wsdl");
+        try {
+            // 方法 参数1 参数2
+            Object[] result = client.invoke("sayHello", "哈哈哈哈", 18);
+            String outParam = "";
+            System.out.println(result.length);
+            if (result.length > 0) {
+                Object object = result[0];
+                if (object instanceof byte[]) {
+                    outParam = new String((byte[]) object);
+                } else {
+                    outParam = (String) object;
+                }
+
+            }
+            System.out.println(outParam);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public static Client initClient(String url) {
+        JaxWsDynamicClientFactory dcf = JaxWsDynamicClientFactory.newInstance();
+        Client client = dcf.createClient(url);
+        //如果需要密码
+        //client.getOutInterceptors().add(new ClientLoginInterceptor("123","123"));
+        HTTPConduit http = (HTTPConduit) client.getConduit();
+        HTTPClientPolicy httpClientPolicy = new HTTPClientPolicy();
+        httpClientPolicy.setConnectionTimeout(30000);
+        httpClientPolicy.setAllowChunking(false);
+        httpClientPolicy.setReceiveTimeout(60000);
+        http.setClient(httpClientPolicy);
+        return client;
+    }
+```
+
+- ClientLoginInterceptor 实现
+
+```java
+import org.apache.cxf.binding.soap.SoapMessage;
+import org.apache.cxf.headers.Header;
+import org.apache.cxf.helpers.DOMUtils;
+import org.apache.cxf.interceptor.Fault;
+import org.apache.cxf.phase.AbstractPhaseInterceptor;
+import org.apache.cxf.phase.Phase;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+
+import javax.xml.namespace.QName;
+import java.util.List;
+
+public class ClientLoginInterceptor extends AbstractPhaseInterceptor<SoapMessage> {
+
+    public ClientLoginInterceptor(String username, String password) {
+        super(Phase.PREPARE_SEND);
+        this.username = username;
+        this.password = password;
+    }
+    
+    private String username;
+    private String password;
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+
+    public void handleMessage(SoapMessage soap) throws Fault {
+        List<Header> headers = soap.getHeaders();
+        Document doc = DOMUtils.createDocument();
+        Element auth = doc.createElement("authrity");
+        Element username = doc.createElement("username");
+        Element password = doc.createElement("password");
+
+        username.setTextContent(this.username);
+        password.setTextContent(this.password);
+
+        auth.appendChild(username);
+        auth.appendChild(password);
+
+        headers.add(0, new Header(new QName("tiamaes"), auth));
+    }
+
+}
+```
 
 
 
