@@ -1,0 +1,2156 @@
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>文档</title>
+  <link href="./css/semantic/semantic.min.css" rel="stylesheet">
+  <link href="./css/markdown.css" rel="stylesheet">
+  <style>
+    body{padding-top:0;background:#f7f7f7}
+    body>.ui.container{width:100%;padding:0}
+    #project-title{background:#6e6e6e;width:100%;line-height:3.572rem;color:#fff;font-size:1.2rem}
+    #project-title .title-wrap{font-weight:700;padding:0 12px;width:100%;max-width:1366px!important;min-width:900px;margin:0 auto}
+    #project-title .left,#project-title right{display:inline-block}
+    #project-title .right{float:right}
+    #project-title .right .wiki-actions .menu{left:auto;right:0;margin-top:.4em!important}
+    #wiki-preview-container{width:100%;max-width:1366px!important;min-width:900px;padding:0;border:1px solid #e3e9ed;border-top:0}
+    #wiki-preview>.ui.segment{margin-top:0;padding:1rem;padding-left:0;border:0}
+    .hover-places{display:inline-block}
+    #page-detail{width:60%;margin:0 auto}
+    #page-detail .title{font-weight:700;font-size:24px;padding:12px 0;border-bottom:1px solid #ccc}
+    #page-detail .content{margin-top:15px}
+    .content p{word-wrap:break-word}
+    #wiki-parent,#wiki-title,#wikis{display:none}
+    .ui.grid{padding:0!important}
+    #ex-all{cursor:pointer;color:#537c8d}
+  </style>
+</head>
+<body>
+  <div class="ui container">
+    <div id="project-title">
+      <div class="title-wrap">
+        <div class="left">
+          <i class="icon eye"></i>
+          文档预览:
+          abel533/Mapper
+        </div>
+        <div class="right">
+          Export by Gitee
+        </div>
+      </div>
+    </div>
+
+    <div class="ui container" id="wiki-preview-container">
+      <div id="wiki-preview">
+        <div class="ui segment">
+          <div id="page-detail" class="markdown-body">
+            <div class='title'>1.integration</div><div class='content'></div><div class='title'>1.1-java</div><div class='content'><h3><a class="anchor" id="1-1-java-编码方式集成" href="#1-1-java-编码方式集成"></a>1.1 Java 编码方式集成</h3>
+<p>Java 编码方式集成是最少见的一种情况，但是通过这种集成方式可以很容易让大家看清通用 Mapper 集成的入口，这里会提供两种方式。</p>
+
+<ol class="task-list">
+<li> 最直接的方式</li>
+<li> 使用 <code>Configuration</code> 作为入口集成</li>
+</ol>
+<h4><a class="anchor" id="1-1-1-添加依赖" href="#1-1-1-添加依赖"></a>1.1.1 添加依赖</h4>
+<p>在开始写代码前，先把依赖添加进来。</p>
+
+<p>在 Java 编码集成方式中，首先你肯定已经引入了 MyBatis 的依赖：</p>
+<div class="white"><div class="highlight"><pre><span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>org.mybatis<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>mybatis<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>版本号<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+</pre></div></div>
+<blockquote>
+<p>所有版本号看这里：<a target="_blank" href="http://mvnrepository.com/artifact/org.mybatis/mybatis">http://mvnrepository.com/artifact/org.mybatis/mybatis</a></p>
+
+<p>通用 Mapper 支持 MyBatis 3.2.4+</p>
+</blockquote>
+
+<p>在 mybatis 依赖的基础上，添加通用 Mapper 的依赖即可：</p>
+<div class="white"><div class="highlight"><pre><span class="nt">&lt;dependency&gt;</span>
+    <span class="nt">&lt;groupId&gt;</span>tk.mybatis<span class="nt">&lt;/groupId&gt;</span>
+    <span class="nt">&lt;artifactId&gt;</span>mapper<span class="nt">&lt;/artifactId&gt;</span>
+    <span class="nt">&lt;version&gt;</span>最新版本<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+</pre></div></div>
+<blockquote>
+<p>最新版本看这里：<a target="_blank" href="http://mvnrepository.com/artifact/tk.mybatis/mapper">http://mvnrepository.com/artifact/tk.mybatis/mapper</a></p>
+</blockquote>
+
+<p><em>如果你使用的 Jar 包，你可以通过上面提供的链接下载 Jar。</em></p>
+<h4><a class="anchor" id="1-1-2-编写代码集成" href="#1-1-2-编写代码集成"></a>1.1.2 编写代码集成</h4>
+<p>使用 Java 编码方式时，正常情况下你都会有构建 <code>SqlSessionFactory</code> 的代码。</p>
+
+<p>在创建 <code>SqlSessionFactory</code> 对象<strong>前</strong>或者<strong>后</strong>对应两种配置通用 Mapper 的方法，由于没有提供 mybatis-config.xml 文件的解析类，这里会推荐使用 <strong>创建后</strong> 的方式来创建。</p>
+<h5><a class="anchor" id="1-1-2-1-创建后" href="#1-1-2-1-创建后"></a>1.1.2.1 创建后</h5>
+<p>在创建 <code>SqlSessionFactory</code> 后，在任何其他调用发生前，使用下面的方式配置通用 Mapper。</p>
+<div class="white"><div class="highlight"><pre><span class="c1">//从刚刚创建的 sqlSessionFactory 中获取 session</span>
+<span class="n">session</span> <span class="o">=</span> <span class="n">sqlSessionFactory</span><span class="o">.</span><span class="na">openSession</span><span class="o">();</span>
+<span class="c1">//创建一个MapperHelper</span>
+<span class="n">MapperHelper</span> <span class="n">mapperHelper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">MapperHelper</span><span class="o">();</span>
+<span class="c1">//特殊配置</span>
+<span class="n">Config</span> <span class="n">config</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Config</span><span class="o">();</span>
+<span class="c1">//主键自增回写方法,默认值MYSQL,详细说明请看文档</span>
+<span class="n">config</span><span class="o">.</span><span class="na">setIDENTITY</span><span class="o">(</span><span class="s">"MYSQL"</span><span class="o">);</span>
+<span class="c1">//支持getter和setter方法上的注解</span>
+<span class="n">config</span><span class="o">.</span><span class="na">setEnableMethodAnnotation</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+<span class="c1">//设置 insert 和 update 中，是否判断字符串类型!=''</span>
+<span class="n">config</span><span class="o">.</span><span class="na">setNotEmpty</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+<span class="c1">//校验Example中的类型和最终调用时Mapper的泛型是否一致</span>
+<span class="n">config</span><span class="o">.</span><span class="na">setCheckExampleEntityClass</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+<span class="c1">//启用简单类型</span>
+<span class="n">config</span><span class="o">.</span><span class="na">setUseSimpleType</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+<span class="c1">//枚举按简单类型处理</span>
+<span class="n">config</span><span class="o">.</span><span class="na">setEnumAsSimpleType</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+<span class="c1">//自动处理关键字 - mysql</span>
+<span class="n">config</span><span class="o">.</span><span class="na">setWrapKeyword</span><span class="o">(</span><span class="s">"`{0}`"</span><span class="o">);</span>
+<span class="c1">//设置配置</span>
+<span class="n">mapperHelper</span><span class="o">.</span><span class="na">setConfig</span><span class="o">(</span><span class="n">config</span><span class="o">);</span>
+<span class="c1">//注册通用接口，和其他集成方式中的 mappers 参数作用相同</span>
+<span class="c1">//4.0 之后的版本，如果类似 Mapper.class 这样的基础接口带有 @RegisterMapper 注解，就不必在这里注册</span>
+<span class="n">mapperHelper</span><span class="o">.</span><span class="na">registerMapper</span><span class="o">(</span><span class="n">Mapper</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+<span class="c1">//配置 mapperHelper 后，执行下面的操作</span>
+<span class="n">mapperHelper</span><span class="o">.</span><span class="na">processConfiguration</span><span class="o">(</span><span class="n">session</span><span class="o">.</span><span class="na">getConfiguration</span><span class="o">());</span>
+</pre></div></div>
+<p>如果省略 <code>Config</code> 的配置，上述代码简化为：</p>
+<div class="white"><div class="highlight"><pre><span class="c1">//从刚刚创建的 sqlSessionFactory 中获取 session</span>
+<span class="n">session</span> <span class="o">=</span> <span class="n">sqlSessionFactory</span><span class="o">.</span><span class="na">openSession</span><span class="o">();</span>
+<span class="c1">//创建一个MapperHelper</span>
+<span class="n">MapperHelper</span> <span class="n">mapperHelper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">MapperHelper</span><span class="o">();</span>
+<span class="n">mapperHelper</span><span class="o">.</span><span class="na">processConfiguration</span><span class="o">(</span><span class="n">session</span><span class="o">.</span><span class="na">getConfiguration</span><span class="o">());</span>
+</pre></div></div>
+<blockquote>
+<p>通用 Mapper 默认就是通过 session.getConfiguration() 获取所有的 MyBatis 方法，然后对其中属于通用方法的方法进行处理。</p>
+</blockquote>
+<h5><a class="anchor" id="1-1-2-2-创建前" href="#1-1-2-2-创建前"></a>1.1.2.2 创建前</h5>
+<p>创建前就是通过使用 <code>tk.mybatis.mapper.session.Configuration</code> 替换 MyBatis 中的 <code>org.apache.ibatis.session.Configuration</code> 来实现。配置代码如下：</p>
+<div class="white"><div class="highlight"><pre><span class="n">Configuration</span> <span class="n">configuration</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Configuration</span><span class="o">();</span>
+<span class="c1">//这里可以参考上面的方式来配置 MapperHelper</span>
+<span class="n">configuration</span><span class="o">.</span><span class="na">setMapperHelper</span><span class="o">(</span><span class="k">new</span> <span class="n">MapperHelper</span><span class="o">());</span>
+<span class="n">sqlSessionFactory</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SqlSessionFactoryBuilder</span><span class="o">().</span><span class="na">build</span><span class="o">(</span><span class="n">configuration</span><span class="o">);</span>
+</pre></div></div>
+<blockquote>
+<p><strong>实现原理</strong>：</p>
+
+<p>这种配置方式是通过重写原 <code>Configuration</code> 中的 <code>addMappedStatement</code> 方法来实现的：</p>
+<div class="white"><div class="highlight"><pre>  <span class="nd">@Override</span>
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">addMappedStatement</span><span class="o">(</span><span class="n">MappedStatement</span> <span class="n">ms</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">try</span> <span class="o">{</span>
+      <span class="kd">super</span><span class="o">.</span><span class="na">addMappedStatement</span><span class="o">(</span><span class="n">ms</span><span class="o">);</span>
+      <span class="c1">//没有任何配置时，使用默认配置</span>
+      <span class="k">if</span> <span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">mapperHelper</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">mapperHelper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">MapperHelper</span><span class="o">();</span>
+      <span class="o">}</span>
+      <span class="k">this</span><span class="o">.</span><span class="na">mapperHelper</span><span class="o">.</span><span class="na">processMappedStatement</span><span class="o">(</span><span class="n">ms</span><span class="o">);</span>
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">IllegalArgumentException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+      <span class="c1">//这里的异常是导致 Spring 启动死循环的关键位置，为了避免后续会吞异常，这里直接输出</span>
+      <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+      <span class="k">throw</span> <span class="k">new</span> <span class="nf">RuntimeException</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+</pre></div></div>
+</blockquote>
+
+<p>通过上面其中一种方式配置后，通用方法都会生效。</p>
+
+<p>接下来请继续看下一章内容。</p>
+<h4><a class="anchor" id="1-1-3-细化依赖的用法" href="#1-1-3-细化依赖的用法"></a>1.1.3 细化依赖的用法</h4>
+<p><strong>首先不推荐 Maven 初学者看这里，也不建议通用 Mapper 初学者看这里</strong>。</p>
+
+<p>在决定是否看之前，先看看细化依赖用法的特点：</p>
+
+<ul class="task-list">
+<li>  可以以最精简的方式引入通用 Mapper，按照需要引入。</li>
+<li>  可以将某个依赖替换为自己的实现或者选择特定版本的依赖（比如某些依赖可以选择 Java 6 或者 Java 8 的版本）。</li>
+</ul>
+
+<p>当你需要自己选择具体的依赖时，继续看下面的介绍。</p>
+
+<p>通用 Mapper4 中，原来的 <code>tk.mybatis:mapper</code> 项目已经拆分，1.1.1 中添加的依赖是通过特殊打包方式将所有拆分的项目合并到了一个 jar 包中。</p>
+
+<p>如果需要对依赖进行详细的定制，可以分别引入下面的依赖：</p>
+<div class="white"><div class="highlight"><pre><span class="c">&lt;!-- 必备依赖，提供核心功能 --&gt;</span>
+<span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>tk.mybatis<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>mapper-core<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>${mapper-core.version}<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+<span class="c">&lt;!-- 如果需要通用 Mapper 自带的 Mapper 接口和系列方法，需要引入本依赖 --&gt;</span>
+<span class="c">&lt;!-- 拆分 base 项目的目的在于以后可能会提供其他的方式来实现接口 --&gt;</span>
+<span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>tk.mybatis<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>mapper-base<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>${mapper-base.version}<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+<span class="c">&lt;!-- 针对开发人员的需要提供的一些额外的接口，都有特殊的使用要求 --&gt;</span>
+<span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>tk.mybatis<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>mapper-extra<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>${mapper-extra.version}<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+<span class="c">&lt;!-- 基于 Java8 方法引用的类 Example 对象 Weekend --&gt;</span>
+<span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>tk.mybatis<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>mapper-weekend<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>${mapper-weekend.version}<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+<span class="c">&lt;!-- 代码生成器 --&gt;</span>
+<span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>tk.mybatis<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>mapper-generator<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>${mapper-generator.version}<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+</pre></div></div>
+<blockquote>
+<p>这些依赖的版本号可以通过 mapper-all 子模块进行查看</p>
+
+<p><a target="_blank" href="https://github.com/abel533/Mapper/tree/master/mapper-all/pom.xml">https://github.com/abel533/Mapper/tree/master/mapper-all/pom.xml</a></p>
+
+<p>还可以通过下面的目录查找</p>
+
+<p><a target="_blank" href="http://central.maven.org/maven2/tk/mybatis/">http://central.maven.org/maven2/tk/mybatis/</a></p>
+</blockquote>
+</div><div class='title'>1.2-spring</div><div class='content'><h3><a class="anchor" id="1-2-spring-集成" href="#1-2-spring-集成"></a>1.2 Spring 集成</h3>
+<p>这是 MyBatis 最常用的一种的环境。通用 Mapper 提供了多种方式来和 Spring 进行集成。</p>
+<h4><a class="anchor" id="1-2-1-添加依赖" href="#1-2-1-添加依赖"></a>1.2.1 添加依赖</h4>
+<p>在开始配置前，先添加相关的依赖。</p>
+
+<p>正常情况下，Spring 和 MyBatis 的集成环境中，应该已经存在下面的依赖：</p>
+<div class="white"><div class="highlight"><pre><span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>org.mybatis<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>mybatis<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>版本号<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+<span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>org.mybatis<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>mybatis-spring<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>版本号<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+<span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>org.springframework<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>spring-context<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>版本号<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+<span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>org.springframework<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>spring-tx<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>版本号<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+<span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>org.springframework<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>spring-jdbc<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>版本号<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+</pre></div></div>
+<blockquote>
+<p>相关依赖和版本可以通过 <a target="_blank" href="http://mvnrepository.com/">http://mvnrepository.com/</a> 进行搜索</p>
+
+<p>通用 Mapper 支持 MyBatis 3.2.4+</p>
+</blockquote>
+
+<p>集成通用 Mapper 在上面的基础上添加下面的依赖：</p>
+<div class="white"><div class="highlight"><pre><span class="nt">&lt;dependency&gt;</span>
+    <span class="nt">&lt;groupId&gt;</span>tk.mybatis<span class="nt">&lt;/groupId&gt;</span>
+    <span class="nt">&lt;artifactId&gt;</span>mapper<span class="nt">&lt;/artifactId&gt;</span>
+    <span class="nt">&lt;version&gt;</span>最新版本<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+</pre></div></div>
+<blockquote>
+<p>通用 Mapper 最新版本看这里：<a target="_blank" href="http://mvnrepository.com/artifact/tk.mybatis/mapper">http://mvnrepository.com/artifact/tk.mybatis/mapper</a></p>
+
+<p>tk.mybatis:mapper 依赖包含了通用 Mapper 的基础代码以及和 Spring 集成必须的代码</p>
+</blockquote>
+<h4><a class="anchor" id="1-2-2-和-spring-集成" href="#1-2-2-和-spring-集成"></a>1.2.2 和 Spring 集成</h4>
+<p>和 Spring 进行集成时，分为 XML 和注解配置两种方式，每种方式又有不同的配置方式。</p>
+
+<p><em>这里提供了很多配置方式，使用时选择一种改动最小的方式即可！</em></p>
+<h5><a class="anchor" id="1-2-2-1-xml-配置" href="#1-2-2-1-xml-配置"></a>1.2.2.1 XML 配置</h5>
+<p><strong>1.使用 <code>MapperScannerConfigurer</code></strong></p>
+
+<p>和通用 Mapper 以前版本一样，可以直接使用 tk.mybatis 提供的 <code>tk.mybatis.spring.mapper.MapperScannerConfigurer</code> 进行配置，这个配置和 MyBatis 官方提供的 <code>org.mybatis.spring.mapper.MapperScannerConfigurer</code> 区别只是第一层的包名，<code>tk</code> 和 <code>org</code>。所以使用这种方式时，如果你项目已经使用 <code>org.</code> 进行了配置，只需要改成 <code>tk.</code> 即可。</p>
+<div class="white"><div class="highlight"><pre><span class="nt">&lt;bean</span> <span class="na">class=</span><span class="s">"tk.mybatis.spring.mapper.MapperScannerConfigurer"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;property</span> <span class="na">name=</span><span class="s">"basePackage"</span> <span class="na">value=</span><span class="s">"扫描包名"</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/bean&gt;</span>
+</pre></div></div>
+<p>如果你需要对通用 Mapper 进行特殊配置，可以按下面的方式进行配置：</p>
+<div class="white"><div class="highlight"><pre><span class="nt">&lt;bean</span> <span class="na">class=</span><span class="s">"tk.mybatis.spring.mapper.MapperScannerConfigurer"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;property</span> <span class="na">name=</span><span class="s">"basePackage"</span> <span class="na">value=</span><span class="s">"tk.mybatis.mapper.mapper"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;property</span> <span class="na">name=</span><span class="s">"sqlSessionFactoryBeanName"</span> <span class="na">value=</span><span class="s">"sqlSessionFactory"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;property</span> <span class="na">name=</span><span class="s">"properties"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;value&gt;</span>
+            参数名=值
+            参数名2=值2
+            ...
+        <span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;/bean&gt;</span>
+</pre></div></div>
+<blockquote>
+<p>可用配置的参数请看后续的配置文档，配置参数时一行写一个值。</p>
+</blockquote>
+
+<p><strong>2.XML 配置使用 <code>Configuration</code></strong></p>
+
+<p>如果某些第三方也需要特殊的 <code>MapperScannerConfigurer</code> 时，就不能用上面的方式进行配置了，此时可以选择下面这种方式，这种方式要求使用MyBatis (3.4.0+) 和 mybatis-spring (1.3.0+)，配置方式如下：</p>
+<div class="white"><div class="highlight"><pre><span class="c">&lt;!--使用 Configuration 方式进行配置--&gt;</span>
+<span class="nt">&lt;bean</span> <span class="na">id=</span><span class="s">"mybatisConfig"</span> <span class="na">class=</span><span class="s">"tk.mybatis.mapper.session.Configuration"</span><span class="nt">&gt;</span>
+    <span class="c">&lt;!-- 配置通用 Mapper，有三种属性注入方式 --&gt;</span>
+    <span class="nt">&lt;property</span> <span class="na">name=</span><span class="s">"mapperProperties"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;value&gt;</span>
+            notEmpty=true
+        <span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;/bean&gt;</span>
+
+<span class="nt">&lt;bean</span> <span class="na">id=</span><span class="s">"sqlSessionFactory"</span> <span class="na">class=</span><span class="s">"org.mybatis.spring.SqlSessionFactoryBean"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;property</span> <span class="na">name=</span><span class="s">"dataSource"</span> <span class="na">ref=</span><span class="s">"dataSource"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;property</span> <span class="na">name=</span><span class="s">"configuration"</span> <span class="na">ref=</span><span class="s">"mybatisConfig"</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/bean&gt;</span>
+
+<span class="c">&lt;!-- 不需要考虑下面这个，注意这里是 org 的 --&gt;</span>
+<span class="nt">&lt;bean</span> <span class="na">class=</span><span class="s">"org.mybatis.spring.mapper.MapperScannerConfigurer"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;property</span> <span class="na">name=</span><span class="s">"basePackage"</span> <span class="na">value=</span><span class="s">"tk.mybatis.mapper.configuration"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;property</span> <span class="na">name=</span><span class="s">"sqlSessionFactoryBeanName"</span> <span class="na">value=</span><span class="s">"sqlSessionFactory"</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/bean&gt;</span>
+</pre></div></div>
+<p>这里使用了 <code>tk.mybatis.mapper.session.Configuration</code> ，也就是不能通过读取 <code>mybatis-config.xml</code> 进行配置，上面这种配置更直接，使用 Spring setter 配置属性更方便。当需要配置通用 Mapper 时，使用 <code>mapperProperties</code> 属性配置即可，配置方式和前面的相同，一行一个配置即可。</p>
+
+<p>配置了一个 mybatisConfig 的 bean 后，在 <code>SqlSessionFactoryBean</code> 中注入即可。</p>
+
+<p>后面的 <code>MapperScannerConfigurer</code> 只是为了说明这里不需要使用 <code>tk.</code> 开头的类进行配置。</p>
+
+<p>这种配置方式基本上和任何第三方都不会冲突，如果你遇到了第三方重写 <code>SqlSessionFactoryBean</code> 的情况，就使用前一种方式配置即可。</p>
+<h5><a class="anchor" id="1-2-2-2-使用-mapperscan-注解" href="#1-2-2-2-使用-mapperscan-注解"></a>1.2.2.2 使用 <code>@MapperScan</code> 注解</h5>
+<p>如果要使用该注解进行配置，请确认选择的是 <code>tk.mybatis.spring.annotation.MapperScan</code> 注解（必须使用官方的注解时，看下面其他配置方式）。</p>
+
+<p><code>tk</code> 提供的这个注解相比官方的多了下面两个属性：</p>
+<div class="white"><div class="highlight"><pre><span class="cm">/**
+ * 通用 Mapper 的配置，一行一个配置
+ *
+ * @return
+ */</span>
+<span class="n">String</span><span class="o">[]</span> <span class="nf">properties</span><span class="o">()</span> <span class="k">default</span> <span class="o">{};</span>
+
+<span class="cm">/**
+ * 还可以直接配置一个 MapperHelper bean
+ *
+ * @return
+ */</span>
+<span class="n">String</span> <span class="nf">mapperHelperRef</span><span class="o">()</span> <span class="k">default</span> <span class="s">""</span><span class="o">;</span>
+</pre></div></div>
+<p>这两个配置方式中，<code>mapperHelperRef</code> 优先级更高，只需要选择其中一种方式进行配置即可。</p>
+
+<p><strong>1.使用 <code>properties</code> 配置时：</strong></p>
+<div class="white"><div class="highlight"><pre><span class="nd">@Configuration</span>
+<span class="nd">@MapperScan</span><span class="o">(</span><span class="n">value</span> <span class="o">=</span> <span class="s">"tk.mybatis.mapper.annotation"</span><span class="o">,</span>
+    <span class="n">properties</span> <span class="o">=</span> <span class="o">{</span>
+            <span class="s">"mappers=tk.mybatis.mapper.common.Mapper"</span><span class="o">,</span>
+            <span class="s">"notEmpty=true"</span>
+    <span class="o">}</span>
+<span class="o">)</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">MyBatisConfigProperties</span> <span class="o">{</span>
+</pre></div></div>
+<p>和 XML 中很像，仍然一个一个配置。</p>
+
+<p><strong>2.使用 <code>mapperHelperRef</code> 配置时：</strong></p>
+<div class="white"><div class="highlight"><pre><span class="nd">@Configuration</span>
+<span class="nd">@MapperScan</span><span class="o">(</span><span class="n">value</span> <span class="o">=</span> <span class="s">"tk.mybatis.mapper.annotation"</span><span class="o">,</span> <span class="n">mapperHelperRef</span> <span class="o">=</span> <span class="s">"mapperHelper"</span><span class="o">)</span>
+<span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">MyBatisConfigRef</span> <span class="o">{</span>
+    <span class="c1">//其他</span>
+
+    <span class="nd">@Bean</span>
+    <span class="kd">public</span> <span class="n">MapperHelper</span> <span class="nf">mapperHelper</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">Config</span> <span class="n">config</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Config</span><span class="o">();</span>
+        <span class="n">List</span><span class="o">&lt;</span><span class="n">Class</span><span class="o">&gt;</span> <span class="n">mappers</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Class</span><span class="o">&gt;();</span>
+        <span class="n">mappers</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">Mapper</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+        <span class="n">config</span><span class="o">.</span><span class="na">setMappers</span><span class="o">(</span><span class="n">mappers</span><span class="o">);</span>
+
+        <span class="n">MapperHelper</span> <span class="n">mapperHelper</span> <span class="o">=</span> <span class="k">new</span> <span class="n">MapperHelper</span><span class="o">();</span>
+        <span class="n">mapperHelper</span><span class="o">.</span><span class="na">setConfig</span><span class="o">(</span><span class="n">config</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">mapperHelper</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div></div>
+<p>这里配置 <code>mapperHelperRef = &quot;mapperHelper&quot;</code>，并且提供了一个名为 <code>mapperHelper</code> 的 <code>bean</code>。对通用 Mapper 的任何配置直接通过编码对 MapperHelper 进行配置。</p>
+
+<p><strong>3.使用 <code>Configuration</code> 进行配置</strong></p>
+
+<p>这里可以使用 tk 或者 MyBatis 官方的 <code>@MapperScan</code> 注解。</p>
+<div class="white"><div class="highlight"><pre><span class="nd">@Configuration</span>
+<span class="nd">@MapperScan</span><span class="o">(</span><span class="n">value</span> <span class="o">=</span> <span class="s">"tk.mybatis.mapper.annotation"</span><span class="o">)</span>
+<span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">MyBatisConfigRef</span> <span class="o">{</span>
+
+    <span class="nd">@Bean</span>
+    <span class="kd">public</span> <span class="n">SqlSessionFactory</span> <span class="nf">sqlSessionFactory</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="n">SqlSessionFactoryBean</span> <span class="n">sessionFactory</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SqlSessionFactoryBean</span><span class="o">();</span>
+        <span class="n">sessionFactory</span><span class="o">.</span><span class="na">setDataSource</span><span class="o">(</span><span class="n">dataSource</span><span class="o">());</span>
+        <span class="c1">//tk.mybatis.mapper.session.Configuration</span>
+        <span class="n">Configuration</span> <span class="n">configuration</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Configuration</span><span class="o">();</span>
+        <span class="c1">//可以对 MapperHelper 进行配置后 set</span>
+        <span class="n">configuration</span><span class="o">.</span><span class="na">setMapperHelper</span><span class="o">(</span><span class="k">new</span> <span class="n">MapperHelper</span><span class="o">());</span>
+        <span class="c1">//设置为 tk 提供的 Configuration</span>
+        <span class="n">sessionFactory</span><span class="o">.</span><span class="na">setConfiguration</span><span class="o">(</span><span class="n">configuration</span><span class="o">);</span>
+        <span class="k">return</span> <span class="n">sessionFactory</span><span class="o">.</span><span class="na">getObject</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div></div>
+<blockquote>
+<p><code>@MapperScan</code> 注解在 Spring Boot 集成中还会提到。</p>
+</blockquote>
+
+<p>文档到这里就集成好通用 Mapper 了，接下来请继续看下一章内容。</p>
+<h4><a class="anchor" id="1-2-3-细化依赖的用法" href="#1-2-3-细化依赖的用法"></a>1.2.3 细化依赖的用法</h4>
+<p><strong>首先不推荐 Maven 初学者看这里，也不建议通用 Mapper 初学者看这里</strong>。</p>
+
+<p>在决定是否看之前，先看看细化依赖用法的特点：</p>
+
+<ul class="task-list">
+<li>  可以以最精简的方式引入通用 Mapper，按照需要引入。</li>
+<li>  可以将某个依赖替换为自己的实现或者选择特定版本的依赖（比如某些依赖可以选择 Java 6 或者 Java 8 的版本）。</li>
+<li>  支持 Spring 高版本的特殊用法（例如多个 <code>@MapperScan</code>注解，暂时还没提供）</li>
+</ul>
+
+<p>通用 Mapper4 中，原来的 <code>tk.mybatis:mapper</code> 项目已经拆分，1.2.1 中添加的依赖是通过特殊打包方式将所有拆分的项目合并到了一个 jar 包中。</p>
+
+<p>如果需要对依赖进行详细的定制，可以分别引入下面的依赖：</p>
+<div class="white"><div class="highlight"><pre><span class="c">&lt;!-- 必备依赖，提供核心功能 --&gt;</span>
+<span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>tk.mybatis<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>mapper-core<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>${mapper-core.version}<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+<span class="c">&lt;!-- 如果需要通用 Mapper 自带的 Mapper 接口和系列方法，需要引入本依赖 --&gt;</span>
+<span class="c">&lt;!-- 拆分 base 项目的目的在于以后可能会提供其他的方式来实现接口 --&gt;</span>
+<span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>tk.mybatis<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>mapper-base<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>${mapper-base.version}<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+<span class="c">&lt;!-- 针对开发人员的需要提供的一些额外的接口，都有特殊的使用要求 --&gt;</span>
+<span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>tk.mybatis<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>mapper-extra<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>${mapper-extra.version}<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+<span class="c">&lt;!-- 基于 Java8 方法引用的类 Example 对象 Weekend --&gt;</span>
+<span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>tk.mybatis<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>mapper-weekend<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>${mapper-weekend.version}<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+<span class="c">&lt;!-- 代码生成器 --&gt;</span>
+<span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>tk.mybatis<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>mapper-generator<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>${mapper-generator.version}<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+<span class="c">&lt;!-- Spring 集成必备 --&gt;</span>
+<span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>tk.mybatis<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>mapper-spring<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>${mapper-spring.version}<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+</pre></div></div>
+<blockquote>
+<p>这些依赖的版本号可以通过 mapper-all 子模块进行查看</p>
+
+<p><a target="_blank" href="https://github.com/abel533/Mapper/tree/master/mapper-all/pom.xml">https://github.com/abel533/Mapper/tree/master/mapper-all/pom.xml</a></p>
+
+<p>还可以通过下面的目录查找</p>
+
+<p><a target="_blank" href="http://central.maven.org/maven2/tk/mybatis/">http://central.maven.org/maven2/tk/mybatis/</a></p>
+</blockquote>
+</div><div class='title'>1.3-spring-boot</div><div class='content'><h3><a class="anchor" id="1-3-spring-boot-集成" href="#1-3-spring-boot-集成"></a>1.3 Spring Boot 集成</h3>
+<p>Spring Boot 在微服务领域中已经成为主流。</p>
+
+<p>这里介绍通用 Mapper 如何同 Spring Boot 进行集成。</p>
+
+<p>为了能适应各种情况的用法，这里也提供了多种集成方式，基本上分为两大类。</p>
+
+<ul class="task-list">
+<li>  基于 starter 的自动配置</li>
+<li>  基于 <code>@MapperScan</code> 注解的手工配置</li>
+</ul>
+<h5><a class="anchor" id="1-3-1-mapper-spring-boot-starter" href="#1-3-1-mapper-spring-boot-starter"></a>1.3.1 mapper-spring-boot-starter</h5>
+<p>你只需要添加通用 Mapper 提供的 starter 就完成了最基本的集成，依赖如下：</p>
+<div class="white"><div class="highlight"><pre><span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>tk.mybatis<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>mapper-spring-boot-starter<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>版本号<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+</pre></div></div>
+<p><a href="https://maven-badges.herokuapp.com/maven-central/tk.mybatis/mapper-spring-boot-starter"><img alt="Maven central" src="https://maven-badges.herokuapp.com/maven-central/tk.mybatis/mapper-spring-boot-starter/badge.svg" /></a></p>
+
+<blockquote>
+<p>最新版本号如上所示，你也可以从下面地址查看：</p>
+
+<p><a target="_blank" href="http://mvnrepository.com/artifact/tk.mybatis/mapper-spring-boot-starter">http://mvnrepository.com/artifact/tk.mybatis/mapper-spring-boot-starter</a></p>
+
+<p><strong>注意：引入该 starter 时，和 MyBatis 官方的 starter 没有冲突，但是官方的自动配置不会生效！</strong></p>
+</blockquote>
+
+<p>如果你需要对通用 Mapper 进行配置，你可以在 Spring Boot 的配置文件中配置 <code>mapper.</code> 前缀的配置。</p>
+
+<p>例如在 yml 格式中配置：</p>
+<div class="white"><div class="highlight"><pre><span class="na">mapper</span><span class="pi">:</span>
+  <span class="na">mappers</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">tk.mybatis.mapper.common.Mapper</span>
+    <span class="pi">-</span> <span class="s">tk.mybatis.mapper.common.Mapper2</span>
+  <span class="na">notEmpty</span><span class="pi">:</span> <span class="no">true</span>
+</pre></div></div>
+<p>在 propertie 配置中：</p>
+<div class="white"><div class="highlight"><pre><span class="py">mapper.mappers</span><span class="p">=</span><span class="s">tk.mybatis.mapper.common.Mapper,tk.mybatis.mapper.common.Mapper2</span>
+<span class="py">mapper.notEmpty</span><span class="p">=</span><span class="s">true</span>
+</pre></div></div>
+<p>由于 Spring Boot 支持 Relax 方式的参数，因此你在配置 <code>notEmpty</code> 时更多的是用 <code>not-empty</code>，也只有在 Spring Boot 中使用的时候参数名不必和配置中的完全一致。</p>
+
+<blockquote>
+<p>如果你对 Spring Boot 的 Environment 了解，你可以用 Spring Boot 支持的所有方式进行配置。</p>
+</blockquote>
+
+<p>关于通用 Mapper 支持的所有配置请看后续的文档。</p>
+<h5><a class="anchor" id="1-3-2-mapperscan-注解配置" href="#1-3-2-mapperscan-注解配置"></a>1.3.2  <code>@MapperScan</code> 注解配置</h5>
+<p>你可以给带有 <code>@Configuration</code> 的类配置该注解，或者直接配置到 Spring Boot 的启动类上，如下：</p>
+<div class="white"><div class="highlight"><pre><span class="nd">@tk</span><span class="o">.</span><span class="na">mybatis</span><span class="o">.</span><span class="na">spring</span><span class="o">.</span><span class="na">annotation</span><span class="o">.</span><span class="na">MapperScan</span><span class="o">(</span><span class="n">basePackages</span> <span class="o">=</span> <span class="s">"扫描包"</span><span class="o">)</span>
+<span class="nd">@SpringBootApplication</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">SampleMapperApplication</span> <span class="kd">implements</span> <span class="n">CommandLineRunner</span> <span class="o">{</span>
+</pre></div></div>
+<p><strong>注意：这里使用的 <code>tk.mybatis.spring.annotation.MapperScan</code> !</strong></p>
+
+<p>你可以直接在 Spring Boot 的配置文件中直接配置通用 Mapper（参考1.3.1中的配置），还可以使用注解中提供的两个属性进行配置：</p>
+<div class="white"><div class="highlight"><pre><span class="cm">/**
+ * 通用 Mapper 的配置，一行一个配置
+ *
+ * @return
+ */</span>
+<span class="n">String</span><span class="o">[]</span> <span class="nf">properties</span><span class="o">()</span> <span class="k">default</span> <span class="o">{};</span>
+
+<span class="cm">/**
+ * 还可以直接配置一个 MapperHelper bean
+ *
+ * @return
+ */</span>
+<span class="n">String</span> <span class="nf">mapperHelperRef</span><span class="o">()</span> <span class="k">default</span> <span class="s">""</span><span class="o">;</span>
+</pre></div></div>
+<p>使用这种方式进行配置时，请参考 1.2.2.2 中的内容。</p>
+
+<blockquote>
+<p>注意：这两个属性配置方式的优先级更高，所以建议在 Spring Boot 中通过配置文件（或 Environment）配置。</p>
+</blockquote>
+
+<p>接下来请继续看下一章内容。</p>
+</div><div class='title'>1.integration</div><div class='content'><h2><a class="anchor" id="一-集成通用-mapper" href="#一-集成通用-mapper"></a>一、集成通用 Mapper</h2>
+<p>通用 Mapper 有很多种集成方式，这里会介绍大部分情况下的配置方式。</p>
+
+<p>Java 编码方式集成是最少见的一种情况，但是通过这种集成方式可以很容易让大家看清通用 Mapper 集成的入口。</p>
+
+<p>和 Spring 集成是最常见的，Spring Boot 也在慢慢成为主流，为了便于在集成通用 Mapper 的情况下仍然可以和第三方的工具集成，这里也会有很多种集成的方式。</p>
+
+<hr>
+<h3><a class="anchor" id="1-1-java-编码方式集成_1" href="#1-1-java-编码方式集成_1"></a><a href="1.1-java" class="md_relative_url">1.1 Java 编码方式集成</a></h3><h3><a class="anchor" id="1-2-spring-集成_1" href="#1-2-spring-集成_1"></a><a href="1.2-spring" class="md_relative_url">1.2 Spring 集成</a></h3><h3><a class="anchor" id="1-3-spring-boot-集成_1" href="#1-3-spring-boot-集成_1"></a><a href="1.3-spring-boot" class="md_relative_url">1.3 Spring Boot 集成</a></h3></div><div class='title'>2.orm</div><div class='content'></div><div class='title'>2.1-simple</div><div class='content'><h3><a class="anchor" id="2-1-简单示例" href="#2-1-简单示例"></a>2.1 简单示例</h3>
+<p>示例针对 MySql 数据库（数据库对主键影响较大，和 insert 关系密切）。</p>
+
+<p>数据库有如下表：</p>
+<div class="white"><div class="highlight"><pre><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="nv">`country`</span> <span class="p">(</span>
+  <span class="nv">`id`</span> <span class="n">int</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="n">AUTO_INCREMENT</span> <span class="k">COMMENT</span> <span class="s1">'主键'</span><span class="p">,</span>
+  <span class="nv">`countryname`</span> <span class="n">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'名称'</span><span class="p">,</span>
+  <span class="nv">`countrycode`</span> <span class="n">varchar</span><span class="p">(</span><span class="mi">255</span><span class="p">)</span> <span class="k">DEFAULT</span> <span class="k">NULL</span> <span class="k">COMMENT</span> <span class="s1">'代码'</span><span class="p">,</span>
+  <span class="k">PRIMARY</span> <span class="k">KEY</span> <span class="p">(</span><span class="nv">`Id`</span><span class="p">)</span>
+<span class="p">)</span> <span class="n">ENGINE</span><span class="o">=</span><span class="n">InnoDB</span> <span class="n">AUTO_INCREMENT</span><span class="o">=</span><span class="mi">10011</span> <span class="k">DEFAULT</span> <span class="n">CHARSET</span><span class="o">=</span><span class="n">utf8</span> <span class="k">COMMENT</span><span class="o">=</span><span class="s1">'国家信息'</span><span class="p">;</span>
+</pre></div></div>
+<p>对应的 Java 实体类型如下：</p>
+<div class="white"><div class="highlight"><pre><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Country</span> <span class="o">{</span>
+    <span class="nd">@Id</span>
+    <span class="kd">private</span> <span class="n">Integer</span> <span class="n">id</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">String</span>  <span class="n">countryname</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">String</span>  <span class="n">countrycode</span><span class="o">;</span>
+
+    <span class="c1">//省略 getter 和 setter</span>
+<span class="o">}</span>
+</pre></div></div>
+<p>最简单的情况下，只需要一个 <code>@Id</code> 标记字段为主键即可。数据库中的字段名和实体类的字段名是完全相同的，这中情况下实体和表可以直接映射。</p>
+
+<p><strong>提醒：如果实体类中没有一个标记 <code>@Id</code> 的字段，当你使用带有 <code>ByPrimaryKey</code> 的方法时，所有的字段会作为联合主键来使用，也就会出现类似 <code>where id = ? and countryname = ? and countrycode = ?</code> 的情况。</strong></p>
+
+<blockquote>
+<p>第四章会介绍代码生成器，可以自动生成上面的实体和下面的接口代码</p>
+</blockquote>
+
+<p><strong>通用 Mapper 提供了大量的通用接口，这里以最常用的 Mapper 接口为例</strong></p>
+
+<p>该实体类对应的数据库操作接口如下：</p>
+<div class="white"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">tk.mybatis.mapper.common.Mapper</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">interface</span> <span class="nc">CountryMapper</span> <span class="kd">extends</span> <span class="n">Mapper</span><span class="o">&lt;</span><span class="n">Country</span><span class="o">&gt;</span> <span class="o">{</span>
+<span class="o">}</span>
+</pre></div></div>
+<blockquote>
+<p>只要配置 MyBatis 时能注册或者扫描到该接口，该接口提供的方法就都可以使用。</p>
+</blockquote>
+
+<p>该接口默认继承的方法如下：</p>
+
+<ul class="task-list">
+<li><em>selectOne</em></li>
+<li><em>select</em></li>
+<li><em>selectAll</em></li>
+<li><em>selectCount</em></li>
+<li><em>selectByPrimaryKey</em></li>
+<li><em>方法太多，省略其他...</em></li>
+</ul>
+
+<p>从 MyBatis 中获取该接口后就可以直接使用：</p>
+<div class="white"><div class="highlight"><pre><span class="c1">//从 MyBatis 或者 Spring 中获取 countryMapper，然后调用 selectAll 方法</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Country</span><span class="o">&gt;</span> <span class="n">countries</span> <span class="o">=</span> <span class="n">countryMapper</span><span class="o">.</span><span class="na">selectAll</span><span class="o">();</span>
+<span class="c1">//根据主键查询</span>
+<span class="n">Country</span> <span class="n">country</span> <span class="o">=</span> <span class="n">countryMapper</span><span class="o">.</span><span class="na">selectByPrimaryKey</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+<span class="c1">//或者使用对象传参，适用于1个字段或者多个字段联合主键使用</span>
+<span class="n">Country</span> <span class="n">query</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Country</span><span class="o">();</span>
+<span class="n">query</span><span class="o">.</span><span class="na">setId</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+<span class="n">country</span> <span class="o">=</span> <span class="n">countryMapper</span><span class="o">.</span><span class="na">selectByPrimaryKey</span><span class="o">(</span><span class="n">query</span><span class="o">);</span>
+</pre></div></div>
+<p><strong>如果想要增加自己写的方法，可以直接在 <code>CountryMapper</code> 中增加。</strong></p>
+
+<p><strong>1. 使用纯接口注解方式时</strong></p>
+<div class="white"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">org.apache.ibatis.annotations.Select</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">tk.mybatis.mapper.common.Mapper</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">interface</span> <span class="nc">CountryMapper</span> <span class="kd">extends</span> <span class="n">Mapper</span><span class="o">&lt;</span><span class="n">Country</span><span class="o">&gt;</span> <span class="o">{</span>
+    <span class="nd">@Select</span><span class="o">(</span><span class="s">"select * from country where countryname = #{countryname}"</span><span class="o">)</span>
+    <span class="n">Country</span> <span class="nf">selectByCountryName</span><span class="o">(</span><span class="n">String</span> <span class="n">countryname</span><span class="o">);</span>
+<span class="o">}</span>
+</pre></div></div>
+<blockquote>
+<p>这里只是举了个简单的例子，可以是很复杂的查询。</p>
+</blockquote>
+
+<p><strong>2. 如果使用 XML 方式，需要提供接口对应的 XML 文件</strong></p>
+
+<p>例如提供了 <code>CountryMapper.xml</code> 文件，内容如下：</p>
+<div class="white"><div class="highlight"><pre><span class="cp">&lt;!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd"&gt;</span>
+<span class="nt">&lt;mapper</span> <span class="na">namespace=</span><span class="s">"tk.mybatis.sample.mapper.CountryMapper"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;select</span> <span class="na">id=</span><span class="s">"selectByCountryName"</span> <span class="na">resultType=</span><span class="s">"tk.mybatis.model.Country"</span><span class="nt">&gt;</span>
+        select * from country where countryname = #{countryname}
+    <span class="nt">&lt;/select&gt;</span>
+<span class="nt">&lt;/mapper&gt;</span>
+</pre></div></div>
+<p>在接口中添加对应的方法：</p>
+<div class="white"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">tk.mybatis.mapper.common.Mapper</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">interface</span> <span class="nc">CountryMapper</span> <span class="kd">extends</span> <span class="n">Mapper</span><span class="o">&lt;</span><span class="n">Country</span><span class="o">&gt;</span> <span class="o">{</span>
+    <span class="n">Country</span> <span class="nf">selectByCountryName</span><span class="o">(</span><span class="n">String</span> <span class="n">countryname</span><span class="o">);</span>
+<span class="o">}</span>
+</pre></div></div>
+<p>在接口中添加其他方法的时候和只用 MyBatis 是完全一样的，<strong>但是需要注意，在对应的 XML 中，不能出现和继承接口中同名的方法！</strong></p>
+
+<blockquote>
+<p><strong>多态！</strong></p>
+
+<p>在接口中，只要不是通过注解来实现接口方法，接口是允许重名的，真正调用会使用通用 Mapper 提供的方法。</p>
+
+<p>例如在上面 CountryMapper 中提供一个带分页的 selectAll 方法：</p>
+<div class="white"><div class="highlight"><pre>  <span class="kd">public</span> <span class="kd">interface</span> <span class="nc">CountryMapper</span> <span class="kd">extends</span> <span class="n">Mapper</span><span class="o">&lt;</span><span class="n">Country</span><span class="o">&gt;</span> <span class="o">{</span>
+      <span class="n">List</span><span class="o">&lt;</span><span class="n">Country</span><span class="o">&gt;</span> <span class="nf">selectAll</span><span class="o">(</span><span class="n">RowBounds</span> <span class="n">rowBounds</span><span class="o">);</span>
+  <span class="o">}</span>
+</pre></div></div>
+<p>在 Java 8 的接口中通过默认方法还能增加一些简单的间接调用方法，例如：</p>
+<div class="white"><div class="highlight"><pre>  <span class="kd">public</span> <span class="kd">interface</span> <span class="nc">CountryMapper</span> <span class="kd">extends</span> <span class="n">Mapper</span><span class="o">&lt;</span><span class="n">Country</span><span class="o">&gt;</span> <span class="o">{</span>
+      <span class="c1">//这个示例适合参考实现对乐观锁方法封装</span>
+      <span class="k">default</span> <span class="kt">void</span> <span class="nf">updateSuccess</span><span class="o">(</span><span class="n">Country</span> <span class="n">country</span><span class="o">){</span>
+          <span class="n">Assert</span><span class="o">.</span><span class="na">assertEquals</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="n">updateByPrimaryKey</span><span class="o">(</span><span class="n">country</span><span class="o">));</span>
+      <span class="o">}</span>
+  <span class="o">}</span>
+</pre></div></div>
+<p><strong>在不熟悉 Java 语言和 MyBatis 特性前，不要轻易使用！</strong></p>
+</blockquote>
+</div><div class='title'>2.2-mapping</div><div class='content'><h3><a class="anchor" id="2-2-数据库映射" href="#2-2-数据库映射"></a>2.2 数据库映射</h3>
+<p>在 2.1 中看到的是最简单的情况，实际使用过程中也不会更复杂，下面是更详细的映射配置。</p>
+
+<p><strong>通用 Mapper 中，默认情况下是将实体类字段按照驼峰转下划线形式的表名列名进行转换。</strong></p>
+
+<blockquote>
+<p>例如 </p>
+
+<p>实体类的 <code>userName</code> 可以映射到表的 <code>user_name</code> 上。</p>
+
+<p>如果想要修改默认的转换方式，可以在后续的配置中，修改 <code>style</code> 全局配置。</p>
+</blockquote>
+
+<p>数据库映射主要涉及到一些注解和全局配置，这一节中会介绍所有注解，后面章节会有配置的介绍。</p>
+
+<p>通用 Mapper 默认使用了几个简单的注解，其他 JPA 的注解默认并不支持，但是如果你开发自己的通用方法，你可以使用 JPA 注解或者引入自己的注解。</p>
+<h4><a class="anchor" id="2-2-1-namestyle-注解-mapper-" href="#2-2-1-namestyle-注解-mapper-"></a>2.2.1<code>@NameStyle</code> 注解（Mapper）</h4>
+<p>这个注解可以在类上进行配置，优先级高于对应的 <code>style</code> 全局配置。</p>
+
+<p>注解支持以下几个选项：</p>
+<div class="white"><div class="highlight"><pre>normal,                     //原值
+camelhump,                  //驼峰转下划线
+uppercase,                  //转换为大写
+lowercase,                  //转换为小写
+camelhumpAndUppercase,      //驼峰转下划线大写形式
+camelhumpAndLowercase,      //驼峰转下划线小写形式
+</pre></div></div>
+<p>使用时，直接在类上配置即可，例如：</p>
+<div class="white"><div class="highlight"><pre><span class="nd">@NameStyle</span><span class="o">(</span><span class="n">Style</span><span class="o">.</span><span class="na">camelhumpAndUppercase</span><span class="o">)</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">Country</span>
+</pre></div></div>
+<p>配置该注解后，对该类和其中的字段进行转换时，会将形如 <code>userName</code> 的字段转换为表中的 <code>USER_NAME</code> 字段。</p>
+<h4><a class="anchor" id="2-2-2-table-注解-jpa-" href="#2-2-2-table-注解-jpa-"></a>2.2.2 <code>@Table</code> 注解（JPA）</h4>
+<p><code>@Table</code> 注解可以配置 <code>name</code>,<code>catalog</code> 和 <code>schema</code> 三个属性，配置 <code>name</code> 属性后，直接使用提供的表名，不再根据实体类名进行转换。其他两个属性中，同时配置时，<code>catalog</code> 优先级高于 <code>schema</code>，也就是只有 <code>catalog</code> 会生效。</p>
+
+<p>配置示例如下：</p>
+<div class="white"><div class="highlight"><pre><span class="nd">@Table</span><span class="o">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">"sys_user"</span><span class="o">)</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">User</span>
+</pre></div></div>
+<p>将 <code>User</code> 实体映射到 <code>sys_user</code> 表。</p>
+<h4><a class="anchor" id="2-2-3-column-注解-jpa-" href="#2-2-3-column-注解-jpa-"></a>2.2.3 <code>@Column</code> 注解（JPA）</h4>
+<p><code>@Column</code> 注解支持 <code>name</code>, <code>insertable</code> 和 <code>updateable</code> 三个属性。</p>
+
+<p><code>name</code> 配置映射的列名。</p>
+
+<p><code>insertable</code> 对提供的 <code>insert</code> 方法有效，如果设置 <code>false</code> 就不会出现在 SQL 中。</p>
+
+<p><code>updateable</code> 对提供的 <code>update</code> 方法有效，设置为 <code>false</code> 后不会出现在 SQL 中。</p>
+
+<p>配置示例如：</p>
+<div class="white"><div class="highlight"><pre><span class="nd">@Column</span><span class="o">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">"user_name"</span><span class="o">)</span>
+<span class="kd">private</span> <span class="n">String</span> <span class="n">name</span><span class="o">;</span>
+</pre></div></div>
+<p>除了直接映射 <code>name</code> 到 <code>user_name</code> 这种用法外，在使用关键字的情况，还会有下面的用法：</p>
+<div class="white"><div class="highlight"><pre><span class="nd">@Column</span><span class="o">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">"`order`"</span><span class="o">)</span>
+<span class="kd">private</span> <span class="n">String</span> <span class="n">order</span><span class="o">;</span>
+</pre></div></div>
+<p>对于关键字这种情况，通用 Mapper 支持自动转换，可以查看后续配置文档中的 <strong>wrapKeyword</strong> 配置。</p>
+<h4><a class="anchor" id="2-2-4-columntype-注解-mapper-" href="#2-2-4-columntype-注解-mapper-"></a>2.2.4 <code>@ColumnType</code> 注解（Mapper）</h4>
+<p>这个注解提供的 <code>column</code>属性和 <code>@Column</code> 中的 <code>name</code> 作用相同。但是 <code>@Column</code> 的优先级更高。</p>
+
+<p>除了 <code>name</code> 属性外，这个注解主要提供了  <code>jdbcType</code> 属性和 <code>typeHandler</code> 属性。</p>
+
+<p><code>jdbcType</code> 用于设置特殊数据库类型时指定数据库中的 <code>jdbcType</code>。</p>
+
+<p><code>typeHandler</code> 用于设置特殊类型处理器，常见的是枚举。</p>
+
+<p>用法示例如下：</p>
+<div class="white"><div class="highlight"><pre><span class="nd">@ColumnType</span><span class="o">(</span>
+        <span class="n">column</span> <span class="o">=</span> <span class="s">"countryname"</span><span class="o">,</span>
+        <span class="n">jdbcType</span> <span class="o">=</span> <span class="n">JdbcType</span><span class="o">.</span><span class="na">VARCHAR</span><span class="o">,</span>
+        <span class="n">typeHandler</span> <span class="o">=</span> <span class="n">StringTypeHandler</span><span class="o">.</span><span class="na">class</span><span class="o">)</span>
+<span class="kd">private</span> <span class="n">String</span>  <span class="n">countryname</span><span class="o">;</span>
+</pre></div></div><h4><a class="anchor" id="2-2-5-transient-注解-jpa-" href="#2-2-5-transient-注解-jpa-"></a>2.2.5 <code>@Transient</code> 注解（JPA）</h4>
+<p>一般情况下，实体中的字段和数据库表中的字段是一一对应的，但是也有很多情况我们会在实体中增加一些额外的属性，这种情况下，就需要使用  <code>@Transient</code> 注解来告诉通用 Mapper 这不是表中的字段。</p>
+
+<p>默认情况下，只有简单类型会被自动认为是表中的字段（可以通过配置中的 <strong><code>useSimpleType</code></strong> 控制）。</p>
+
+<blockquote>
+<p>这里的简单类型不包含 Java 中的8种基本类型：</p>
+
+<p>byte,short,int,long,float,double,char,boolean</p>
+
+<p>这是因为在类中，基本类型会有默认值，而 MyBatis 中经常会需要判断属性值是否为空，所以不要在类中使用基本类型，否则会遇到莫名其妙的错误。</p>
+</blockquote>
+
+<p>对于类中的复杂对象，以及 <code>Map</code>,<code>List</code> 等属性不需要配置这个注解。</p>
+
+<p>对于枚举类型作为数据库字段的情况，需要看配置中的 <strong><code>enumAsSimpleType</code></strong> 参数。</p>
+
+<p>配置示例：</p>
+<div class="white"><div class="highlight"><pre><span class="nd">@Transient</span>
+<span class="kd">private</span> <span class="n">String</span> <span class="n">otherThings</span><span class="o">;</span> <span class="c1">//非数据库表中字段</span>
+</pre></div></div><h4><a class="anchor" id="2-2-6-id-注解-jpa-" href="#2-2-6-id-注解-jpa-"></a>2.2.6 <code>@Id</code> 注解（JPA）</h4>
+<p>上面几个注解都涉及到映射。 <code>@Id</code> 注解和映射无关，它是一个特殊的标记，用于标识数据库中的主键字段。</p>
+
+<p>正常情况下，<strong>一个实体类中至少需要一个标记 <code>@Id</code> 注解的字段，存在联合主键时可以标记多个。</strong></p>
+
+<p>如果表中没有主键，类中就可以不标记。</p>
+
+<p>当类中没有存在标记 <code>@Id</code> 注解的字段时，你可以理解为类中的<strong>所有字段是联合主键</strong>。使用所有的 <code>ByPrimaryKey</code> 相关的方法时，有 <code>where</code> 条件的地方，会将所有列作为条件。</p>
+
+<p>配置示例：</p>
+<div class="white"><div class="highlight"><pre><span class="nd">@Id</span>
+<span class="kd">private</span> <span class="n">Integer</span> <span class="n">id</span><span class="o">;</span>
+</pre></div></div>
+<p>或者联合主键：</p>
+<div class="white"><div class="highlight"><pre><span class="nd">@Id</span>
+<span class="kd">private</span> <span class="n">Integer</span> <span class="n">userId</span><span class="o">;</span>
+<span class="nd">@Id</span>
+<span class="kd">private</span> <span class="n">Integer</span> <span class="n">roleId</span><span class="o">;</span>
+</pre></div></div><h4><a class="anchor" id="2-2-7-generatedvalue-注解-jpa-" href="#2-2-7-generatedvalue-注解-jpa-"></a>2.2.7 <code>@GeneratedValue</code> 注解（JPA）</h4>
+<p>主键策略注解，用于配置如何生成主键。</p>
+
+<p>由于不同类型数据库的配置不同，所以后面有一节专门介绍该注解的文档。</p>
+
+<p>关于该注解的用法可以查看 <strong>2.3 主键策略</strong>。</p>
+<h4><a class="anchor" id="2-2-8-version-注解-mapper-" href="#2-2-8-version-注解-mapper-"></a>2.2.8 <code>@Version</code> 注解（Mapper）</h4>
+<p><code>@Version</code> 是实现乐观锁的一个注解，大多数人都不需要。</p>
+
+<p>需要使用该注解的请看 <strong>2.4 乐观锁</strong>。</p>
+<h4><a class="anchor" id="2-2-9-registermapper-注解" href="#2-2-9-registermapper-注解"></a>2.2.9 <code>@RegisterMapper</code> 注解</h4>
+<p>为了解决通用 Mapper 中最常见的一个错误而增加的标记注解，该注解仅用于开发的通用接口，不是实体类上使用的，这里和其他注解一起介绍了。</p>
+
+<p>4.0 版本提供的所有通用接口上都标记了该注解，因此自带的通用接口时，不需要配置 <code>mappers</code> 参数，该注解的具体用法会在 <strong>第五章 扩展通用接口</strong> 中介绍。</p>
+<h4><a class="anchor" id="2-2-10-自定义注解" href="#2-2-10-自定义注解"></a>2.2.10 自定义注解</h4>
+<p><em>这部分提供给想要开发通用方法的朋友，如果只是使用，不需要阅读这部分内容。</em></p>
+
+<p>在通用 Mapper 中，可以通过 <code>EntityHelper.getColumns(entityClass)</code> 方法来获取实体类的全部信息。</p>
+
+<p>在 <code>EntityColumn</code> 中，通过下面的代码可以获取字段上的任意注解。</p>
+<div class="white"><div class="highlight"><pre><span class="c1">//判断是否有某个注解</span>
+<span class="kt">boolean</span> <span class="n">hasVersion</span> <span class="o">=</span> <span class="n">column</span><span class="o">.</span><span class="na">getEntityField</span><span class="o">().</span><span class="na">isAnnotationPresent</span><span class="o">(</span><span class="n">Version</span><span class="o">.</span><span class="na">class</span><span class="o">)</span>
+<span class="c1">//通过下面的代码可以获取注解信息</span>
+<span class="n">Version</span> <span class="n">version</span> <span class="o">=</span> <span class="n">column</span><span class="o">.</span><span class="na">getEntityField</span><span class="o">().</span><span class="na">getAnnotation</span><span class="o">(</span><span class="n">Version</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+</pre></div></div>
+<p>通过这种方式，在实现自己的通用方式时，可以根据需要来增加额外的注解来实现一些其他的用途。</p>
+</div><div class='title'>2.3-generatedvalue</div><div class='content'><h3><a class="anchor" id="2-3-主键策略" href="#2-3-主键策略"></a>2.3 主键策略</h3>
+<p>在 2.2 中介绍了所有其他注解的作用和用法，由于主键策略比较复杂，单独用一节来阐述。</p>
+
+<p>首先主键策略和数据库关系很大，有些数据库支持主键自增，而有些数据库只能通过序列来获得。</p>
+<h4><a class="anchor" id="2-3-1-jdbc-支持通过-getgeneratedkeys-方法取回主键的情况" href="#2-3-1-jdbc-支持通过-getgeneratedkeys-方法取回主键的情况"></a>2.3.1 JDBC 支持通过 <code>getGeneratedKeys</code> 方法取回主键的情况</h4>
+<p>这种情况首先需要数据库支持自增，其次数据库提供的 JDBC 支持 <code>getGeneratedKeys</code> 方法。</p>
+
+<p>常见的如 MySql，SqlServer 支持这种模式。</p>
+
+<p>这种情况下，配置主键策略最简单。</p>
+
+<p>用法如下：</p>
+<div class="white"><div class="highlight"><pre><span class="nd">@Id</span>
+<span class="nd">@GeneratedValue</span><span class="o">(</span><span class="n">generator</span> <span class="o">=</span> <span class="s">"JDBC"</span><span class="o">)</span>
+<span class="kd">private</span> <span class="n">Long</span> <span class="n">id</span><span class="o">;</span>
+</pre></div></div>
+<p>为了让大家容易理解这里配置和 MyBatis 写法的关系，大家可以看看对应生成的 XML 代码：</p>
+<div class="white"><div class="highlight"><pre><span class="nt">&lt;insert</span> <span class="na">id=</span><span class="s">"insert"</span> <span class="na">useGeneratedKeys=</span><span class="s">"true"</span> <span class="na">keyProperty=</span><span class="s">"id"</span><span class="nt">&gt;</span>
+    insert into country (id, countryname, countrycode)
+    values (#{id},#{countryname},#{countrycode})
+<span class="nt">&lt;/insert&gt;</span>
+</pre></div></div>
+<blockquote>
+<p>SqlServer 中使用时，需要设置 id 的 <code>insertable=false</code> </p>
+</blockquote>
+<h4><a class="anchor" id="2-3-2-支持自增的数据库" href="#2-3-2-支持自增的数据库"></a>2.3.2 支持自增的数据库</h4>
+<p>支持自增的数据库列表如下：</p>
+
+<ul class="task-list">
+<li>
+<strong>DB2</strong>: <code>VALUES IDENTITY_VAL_LOCAL()</code></li>
+<li>
+<strong>MYSQL</strong>: <code>SELECT LAST_INSERT_ID()</code></li>
+<li>
+<strong>SQLSERVER</strong>: <code>SELECT SCOPE_IDENTITY()</code></li>
+<li>
+<strong>CLOUDSCAPE</strong>: <code>VALUES IDENTITY_VAL_LOCAL()</code></li>
+<li>
+<strong>DERBY</strong>: <code>VALUES IDENTITY_VAL_LOCAL()</code></li>
+<li>
+<strong>HSQLDB</strong>: <code>CALL IDENTITY()</code></li>
+<li>
+<strong>SYBASE</strong>: <code>SELECT @@IDENTITY</code></li>
+<li>
+<strong>DB2_MF</strong>: <code>SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1</code></li>
+<li>
+<strong>INFORMIX</strong>: <code>select dbinfo(&#39;sqlca.sqlerrd1&#39;) from systables where tabid=1</code></li>
+</ul>
+
+<blockquote>
+<p>这个列表只是列举了比较常见的数据库，其他类似的也支持。</p>
+
+<p>列表数据库名字后面对应的 SQL 是插入后<strong>取 id 的 SQL 语句</strong>。</p>
+</blockquote>
+
+<p>这类数据库主键策略配置示例如下：</p>
+<div class="white"><div class="highlight"><pre><span class="nd">@Id</span>
+<span class="nd">@GeneratedValue</span><span class="o">(</span><span class="n">strategy</span> <span class="o">=</span> <span class="n">GenerationType</span><span class="o">.</span><span class="na">IDENTITY</span><span class="o">)</span>
+<span class="kd">private</span> <span class="n">Integer</span> <span class="n">id</span><span class="o">;</span>
+</pre></div></div>
+<p>除此之外，这种用法还要配合 <strong>IDENTITY</strong> 参数（以及 <strong>ORDER</strong> 参数），这个参数值需要配置为对应的数据库，就是上面列表中的名字，具体的配置方法看后面章节的内容。</p>
+
+<p>这种配置对应的 XML 形式为：</p>
+<div class="white"><div class="highlight"><pre><span class="nt">&lt;insert</span> <span class="na">id=</span><span class="s">"insertAuthor"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;selectKey</span> <span class="na">keyProperty=</span><span class="s">"id"</span> <span class="na">resultType=</span><span class="s">"int"</span> <span class="na">order=</span><span class="s">"AFTER"</span><span class="nt">&gt;</span>
+      SELECT LAST_INSERT_ID()
+    <span class="nt">&lt;/selectKey&gt;</span>
+    insert into country (id, countryname, countrycode)
+    values (#{id},#{countryname},#{countrycode})
+<span class="nt">&lt;/insert&gt;</span>
+</pre></div></div>
+<p><strong>IDENTITY</strong> 参数以及 <strong>ORDER</strong> 参数会决定 <code>selectKey</code> 中的 SQL 和 <code>order</code> 属性的值（这里是 <code>AFTER</code>）。</p>
+<h4><a class="anchor" id="2-3-3-通过序列和任意-sql-获取主键值" href="#2-3-3-通过序列和任意-sql-获取主键值"></a>2.3.3 通过序列和任意 SQL 获取主键值</h4>
+<p>像 Oracle 中通过序列获取主键就属于这种情况，实际上 2.3.2 中的 SQL 也可以在这里配置。</p>
+
+<p>除了类似序列获取值外，还可以是获取 UUID 的 SQL 语句，例如 <code>select uuid()</code>。</p>
+
+<p><strong>2.3.3 和 2.3.2 的区别主要在于</strong>，2.3.2 是插入表之后才有 id 的值，2.3.3 是插入数据库前需要获取一个值作为主键。</p>
+
+<p>在 Oracle 中，我们可以用下面的方式进行配置：</p>
+<div class="white"><div class="highlight"><pre><span class="nd">@Id</span>
+<span class="nd">@GeneratedValue</span><span class="o">(</span>
+  <span class="n">strategy</span> <span class="o">=</span> <span class="n">GenerationType</span><span class="o">.</span><span class="na">IDENTITY</span><span class="o">,</span>
+  <span class="n">generator</span> <span class="o">=</span> <span class="s">"select SEQ_ID.nextval from dual"</span><span class="o">)</span>
+<span class="kd">private</span> <span class="n">Integer</span> <span class="n">id</span><span class="o">;</span>
+</pre></div></div>
+<p>除此之外也要配置一个 <strong>ORDER</strong> 全局参数，2.3.2 中提到的 <code>AFTER</code>，在 2.3.3 中需要配置为 <code>BEFORE</code>，具体配置方式看后面章节的内容。</p>
+
+<p>这种配置对应的 XML 代码如下：</p>
+<div class="white"><div class="highlight"><pre><span class="nt">&lt;insert</span> <span class="na">id=</span><span class="s">"insertAuthor"</span><span class="nt">&gt;</span>
+  <span class="nt">&lt;selectKey</span> <span class="na">keyProperty=</span><span class="s">"id"</span> <span class="na">resultType=</span><span class="s">"int"</span> <span class="na">order=</span><span class="s">"BEFORE"</span><span class="nt">&gt;</span>
+    select SEQ_ID.nextval from dual
+  <span class="nt">&lt;/selectKey&gt;</span>
+  insert into country (id, countryname, countrycode)
+  values (#{id},#{countryname},#{countrycode})
+<span class="nt">&lt;/insert&gt;</span>
+</pre></div></div>
+<blockquote>
+<p>这种用法中，<code>values</code> 中必须出现主键的值，否则就插不到数据库。</p>
+</blockquote>
+
+<p>除了 Oracle 这种外，还有一种更普遍的用法，就是使用 UUID。</p>
+
+<p>例如下面的配置：</p>
+<div class="white"><div class="highlight"><pre><span class="nd">@Id</span>
+<span class="nd">@GeneratedValue</span><span class="o">(</span><span class="n">strategy</span> <span class="o">=</span> <span class="n">GenerationType</span><span class="o">.</span><span class="na">IDENTITY</span><span class="o">,</span><span class="n">generator</span> <span class="o">=</span> <span class="s">"select uuid()"</span><span class="o">)</span>
+<span class="kd">private</span> <span class="n">String</span> <span class="n">id</span><span class="o">;</span>
+</pre></div></div>
+<blockquote>
+<p>注意 SQL 返回值类型和这里接收的类型（<code>String</code>）一致。</p>
+</blockquote>
+<h4><a class="anchor" id="2-3-4-todo-增加一种新的注解-能够独立配置-sql-和-order" href="#2-3-4-todo-增加一种新的注解-能够独立配置-sql-和-order"></a>2.3.4 TODO 增加一种新的注解，能够独立配置 SQL 和 ORDER</h4>
+<p>由于 2.3.2 和 2.3.3 中的配置都依赖于 <code>ORDER</code>，并且这两种情况下的值相反，因此如果想要同时使用就会出现问题，因此提供一个新的专用注解来替代 2.3.2 和 2.3.3 是很有必要的。</p>
+
+<p>这个功能待定，准备包含在 4.0 版本中。</p>
+</div><div class='title'>2.4-version</div><div class='content'><h3><a class="anchor" id="2-4-乐观锁" href="#2-4-乐观锁"></a>2.4 乐观锁</h3></div><div class='title'>2.orm</div><div class='content'><h2><a class="anchor" id="二-对象关系映射" href="#二-对象关系映射"></a>二、对象关系映射</h2>
+<p>通过上一章的文档集成好通用 Mapper 后，就可以继续看这里了。</p>
+
+<p>通用 Mapper 使用 JPA 注解和自己提供的注解来实现对象关系映射，由于本章包含了很多细节，所以通过简单的示例先引领入门，然后在一步步深入去看详细的配置。</p>
+
+<p>本章包含下面的内容，请按照顺序阅读。</p>
+<h3><a class="anchor" id="2-1-简单示例-必看-" href="#2-1-简单示例-必看-"></a><a href="2.1-simple" class="md_relative_url">2.1 简单示例（必看）</a></h3><h3><a class="anchor" id="2-2-数据库映射-必看-" href="#2-2-数据库映射-必看-"></a><a href="2.2-mapping" class="md_relative_url">2.2 数据库映射（必看）</a></h3><h3><a class="anchor" id="2-3-主键策略-必看-" href="#2-3-主键策略-必看-"></a><a href="2.3-generatedvalue" class="md_relative_url">2.3 主键策略（必看）</a></h3><h3><a class="anchor" id="2-4-乐观锁-可选-" href="#2-4-乐观锁-可选-"></a><a href="2.4-version" class="md_relative_url">2.4 乐观锁（可选）</a></h3></div><div class='title'>3.config</div><div class='content'></div><div class='title'>3.config</div><div class='content'><h2><a class="anchor" id="三-配置介绍" href="#三-配置介绍"></a>三、配置介绍</h2>
+<p>由于数据库存在各种各样的差异，因此有些时候要做一些必要的配置。</p>
+
+<p>此外通用 Mapper 还提供了一些控制参数和一些和主键策略相关的参数。</p>
+
+<blockquote>
+<p>文档提供的参数基于 4.0 及以后的版本</p>
+
+<p>有些参数仍然存在，但是由于不推荐使用，这里不会介绍（如 UUID）。</p>
+</blockquote>
+
+<p><strong>提醒：看配置前，一定要看第二章的对象关系映射，否则不会明白这些参数的用途。</strong></p>
+
+<p><strong>参数的配置方式在第一章中，针对不同的集成环境都写了详细的文档。</strong></p>
+
+<p>通用 Mapper 提供了下面这些参数：</p>
+
+<ol class="task-list">
+<li> mappers</li>
+<li> IDENTITY</li>
+<li> ORDER</li>
+<li> catalog</li>
+<li> schema</li>
+<li> notEmpty</li>
+<li> style</li>
+<li> enableMethodAnnotation</li>
+<li> useSimpleType</li>
+<li> usePrimitiveType</li>
+<li> simpleTypes</li>
+<li> enumAsSimpleType</li>
+<li> wrapKeyword</li>
+<li> checkExampleEntityClass</li>
+<li> safeDelete</li>
+<li> useJavaType</li>
+</ol>
+
+<p>下面分别对这些参数进行介绍。</p>
+<h3><a class="anchor" id="3-1-mappers" href="#3-1-mappers"></a>3.1 mappers</h3>
+<p>在 4.0 以前这是一个非常重要的参数，当时只有通过 mappers 配置过的接口才能真正调用，由于很多人不注意看文档，通用 Mapper 90% 的问题都出在这个参数上。</p>
+
+<p>4.0 之后，增加了一个 <code>@RegisterMapper</code> 注解，通用 Mapper 中提供的所有接口都有这个注解，有了该注解后，通用 Mapper 会自动解析所有的接口，如果父接口（递归向上找到的最顶层）存在标记该注解的接口，就会自动注册上。因此 4.0 后使用通用 Mapper 提供的方法时，不需要在配置这个参数。</p>
+
+<p>当你自己扩展通用接口时，建议加上该注解，否则就要配置 <code>mappers</code> 参数。</p>
+<h3><a class="anchor" id="3-2-identity" href="#3-2-identity"></a>3.2  IDENTITY</h3>
+<p>取回主键的方式，可以配置的值如 2.3.2 中所列的数据库类型：</p>
+
+<ul class="task-list">
+<li>  <strong>DB2</strong>: <code>VALUES IDENTITY_VAL_LOCAL()</code></li>
+<li>  <strong>MYSQL</strong>: <code>SELECT LAST_INSERT_ID()</code></li>
+<li>  <strong>SQLSERVER</strong>: <code>SELECT SCOPE_IDENTITY()</code></li>
+<li>  <strong>CLOUDSCAPE</strong>: <code>VALUES IDENTITY_VAL_LOCAL()</code></li>
+<li>  <strong>DERBY</strong>: <code>VALUES IDENTITY_VAL_LOCAL()</code></li>
+<li>  <strong>HSQLDB</strong>: <code>CALL IDENTITY()</code></li>
+<li>  <strong>SYBASE</strong>: <code>SELECT @@IDENTITY</code></li>
+<li>  <strong>DB2_MF</strong>: <code>SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1</code></li>
+<li>  <strong>INFORMIX</strong>: <code>select dbinfo(&#39;sqlca.sqlerrd1&#39;) from systables where tabid=1</code></li>
+</ul>
+
+<p>配置时，写为：</p>
+<div class="white"><div class="highlight"><pre>IDENTITY=MYSQL
+</pre></div></div>
+<p>这个参数配置的同时，还经常伴着 3.2 中的 ORDER 参数。</p>
+<h3><a class="anchor" id="3-3-order" href="#3-3-order"></a>3.3  ORDER</h3>
+<p><code>&lt;selectKey&gt;</code>中的<code>order</code>属性，可选值为<code>BEFORE</code>和<code>AFTER</code></p>
+
+<p>在 3.1 的配置以及 2.3.2 和 2.3.3 中都提到了这个参数。</p>
+
+<p>在支持主键递增，满足 2.3.2 中的情况时，配置如下：</p>
+<div class="white"><div class="highlight"><pre>ORDER=AFTER
+</pre></div></div>
+<p>在类似Oracle序列或者通用的 UUID 时，配置如下：</p>
+<div class="white"><div class="highlight"><pre>ORDER=BEFORE
+</pre></div></div><h3><a class="anchor" id="3-4-catalog" href="#3-4-catalog"></a>3.4  catalog</h3>
+<p>数据库的<code>catalog</code>，如果设置该值，查询的时候表名会带<code>catalog</code>设置的前缀。</p>
+<h3><a class="anchor" id="3-5-schema" href="#3-5-schema"></a>3.5  schema</h3>
+<p>同<code>catalog</code>，<code>catalog</code>优先级高于<code>schema</code>。</p>
+<h3><a class="anchor" id="3-6-notempty" href="#3-6-notempty"></a>3.6  notEmpty</h3>
+<p><code>insertSelective</code> 和 <code>updateByPrimaryKeySelective</code> 中，是否判断字符串类型 <code>!=&#39;&#39;</code>。</p>
+
+<p>配置方式：</p>
+<div class="white"><div class="highlight"><pre>notEmpty=true
+</pre></div></div><h3><a class="anchor" id="3-7-style" href="#3-7-style"></a>3.7  style</h3>
+<p>实体和表转换时的默认规则，在 2.2 和 2.2.1 中都提到了这个参数，可选值如下：</p>
+
+<ul class="task-list">
+<li>  normal：原值</li>
+<li>  camelhump：驼峰转下划线</li>
+<li>  uppercase：转换为大写</li>
+<li>  lowercase：转换为小写</li>
+<li>  camelhumpAndUppercase：驼峰转下划线大写形式</li>
+<li>  camelhumpAndLowercase：驼峰转下划线小写形式</li>
+</ul>
+
+<p>配置方式如下：</p>
+<div class="white"><div class="highlight"><pre>style=camelhumpAndUppercase
+</pre></div></div><h3><a class="anchor" id="3-8-enablemethodannotation" href="#3-8-enablemethodannotation"></a>3.8  enableMethodAnnotation</h3>
+<p>可以控制是否支持（getter 和 setter）在方法上使用注解，默认<code>false</code>。</p>
+
+<p>配置方式如下：</p>
+<div class="white"><div class="highlight"><pre>enableMethodAnnotation=true
+</pre></div></div>
+<p>启用后，可以按照下面方式使用：</p>
+<div class="white"><div class="highlight"><pre><span class="kd">private</span> <span class="n">String</span> <span class="n">name</span><span class="o">;</span>
+
+<span class="nd">@Column</span><span class="o">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">"user_name"</span><span class="o">)</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">setName</span><span class="o">(</span><span class="n">String</span> <span class="n">name</span><span class="o">){</span>
+  <span class="k">this</span><span class="o">.</span><span class="na">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">;</span>
+<span class="o">}</span>
+</pre></div></div><h3><a class="anchor" id="3-9-usesimpletype" href="#3-9-usesimpletype"></a>3.9  useSimpleType</h3>
+<p>默认 <code>true</code>，启用后判断实体类属性是否为表字段时校验字段是否为简单类型，如果不是就忽略该属性，这个配置优先级高于所有注解。</p>
+
+<p><strong>注意：byte, short, int, long, float, double, char, boolean 由于存在默认值，这里不会作为简单类型对待！也就是默认情况下，这些字段不会和表字段进行映射。2.2.5 中也强调了这一点。</strong></p>
+
+<p>配置方式如下：</p>
+<div class="white"><div class="highlight"><pre>useSimpleType=true
+</pre></div></div><h3><a class="anchor" id="3-10-useprimitivetype" href="#3-10-useprimitivetype"></a>3.10  usePrimitiveType</h3>
+<p>为了方便部分还在使用基本类型的实体，增加了该属性，只有配置该属性，并且设置为 <code>true</code> 才会生效，启用后，会扫描 8 种基本类型。</p>
+
+<p>配置方式如下：</p>
+<div class="white"><div class="highlight"><pre>usePrimitiveType=true
+</pre></div></div><h3><a class="anchor" id="3-11-simpletypes" href="#3-11-simpletypes"></a>3.11 simpleTypes</h3>
+<p>默认的简单类型在 <code>SimpleTypeUtil</code> 中，使用该参数可以增加额外的简单类型，通过逗号隔开的全限定类名添加。</p>
+
+<p>配置方式如：</p>
+<div class="white"><div class="highlight"><pre>simpleTypes=xxx.GenderEnum,xxx.JobEnum
+</pre></div></div><h3><a class="anchor" id="3-12-enumassimpletype" href="#3-12-enumassimpletype"></a>3.12  enumAsSimpleType</h3>
+<p>用于配置是否将枚举类型当成基本类型对待。</p>
+
+<p>默认 simpleType 会忽略枚举类型，使用 enumAsSimpleType 配置后会把枚举按简单类型处理，需要自己配置好 <code>typeHandler</code>。</p>
+
+<p>配置方式如下：</p>
+<div class="white"><div class="highlight"><pre>enumAsSimpleType=true
+</pre></div></div><h3><a class="anchor" id="3-13-wrapkeyword" href="#3-13-wrapkeyword"></a>3.13  wrapKeyword</h3>
+<p>配置后会自动处理关键字，可以配的值和数据库有关。</p>
+
+<p>例如 sqlserver 可以配置为 <code>[{0}]</code>，使用 <code>{0}</code> 替代原来的列名。</p>
+
+<p>MySql 对应的配置如下：</p>
+<div class="white"><div class="highlight"><pre>wrapKeyword=`{0}`
+</pre></div></div>
+<p>使用该配置后，类似 <code>private String order</code> 就不需要通过 <code>@Column</code> 来指定别名。</p>
+<h3><a class="anchor" id="3-14-checkexampleentityclass" href="#3-14-checkexampleentityclass"></a>3.14  checkExampleEntityClass</h3>
+<p>默认 <code>false</code> 用于校验通用 <code>Example</code> 构造参数 <code>entityClass</code> 是否和当前调用的 <code>Mapper&lt;EntityClass&gt;</code> 类型一致。</p>
+
+<p>假设存在下面代码：</p>
+<div class="white"><div class="highlight"><pre><span class="n">Example</span> <span class="n">example</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Example</span><span class="o">(</span><span class="n">City</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+<span class="n">example</span><span class="o">.</span><span class="na">xxx</span><span class="o">...;</span><span class="c1">//设置条件的方法</span>
+<span class="n">countryMapper</span><span class="o">.</span><span class="na">selectByExample</span><span class="o">(</span><span class="n">example</span><span class="o">);</span>
+</pre></div></div>
+<p>注意，这里使用 <code>City</code> 创建的 <code>Example</code>，本该使用 <code>cityMapper</code> 来调用，但是这里使用了 <code>countryMapper</code>，默认情况下会出现字段不匹配的错误，<strong>更特殊的情况下会正好匹配字段，但是却操作错了表！</strong></p>
+
+<p>配置该字段为 <code>true</code> 后就会对不匹配的情况进行校验！</p>
+
+<p>配置如下：</p>
+<div class="white"><div class="highlight"><pre>checkExampleEntityClass=true
+</pre></div></div><h3><a class="anchor" id="3-15-safedelete" href="#3-15-safedelete"></a>3.15 safeDelete</h3>
+<p>配置为 true 后，delete 和 deleteByExample 都必须设置查询条件才能删除，否则会抛出异常。</p>
+
+<p>配置如下：</p>
+<div class="white"><div class="highlight"><pre>safeDelete=true
+</pre></div></div>
+<p>使用效果：</p>
+<div class="white"><div class="highlight"><pre>Caused by: tk.mybatis.mapper.MapperException: &lt;[通用 Mapper 配置 safeDelete=true]&gt; delete 方法没有指定查询条件，不允许执行该操作!
+    at tk.mybatis.mapper.util.OGNL.notAllNullParameterCheck(OGNL.java:91)
+    at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+    at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+    at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+    at java.lang.reflect.Method.invoke(Method.java:497)
+    at org.apache.ibatis.ognl.OgnlRuntime.invokeMethod(OgnlRuntime.java:899)
+    at org.apache.ibatis.ognl.OgnlRuntime.callAppropriateMethod(OgnlRuntime.java:1544)
+    ... 53 more
+</pre></div></div><h3><a class="anchor" id="3-16-usejavatype" href="#3-16-usejavatype"></a>3.16 useJavaType</h3>
+<p>设置 true 时，参数中会增加 javaType 设置，如 <code>{id, javaType=java.lang.Long}</code>。在 <code>&lt;resultMap&gt;</code> 中也会设置 <code>javaType</code> 属性。</p>
+
+<p>配置如下：</p>
+<div class="white"><div class="highlight"><pre>useJavaType=true
+</pre></div></div>
+<p>对于使用 <code>User extends Pk&lt;Long&gt;</code> 形式时，需要设置，否则 mybatis 低版本(&lt;3.4.0) 无法识别类型。</p>
+
+<blockquote>
+<p>建议升级到 mybatis 3.4.x 的最新版本</p>
+</blockquote>
+
+<p>例如：</p>
+<div class="white"><div class="highlight"><pre><span class="kd">class</span> <span class="nc">Pk</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="o">{</span>
+  <span class="kd">private</span> <span class="n">T</span> <span class="n">id</span><span class="o">;</span>
+
+  <span class="kd">public</span> <span class="n">T</span> <span class="nf">getId</span><span class="o">()</span> <span class="o">{</span>
+    <span class="k">return</span> <span class="n">id</span><span class="o">;</span>
+  <span class="o">}</span>
+
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">setId</span><span class="o">(</span><span class="n">T</span> <span class="n">id</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">this</span><span class="o">.</span><span class="na">id</span> <span class="o">=</span> <span class="n">id</span><span class="o">;</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="kd">class</span> <span class="nc">User</span> <span class="kd">extends</span> <span class="n">Pk</span><span class="o">&lt;</span><span class="n">Long</span><span class="o">&gt;</span> <span class="o">{</span>
+  <span class="kd">private</span> <span class="n">String</span> <span class="n">name</span><span class="o">;</span>
+<span class="o">}</span>
+</pre></div></div>
+<p>如果不设置 javaType，低版本的 MyBatis 会认为 id 的类型为 Object。升级 MyBatis 到 3.4.0+ 最好。</p>
+
+<p>设置 <code>useJavaType</code> 只对通用 Mapper 自己方法有效，自己写的其他方法还需要自己指定。</p>
+
+<blockquote>
+<p><strong>特别注意</strong></p>
+
+<p>使用 useJavaType=true 后，调用 <code>ByPrimaryKey</code> 类的方法时，需要按照实体中对应的类型来指定，例如主键类型为 <code>Long</code> 时，必须 <code>mapper.selectByPrimaryKey(1L)</code>。</p>
+
+<p>不配置时，没有这个限制，可以使用  <code>mapper.selectByPrimaryKey(1)</code> 或  <code>mapper.selectByPrimaryKey(&quot;1&quot;)</code> 等类型。</p>
+</blockquote>
+</div><div class='title'>4.generator</div><div class='content'></div><div class='title'>4.generator</div><div class='content'><h2><a class="anchor" id="四-代码生成器" href="#四-代码生成器"></a>四、代码生成器</h2></div><div class='title'>5.extend</div><div class='content'></div><div class='title'>5.extend</div><div class='content'><h2><a class="anchor" id="五-扩展通用接口" href="#五-扩展通用接口"></a>五、扩展通用接口</h2></div><div class='title'>6.example</div><div class='content'></div><div class='title'>6.example</div><div class='content'><h2><a class="anchor" id="六-example-用法" href="#六-example-用法"></a>六、Example 用法</h2>
+<p>通用 Mapper 中的 Example 方法有两大类定义，一个参数和两个参数的，例如下面两个：</p>
+<div class="white"><div class="highlight"><pre><span class="n">List</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="nf">selectByExample</span><span class="o">(</span><span class="n">Object</span> <span class="n">example</span><span class="o">);</span>
+
+<span class="kt">int</span> <span class="nf">updateByExampleSelective</span><span class="o">(</span><span class="nd">@Param</span><span class="o">(</span><span class="s">"record"</span><span class="o">)</span> <span class="n">T</span> <span class="n">record</span><span class="o">,</span> <span class="nd">@Param</span><span class="o">(</span><span class="s">"example"</span><span class="o">)</span> <span class="n">Object</span> <span class="n">example</span><span class="o">);</span>
+</pre></div></div>
+<p>所有 Example 方法中的 example 类型都是 <code>Object</code> 类型，这是因为通用 Mapper 支持所有符合 Example 结构的参数，例如通过 MBG 生成的 CountryExample、UserExample 类。还有通用 Mapper 中提供的通用 Example，以及支持 Java8 方法引用的 Weekend 类型。</p>
+
+<blockquote>
+<p>配置中有一个和 Example 有关的参数，点击查看 <a href="3.config#314--checkexampleentityclass" class="md_relative_url">3.14  checkExampleEntityClass</a>。</p>
+</blockquote>
+<h3><a class="anchor" id="6-1-mbg-生成的-example" href="#6-1-mbg-生成的-example"></a>6.1 MBG 生成的 Example</h3>
+<p>用法如下：</p>
+<div class="white"><div class="highlight"><pre><span class="n">CountryExample</span> <span class="n">example</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CountryExample</span><span class="o">();</span>
+<span class="n">example</span><span class="o">.</span><span class="na">createCriteria</span><span class="o">().</span><span class="na">andCountrynameLike</span><span class="o">(</span><span class="s">"A%"</span><span class="o">);</span>
+<span class="n">example</span><span class="o">.</span><span class="na">or</span><span class="o">().</span><span class="na">andIdGreaterThan</span><span class="o">(</span><span class="mi">100</span><span class="o">);</span>
+<span class="n">example</span><span class="o">.</span><span class="na">setDistinct</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+<span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="na">deleteByExample</span><span class="o">(</span><span class="n">example</span><span class="o">);</span>
+</pre></div></div>
+<p>对于的 SQL 日志如下：</p>
+<div class="white"><div class="highlight"><pre><span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">==&gt;</span>  <span class="n">Preparing</span><span class="p">:</span> <span class="k">DELETE</span> <span class="k">FROM</span> <span class="n">country</span> <span class="k">WHERE</span> <span class="p">(</span> <span class="n">countryname</span> <span class="k">like</span> <span class="o">?</span> <span class="p">)</span> <span class="k">or</span> <span class="p">(</span> <span class="n">Id</span> <span class="o">&gt;</span> <span class="o">?</span> <span class="p">)</span> 
+<span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">==&gt;</span> <span class="k">Parameters</span><span class="p">:</span> <span class="n">A</span><span class="o">%</span><span class="p">(</span><span class="n">String</span><span class="p">),</span> <span class="mi">100</span><span class="p">(</span><span class="n">Integer</span><span class="p">)</span>
+<span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">&lt;==</span>    <span class="n">Updates</span><span class="p">:</span> <span class="mi">95</span>
+</pre></div></div>
+<p>生成的 CountryExample 中包含了和字段相关的多种方法，根据自己的需要设置相应的条件即可。</p>
+<h3><a class="anchor" id="6-2-通用-example" href="#6-2-通用-example"></a>6.2 通用 Example</h3>
+<p>这是由通用 Mapper 提供的一个类，这个类和 MBG 生成的相比，需要自己设置属性名。这个类还额外提供了更多的方法。</p>
+<h4><a class="anchor" id="6-2-1-查询" href="#6-2-1-查询"></a>6.2.1 查询</h4>
+<p>示例：</p>
+<div class="white"><div class="highlight"><pre><span class="n">Example</span> <span class="n">example</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Example</span><span class="o">(</span><span class="n">Country</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+<span class="n">example</span><span class="o">.</span><span class="na">setForUpdate</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+<span class="n">example</span><span class="o">.</span><span class="na">createCriteria</span><span class="o">().</span><span class="na">andGreaterThan</span><span class="o">(</span><span class="s">"id"</span><span class="o">,</span> <span class="mi">100</span><span class="o">).</span><span class="na">andLessThan</span><span class="o">(</span><span class="s">"id"</span><span class="o">,</span><span class="mi">151</span><span class="o">);</span>
+<span class="n">example</span><span class="o">.</span><span class="na">or</span><span class="o">().</span><span class="na">andLessThan</span><span class="o">(</span><span class="s">"id"</span><span class="o">,</span> <span class="mi">41</span><span class="o">);</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Country</span><span class="o">&gt;</span> <span class="n">countries</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="na">selectByExample</span><span class="o">(</span><span class="n">example</span><span class="o">);</span>
+</pre></div></div>
+<p>日志：</p>
+<div class="white"><div class="highlight"><pre><span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">==&gt;</span>  <span class="n">Preparing</span><span class="p">:</span> <span class="k">SELECT</span> <span class="n">id</span><span class="p">,</span><span class="n">countryname</span><span class="p">,</span><span class="n">countrycode</span> <span class="k">FROM</span> <span class="n">country</span> <span class="k">WHERE</span> <span class="p">(</span> <span class="n">id</span> <span class="o">&gt;</span> <span class="o">?</span> <span class="k">and</span> <span class="n">id</span> <span class="o">&lt;</span> <span class="o">?</span> <span class="p">)</span> <span class="k">or</span> <span class="p">(</span> <span class="n">id</span> <span class="o">&lt;</span> <span class="o">?</span> <span class="p">)</span> <span class="k">ORDER</span> <span class="k">BY</span> <span class="n">id</span> <span class="k">desc</span> <span class="k">FOR</span> <span class="k">UPDATE</span> 
+<span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">==&gt;</span> <span class="k">Parameters</span><span class="p">:</span> <span class="mi">100</span><span class="p">(</span><span class="n">Integer</span><span class="p">),</span> <span class="mi">151</span><span class="p">(</span><span class="n">Integer</span><span class="p">),</span> <span class="mi">41</span><span class="p">(</span><span class="n">Integer</span><span class="p">)</span>
+<span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">&lt;==</span>      <span class="n">Total</span><span class="p">:</span> <span class="mi">90</span>
+</pre></div></div><h4><a class="anchor" id="6-2-2-动态-sql" href="#6-2-2-动态-sql"></a>6.2.2 动态 SQL</h4>
+<p>示例：</p>
+<div class="white"><div class="highlight"><pre><span class="n">Example</span> <span class="n">example</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Example</span><span class="o">(</span><span class="n">Country</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+<span class="n">Example</span><span class="o">.</span><span class="na">Criteria</span> <span class="n">criteria</span> <span class="o">=</span> <span class="n">example</span><span class="o">.</span><span class="na">createCriteria</span><span class="o">();</span>
+<span class="k">if</span><span class="o">(</span><span class="n">query</span><span class="o">.</span><span class="na">getCountryname</span><span class="o">()</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">){</span>
+    <span class="n">criteria</span><span class="o">.</span><span class="na">andLike</span><span class="o">(</span><span class="s">"countryname"</span><span class="o">,</span> <span class="n">query</span><span class="o">.</span><span class="na">getCountryname</span><span class="o">()</span> <span class="o">+</span> <span class="s">"%"</span><span class="o">);</span>
+<span class="o">}</span>
+<span class="k">if</span><span class="o">(</span><span class="n">query</span><span class="o">.</span><span class="na">getId</span><span class="o">()</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">){</span>
+    <span class="n">criteria</span><span class="o">.</span><span class="na">andGreaterThan</span><span class="o">(</span><span class="s">"id"</span><span class="o">,</span> <span class="n">query</span><span class="o">.</span><span class="na">getId</span><span class="o">());</span>
+<span class="o">}</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Country</span><span class="o">&gt;</span> <span class="n">countries</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="na">selectByExample</span><span class="o">(</span><span class="n">example</span><span class="o">);</span>
+</pre></div></div>
+<p>日志：</p>
+<div class="white"><div class="highlight"><pre><span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">==&gt;</span>  <span class="n">Preparing</span><span class="p">:</span> <span class="k">SELECT</span> <span class="n">id</span><span class="p">,</span><span class="n">countryname</span><span class="p">,</span><span class="n">countrycode</span> <span class="k">FROM</span> <span class="n">country</span> <span class="k">WHERE</span> <span class="p">(</span> <span class="n">countryname</span> <span class="k">like</span> <span class="o">?</span> <span class="p">)</span> <span class="k">ORDER</span> <span class="k">BY</span> <span class="n">id</span> <span class="k">desc</span> 
+<span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">==&gt;</span> <span class="k">Parameters</span><span class="p">:</span> <span class="n">China</span><span class="o">%</span><span class="p">(</span><span class="n">String</span><span class="p">)</span>
+<span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">&lt;==</span>      <span class="n">Total</span><span class="p">:</span> <span class="mi">1</span>
+</pre></div></div><h4><a class="anchor" id="6-2-3-排序" href="#6-2-3-排序"></a>6.2.3 排序</h4>
+<p>示例：</p>
+<div class="white"><div class="highlight"><pre><span class="n">Example</span> <span class="n">example</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Example</span><span class="o">(</span><span class="n">Country</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+<span class="n">example</span><span class="o">.</span><span class="na">orderBy</span><span class="o">(</span><span class="s">"id"</span><span class="o">).</span><span class="na">desc</span><span class="o">().</span><span class="na">orderBy</span><span class="o">(</span><span class="s">"countryname"</span><span class="o">).</span><span class="na">orderBy</span><span class="o">(</span><span class="s">"countrycode"</span><span class="o">).</span><span class="na">asc</span><span class="o">();</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Country</span><span class="o">&gt;</span> <span class="n">countries</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="na">selectByExample</span><span class="o">(</span><span class="n">example</span><span class="o">);</span>
+</pre></div></div>
+<p>日志：</p>
+<div class="white"><div class="highlight"><pre><span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">==&gt;</span>  <span class="n">Preparing</span><span class="p">:</span> <span class="k">SELECT</span> <span class="n">id</span><span class="p">,</span><span class="n">countryname</span><span class="p">,</span><span class="n">countrycode</span> <span class="k">FROM</span> <span class="n">country</span> <span class="k">order</span> <span class="k">by</span> <span class="n">id</span> <span class="k">DESC</span><span class="p">,</span><span class="n">countryname</span><span class="p">,</span><span class="n">countrycode</span> <span class="k">ASC</span> 
+<span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">==&gt;</span> <span class="k">Parameters</span><span class="p">:</span> 
+<span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">&lt;==</span>      <span class="n">Total</span><span class="p">:</span> <span class="mi">183</span>
+</pre></div></div><h4><a class="anchor" id="6-2-4-去重" href="#6-2-4-去重"></a>6.2.4 去重</h4>
+<p>示例：</p>
+<div class="white"><div class="highlight"><pre><span class="n">CountryExample</span> <span class="n">example</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CountryExample</span><span class="o">();</span>
+<span class="c1">//设置 distinct</span>
+<span class="n">example</span><span class="o">.</span><span class="na">setDistinct</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+<span class="n">example</span><span class="o">.</span><span class="na">createCriteria</span><span class="o">().</span><span class="na">andCountrynameLike</span><span class="o">(</span><span class="s">"A%"</span><span class="o">);</span>
+<span class="n">example</span><span class="o">.</span><span class="na">or</span><span class="o">().</span><span class="na">andIdGreaterThan</span><span class="o">(</span><span class="mi">100</span><span class="o">);</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Country</span><span class="o">&gt;</span> <span class="n">countries</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="na">selectByExample</span><span class="o">(</span><span class="n">example</span><span class="o">);</span>
+</pre></div></div>
+<p>日志：</p>
+<div class="white"><div class="highlight"><pre><span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">==&gt;</span>  <span class="n">Preparing</span><span class="p">:</span> <span class="k">SELECT</span> <span class="k">distinct</span> <span class="n">id</span><span class="p">,</span><span class="n">countryname</span><span class="p">,</span><span class="n">countrycode</span> <span class="k">FROM</span> <span class="n">country</span> <span class="k">WHERE</span> <span class="p">(</span> <span class="n">countryname</span> <span class="k">like</span> <span class="o">?</span> <span class="p">)</span> <span class="k">or</span> <span class="p">(</span> <span class="n">Id</span> <span class="o">&gt;</span> <span class="o">?</span> <span class="p">)</span> <span class="k">ORDER</span> <span class="k">BY</span> <span class="n">id</span> <span class="k">desc</span> 
+<span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">==&gt;</span> <span class="k">Parameters</span><span class="p">:</span> <span class="n">A</span><span class="o">%</span><span class="p">(</span><span class="n">String</span><span class="p">),</span> <span class="mi">100</span><span class="p">(</span><span class="n">Integer</span><span class="p">)</span>
+<span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">&lt;==</span>      <span class="n">Total</span><span class="p">:</span> <span class="mi">95</span>
+</pre></div></div><h4><a class="anchor" id="6-2-5-设置查询列" href="#6-2-5-设置查询列"></a>6.2.5 设置查询列</h4>
+<p>示例：</p>
+<div class="white"><div class="highlight"><pre><span class="n">Example</span> <span class="n">example</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Example</span><span class="o">(</span><span class="n">Country</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+<span class="n">example</span><span class="o">.</span><span class="na">selectProperties</span><span class="o">(</span><span class="s">"id"</span><span class="o">,</span> <span class="s">"countryname"</span><span class="o">);</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Country</span><span class="o">&gt;</span> <span class="n">countries</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="na">selectByExample</span><span class="o">(</span><span class="n">example</span><span class="o">);</span>
+</pre></div></div>
+<p>日志：</p>
+<div class="white"><div class="highlight"><pre><span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">==&gt;</span>  <span class="n">Preparing</span><span class="p">:</span> <span class="k">SELECT</span> <span class="n">id</span> <span class="p">,</span> <span class="n">countryname</span> <span class="k">FROM</span> <span class="n">country</span> <span class="k">ORDER</span> <span class="k">BY</span> <span class="n">id</span> <span class="k">desc</span> 
+<span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">==&gt;</span> <span class="k">Parameters</span><span class="p">:</span> 
+<span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">&lt;==</span>      <span class="n">Total</span><span class="p">:</span> <span class="mi">183</span>
+</pre></div></div>
+<blockquote>
+<p>除了这里提到的方法外，还有很多其他的方法，可以查看 Example 源码进行了解。</p>
+</blockquote>
+<h3><a class="anchor" id="6-3-example-builder-方式" href="#6-3-example-builder-方式"></a>6.3 Example.builder 方式</h3>
+<p>示例：</p>
+<div class="white"><div class="highlight"><pre><span class="n">Example</span> <span class="n">example</span> <span class="o">=</span> <span class="n">Example</span><span class="o">.</span><span class="na">builder</span><span class="o">(</span><span class="n">Country</span><span class="o">.</span><span class="na">class</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">select</span><span class="o">(</span><span class="s">"countryname"</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">where</span><span class="o">(</span><span class="n">Sqls</span><span class="o">.</span><span class="na">custom</span><span class="o">().</span><span class="na">andGreaterThan</span><span class="o">(</span><span class="s">"id"</span><span class="o">,</span> <span class="mi">100</span><span class="o">))</span>
+        <span class="o">.</span><span class="na">orderByAsc</span><span class="o">(</span><span class="s">"countrycode"</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">forUpdate</span><span class="o">()</span>
+        <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Country</span><span class="o">&gt;</span> <span class="n">countries</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="na">selectByExample</span><span class="o">(</span><span class="n">example</span><span class="o">);</span>
+</pre></div></div>
+<p>日志：</p>
+<div class="white"><div class="highlight"><pre><span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">==&gt;</span>  <span class="n">Preparing</span><span class="p">:</span> <span class="k">SELECT</span> <span class="n">countryname</span> <span class="k">FROM</span> <span class="n">country</span> <span class="k">WHERE</span> <span class="p">(</span> <span class="n">id</span> <span class="o">&gt;</span> <span class="o">?</span> <span class="p">)</span> <span class="k">order</span> <span class="k">by</span> <span class="n">countrycode</span> <span class="k">Asc</span> <span class="k">FOR</span> <span class="k">UPDATE</span> 
+<span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">==&gt;</span> <span class="k">Parameters</span><span class="p">:</span> <span class="mi">100</span><span class="p">(</span><span class="n">Integer</span><span class="p">)</span>
+<span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">&lt;==</span>      <span class="n">Total</span><span class="p">:</span> <span class="mi">83</span>
+</pre></div></div><h3><a class="anchor" id="6-4-weekend" href="#6-4-weekend"></a>6.4 Weekend</h3>
+<p>使用 6.2 和 6.3 中的 Example 时，需要自己输入属性名，例如 <code>&quot;countryname&quot;</code>，假设输入错误，或者数据库有变化，这里很可能就会出错，因此基于 Java 8 的方法引用是一种更安全的用法，如果你使用 Java 8，你可以试试 Weekend。</p>
+
+<p>示例：</p>
+<div class="white"><div class="highlight"><pre><span class="n">List</span><span class="o">&lt;</span><span class="n">Country</span><span class="o">&gt;</span> <span class="n">selectByWeekendSql</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="na">selectByExample</span><span class="o">(</span><span class="k">new</span> <span class="n">Example</span><span class="o">.</span><span class="na">Builder</span><span class="o">(</span><span class="n">Country</span><span class="o">.</span><span class="na">class</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">where</span><span class="o">(</span><span class="n">WeekendSqls</span><span class="o">.&lt;</span><span class="n">Country</span><span class="o">&gt;</span><span class="n">custom</span><span class="o">().</span><span class="na">andLike</span><span class="o">(</span><span class="nl">Country:</span><span class="o">:</span><span class="n">getCountryname</span><span class="o">,</span> <span class="s">"%a%"</span><span class="o">)</span>
+                <span class="o">.</span><span class="na">andGreaterThan</span><span class="o">(</span><span class="nl">Country:</span><span class="o">:</span><span class="n">getCountrycode</span><span class="o">,</span> <span class="s">"123"</span><span class="o">))</span>
+        <span class="o">.</span><span class="na">build</span><span class="o">());</span>
+</pre></div></div>
+<p>日志：</p>
+<div class="white"><div class="highlight"><pre><span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">==&gt;</span>  <span class="n">Preparing</span><span class="p">:</span> <span class="k">SELECT</span> <span class="n">id</span><span class="p">,</span><span class="n">countryname</span><span class="p">,</span><span class="n">countrycode</span> <span class="k">FROM</span> <span class="n">country</span> <span class="k">WHERE</span> <span class="p">(</span> <span class="n">countryname</span> <span class="k">like</span> <span class="o">?</span> <span class="k">and</span> <span class="n">countrycode</span> <span class="o">&gt;</span> <span class="o">?</span> <span class="p">)</span> 
+<span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">==&gt;</span> <span class="k">Parameters</span><span class="p">:</span> <span class="o">%</span><span class="n">a</span><span class="o">%</span><span class="p">(</span><span class="n">String</span><span class="p">),</span> <span class="mi">123</span><span class="p">(</span><span class="n">String</span><span class="p">)</span>
+<span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">&lt;==</span>      <span class="n">Total</span><span class="p">:</span> <span class="mi">151</span>
+</pre></div></div>
+<p>在代码中的 <code>Country::getCountryname</code> 就是方法引用，通过该方法可以自动转换对应的列名。</p>
+</div><div class='title'>7.others</div><div class='content'></div><div class='title'>7.1.cache</div><div class='content'><h3><a class="anchor" id="7-1-二级缓存" href="#7-1-二级缓存"></a>7.1 二级缓存</h3>
+<p>关于二级缓存的例子，可以查看测试中的 <code>tk.mybatis.mapper.cache.CacheTest</code>。</p>
+
+<p>首先需要开启二级缓存：</p>
+<div class="white"><div class="highlight"><pre><span class="cp">&lt;!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd"&gt;</span>
+<span class="nt">&lt;configuration&gt;</span>
+    <span class="nt">&lt;settings&gt;</span>
+        <span class="nt">&lt;setting</span> <span class="na">name=</span><span class="s">"cacheEnabled"</span> <span class="na">value=</span><span class="s">"true"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;/settings&gt;</span>
+    <span class="c">&lt;!-- 其他 --&gt;</span>
+<span class="nt">&lt;/configuration&gt;</span>
+</pre></div></div><h4><a class="anchor" id="7-1-1-只使用接口" href="#7-1-1-只使用接口"></a>7.1.1 只使用接口</h4>
+<p>只用接口时，只需要加一个缓存的注解，示例如下：</p>
+<div class="white"><div class="highlight"><pre><span class="cm">/**
+ * 只有接口时，加下面的注解即可
+ */</span>
+<span class="nd">@CacheNamespace</span>
+<span class="kd">public</span> <span class="kd">interface</span> <span class="nc">CountryCacheMapper</span> <span class="kd">extends</span> <span class="n">Mapper</span><span class="o">&lt;</span><span class="n">Country</span><span class="o">&gt;</span> <span class="o">{</span>
+
+<span class="o">}</span>
+</pre></div></div>
+<p>对缓存的详细配置可以通过该注解提供的属性进行配置。</p>
+<h4><a class="anchor" id="7-1-2-接口和-xml-混合" href="#7-1-2-接口和-xml-混合"></a>7.1.2 接口和 XML 混合</h4>
+<blockquote>
+<p>由于 MyBatis 目前处理 XML 和 接口中的引用时存在 BUG，所以只有这里提供的一种方式进行配置。也就是在 XML 中配置 <code>&lt;cache/&gt;</code>，在接口中使用 <code>@CacheNamespaceRef(CountryCacheRefMapper.class)</code> 引用注解。</p>
+
+<p>关于该 BUG 可以查看下面链接：</p>
+
+<p><a target="_blank" href="https://github.com/mybatis/mybatis-3/issues/1194">https://github.com/mybatis/mybatis-3/issues/1194</a></p>
+</blockquote>
+
+<p>在 XML 中定义缓存：</p>
+<div class="white"><div class="highlight"><pre><span class="cp">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span>
+<span class="cp">&lt;!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd"&gt;</span>
+<span class="nt">&lt;mapper</span> <span class="na">namespace=</span><span class="s">"tk.mybatis.mapper.cache.CountryCacheRefMapper"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;cache/&gt;</span>
+    <span class="nt">&lt;select</span> <span class="na">id=</span><span class="s">"selectById"</span> <span class="na">resultType=</span><span class="s">"tk.mybatis.mapper.base.Country"</span><span class="nt">&gt;</span>
+        select * from country where id = #{id}
+    <span class="nt">&lt;/select&gt;</span>
+<span class="nt">&lt;/mapper&gt;</span>
+</pre></div></div>
+<p>在接口中配置注解引用：</p>
+<div class="white"><div class="highlight"><pre><span class="nd">@CacheNamespaceRef</span><span class="o">(</span><span class="n">CountryCacheRefMapper</span><span class="o">.</span><span class="na">class</span><span class="o">)</span>
+<span class="c1">//或者 @CacheNamespaceRef(name = "tk.mybatis.mapper.cache.CountryCacheRefMapper")</span>
+<span class="kd">public</span> <span class="kd">interface</span> <span class="nc">CountryCacheRefMapper</span> <span class="kd">extends</span> <span class="n">Mapper</span><span class="o">&lt;</span><span class="n">Country</span><span class="o">&gt;</span> <span class="o">{</span>
+
+    <span class="cm">/**
+     * 定义在 XML 中的方法
+     *
+     * @param id
+     * @return
+     */</span>
+    <span class="n">Country</span> <span class="nf">selectById</span><span class="o">(</span><span class="n">Integer</span> <span class="n">id</span><span class="o">);</span>
+<span class="o">}</span>
+
+</pre></div></div>
+<p><code>@CacheNamespaceRef</code> 指定的是缓存的 <code>namespace</code>，就是 XML 中 <code>&lt;mapper&gt;</code>  中的 <code>namespace</code> 属性。</p>
+<h4><a class="anchor" id="7-1-3-潜在的问题" href="#7-1-3-潜在的问题"></a>7.1.3 潜在的问题</h4>
+<p>通用 Mapper 中部分 insert, update 方法使用了 <code>@Options</code> 注解，在 4.0 版本中 update 方法都去掉了这个注解，但是部分 insert 必须保留。</p>
+
+<blockquote>
+<p>存在 <code>@Options</code> 注解的方法：</p>
+
+<ol class="task-list">
+<li><code>tk.mybatis.mapper.common.special.InsertListMapper</code> 
+
+<ul class="task-list">
+<li><code>int insertList(List&lt;T&gt; recordList);</code> </li>
+</ul>
+</li>
+<li><code>tk.mybatis.mapper.common.special.InsertUseGeneratedKeysMapper</code> 
+
+<ul class="task-list">
+<li><code>int insertUseGeneratedKeys(T record);</code> </li>
+</ul>
+</li>
+<li><code>tk.mybatis.mapper.common.sqlserver.InsertMapper</code> 
+
+<ul class="task-list">
+<li><code>int insert(T record);</code> </li>
+</ul>
+</li>
+<li><code>tk.mybatis.mapper.common.sqlserver.InsertSelectiveMapper</code> 
+
+<ul class="task-list">
+<li><code>int insertSelective(T record);</code> </li>
+</ul>
+</li>
+</ol>
+
+<p><strong>这 4 个方法都是特殊的方法，不是 <code>Mapper&lt;T&gt;</code> 接口中包含的两个 <code>insert</code> 方法。</strong></p>
+</blockquote>
+
+<p>MyBatis 中的 <code>@Options</code> 注解在 3.3.x 版本和 3.4.0+ 后的版本中，对 <code>flushCache</code> 方法定义不同，这就导致通用 Mapper 中无法直接配置改属性，在 3.3.x 等低版本中，该属性默认 <code>false</code>，因此执行 <code>insert</code> 后不会清除一二级缓存。在高版本中不存在该问题。</p>
+
+<p>因此如果要使用二级缓存，建议 MyBatis 使用比较新的版本，否则需要考虑使用 insert 后可能查询不到的问题。</p>
+
+<p><code>Options</code> 注解中的 <code>flushCache</code> 区别如下：</p>
+
+<p>3.3.x 以及更旧的版本中：</p>
+<div class="white"><div class="highlight"><pre><span class="kt">boolean</span> <span class="nf">flushCache</span><span class="o">()</span> <span class="k">default</span> <span class="kc">false</span><span class="o">;</span>
+</pre></div></div>
+<p>3.4.0+中：</p>
+<div class="white"><div class="highlight"><pre><span class="cm">/**
+ * The options for the {@link Options#flushCache()}.
+ * The default is {@link FlushCachePolicy#DEFAULT}
+ */</span>
+<span class="kd">public</span> <span class="kd">enum</span> <span class="n">FlushCachePolicy</span> <span class="o">{</span>
+    <span class="cm">/** &lt;code&gt;false&lt;/code&gt; for select statement; &lt;code&gt;true&lt;/code&gt; for insert/update/delete statement. */</span>
+    <span class="n">DEFAULT</span><span class="o">,</span>
+    <span class="cm">/** Flushes cache regardless of the statement type. */</span>
+    <span class="n">TRUE</span><span class="o">,</span>
+    <span class="cm">/** Does not flush cache regardless of the statement type. */</span>
+    <span class="n">FALSE</span>
+<span class="o">}</span>
+
+<span class="n">FlushCachePolicy</span> <span class="nf">flushCache</span><span class="o">()</span> <span class="k">default</span> <span class="n">FlushCachePolicy</span><span class="o">.</span><span class="na">DEFAULT</span><span class="o">;</span>
+</pre></div></div>
+<p>很显然，在 3.4.0+ 中的定义更合理，所以如果使用二级缓存，建议升级到比较新的版本。</p>
+</div><div class='title'>7.2.typehandler</div><div class='content'><h3><a class="anchor" id="7-2-typehandler-类型处理器" href="#7-2-typehandler-类型处理器"></a>7.2 TypeHandler 类型处理器</h3>
+<p>本文通过两个例子来演示 typeHandler 的用法。</p>
+
+<blockquote>
+<p>示例来自 <a href="https://github.com/abel533/Mapper/tree/master/base/src/test/java/tk/mybatis/mapper/typehandler">base/src/test/java/tk.mybatis.mapper.typehandler</a> 包中的测试。</p>
+</blockquote>
+
+<p>在开始例子前，先上相同的代码。</p>
+
+<p>一个简单的枚举类：</p>
+<div class="white"><div class="highlight"><pre><span class="kd">public</span> <span class="kd">enum</span> <span class="n">StateEnum</span> <span class="o">{</span>
+    <span class="n">disabled</span><span class="o">,</span>
+    <span class="n">enabled</span><span class="o">,</span>
+<span class="o">}</span>
+</pre></div></div>
+<p>这里打算用 MyBatis 提供的 <code>EnumOrdinalTypeHandler</code>，也是数据库存储枚举对应的序号。</p>
+
+<p>一个简单的地址类：</p>
+<div class="white"><div class="highlight"><pre><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Address</span> <span class="kd">implements</span> <span class="n">Serializable</span> <span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">serialVersionUID</span> <span class="o">=</span> <span class="mi">1L</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">String</span> <span class="n">province</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">String</span> <span class="n">city</span><span class="o">;</span>
+
+    <span class="kd">public</span> <span class="n">String</span> <span class="nf">getProvince</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">province</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">setProvince</span><span class="o">(</span><span class="n">String</span> <span class="n">province</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">province</span> <span class="o">=</span> <span class="n">province</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="n">String</span> <span class="nf">getCity</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">city</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">setCity</span><span class="o">(</span><span class="n">String</span> <span class="n">city</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">city</span> <span class="o">=</span> <span class="n">city</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">String</span> <span class="nf">toString</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">StringBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StringBuilder</span><span class="o">();</span>
+        <span class="k">if</span><span class="o">(</span><span class="n">province</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">province</span><span class="o">.</span><span class="na">length</span><span class="o">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="o">){</span>
+            <span class="n">builder</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="n">province</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">if</span><span class="o">(</span><span class="n">city</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">city</span><span class="o">.</span><span class="na">length</span><span class="o">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="o">){</span>
+            <span class="n">builder</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="s">"/"</span><span class="o">).</span><span class="na">append</span><span class="o">(</span><span class="n">city</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">builder</span><span class="o">.</span><span class="na">toString</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div></div>
+<p>这个类用来演示自定义类型的用法，针对该类写一个自定义的 TypeHandler，如下：</p>
+<div class="white"><div class="highlight"><pre><span class="kd">public</span> <span class="kd">class</span> <span class="nc">AddressTypeHandler</span> <span class="kd">extends</span> <span class="n">BaseTypeHandler</span><span class="o">&lt;</span><span class="n">Address</span><span class="o">&gt;</span> <span class="o">{</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">setNonNullParameter</span><span class="o">(</span><span class="n">PreparedStatement</span> <span class="n">ps</span><span class="o">,</span> <span class="kt">int</span> <span class="n">i</span><span class="o">,</span> <span class="n">Address</span> <span class="n">parameter</span><span class="o">,</span>
+                                    <span class="n">JdbcType</span> <span class="n">jdbcType</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">SQLException</span> <span class="o">{</span>
+        <span class="n">ps</span><span class="o">.</span><span class="na">setString</span><span class="o">(</span><span class="n">i</span><span class="o">,</span> <span class="n">parameter</span><span class="o">.</span><span class="na">toString</span><span class="o">());</span>
+    <span class="o">}</span>
+
+    <span class="kd">private</span> <span class="n">Address</span> <span class="nf">convertToAddress</span><span class="o">(</span><span class="n">String</span> <span class="n">addressStr</span><span class="o">){</span>
+        <span class="k">if</span><span class="o">(</span><span class="n">addressStr</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="n">addressStr</span><span class="o">.</span><span class="na">length</span><span class="o">()</span> <span class="o">==</span> <span class="mi">0</span><span class="o">){</span>
+            <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="n">String</span><span class="o">[]</span> <span class="n">strings</span> <span class="o">=</span> <span class="n">addressStr</span><span class="o">.</span><span class="na">split</span><span class="o">(</span><span class="s">"/"</span><span class="o">);</span>
+        <span class="n">Address</span> <span class="n">address</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Address</span><span class="o">();</span>
+        <span class="k">if</span><span class="o">(</span><span class="n">strings</span><span class="o">.</span><span class="na">length</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">strings</span><span class="o">[</span><span class="mi">0</span><span class="o">].</span><span class="na">length</span><span class="o">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="o">){</span>
+            <span class="n">address</span><span class="o">.</span><span class="na">setProvince</span><span class="o">(</span><span class="n">strings</span><span class="o">[</span><span class="mi">0</span><span class="o">]);</span>
+        <span class="o">}</span>
+        <span class="k">if</span><span class="o">(</span><span class="n">strings</span><span class="o">.</span><span class="na">length</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="o">&amp;&amp;</span> <span class="n">strings</span><span class="o">[</span><span class="mi">1</span><span class="o">].</span><span class="na">length</span><span class="o">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="o">){</span>
+            <span class="n">address</span><span class="o">.</span><span class="na">setCity</span><span class="o">(</span><span class="n">strings</span><span class="o">[</span><span class="mi">1</span><span class="o">]);</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">address</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">Address</span> <span class="nf">getNullableResult</span><span class="o">(</span><span class="n">ResultSet</span> <span class="n">rs</span><span class="o">,</span> <span class="n">String</span> <span class="n">columnName</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">SQLException</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="nf">convertToAddress</span><span class="o">(</span><span class="n">rs</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="n">columnName</span><span class="o">));</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">Address</span> <span class="nf">getNullableResult</span><span class="o">(</span><span class="n">ResultSet</span> <span class="n">rs</span><span class="o">,</span> <span class="kt">int</span> <span class="n">columnIndex</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">SQLException</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="nf">convertToAddress</span><span class="o">(</span><span class="n">rs</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="n">columnIndex</span><span class="o">));</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">Address</span> <span class="nf">getNullableResult</span><span class="o">(</span><span class="n">CallableStatement</span> <span class="n">cs</span><span class="o">,</span> <span class="kt">int</span> <span class="n">columnIndex</span><span class="o">)</span>
+            <span class="kd">throws</span> <span class="n">SQLException</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="nf">convertToAddress</span><span class="o">(</span><span class="n">cs</span><span class="o">.</span><span class="na">getString</span><span class="o">(</span><span class="n">columnIndex</span><span class="o">));</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div></div>
+<p>测试数据如下：</p>
+<div class="white"><div class="highlight"><pre><span class="k">create</span> <span class="k">table</span> <span class="k">user</span> <span class="p">(</span>
+  <span class="n">id</span> <span class="n">integer</span> <span class="k">NOT</span> <span class="k">NULL</span> <span class="k">PRIMARY</span> <span class="k">KEY</span><span class="p">,</span>
+  <span class="n">name</span> <span class="n">varchar</span><span class="p">(</span><span class="mi">32</span><span class="p">),</span>
+  <span class="n">address</span> <span class="n">varchar</span><span class="p">(</span><span class="mi">64</span><span class="p">),</span>
+  <span class="k">state</span> <span class="n">integer</span>
+<span class="p">);</span>
+
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="k">user</span> <span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="k">state</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">'abel533'</span><span class="p">,</span> <span class="s1">'Hebei/Shijiazhuang'</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="k">user</span> <span class="p">(</span><span class="n">id</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="k">state</span><span class="p">)</span> <span class="k">VALUES</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s1">'isea533'</span><span class="p">,</span> <span class="s1">'Hebei/Handan'</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</pre></div></div>
+<blockquote>
+<p>特别注意，state 对应的 0 就是枚举第一个 disabled，1 就是枚举第二个 enabled。</p>
+</blockquote>
+<h4><a class="anchor" id="7-2-1-使用-columntype-注解指定" href="#7-2-1-使用-columntype-注解指定"></a>7.2.1 使用 ColumnType 注解指定</h4>
+<p>创建 user 表对应的 User 实体：</p>
+<div class="white"><div class="highlight"><pre><span class="kd">public</span> <span class="kd">class</span> <span class="nc">User</span> <span class="kd">implements</span> <span class="n">Serializable</span> <span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">serialVersionUID</span> <span class="o">=</span> <span class="mi">1L</span><span class="o">;</span>
+    <span class="nd">@Id</span>
+    <span class="kd">private</span> <span class="n">Integer</span>   <span class="n">id</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">String</span>    <span class="n">name</span><span class="o">;</span>
+    <span class="nd">@ColumnType</span><span class="o">(</span><span class="n">typeHandler</span> <span class="o">=</span> <span class="n">AddressTypeHandler</span><span class="o">.</span><span class="na">class</span><span class="o">)</span>
+    <span class="kd">private</span> <span class="n">Address</span>   <span class="n">address</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">StateEnum</span> <span class="n">state</span><span class="o">;</span>
+
+    <span class="c1">//省略 setter 和 getter</span>
+<span class="o">}</span>
+</pre></div></div>
+<blockquote>
+<p><strong>特别提醒</strong></p>
+
+<ol class="task-list">
+<li>默认情况下只有简单类型才会被当作表中的字段(<code>useSimpleType=true</code>)。</li>
+<li>当字段有 <code>@Column</code> 或者 <code>@ColumnType</code> 注解时，也会被当作表中的字段。</li>
+<li>默认情况下，枚举不会当作表中的字段，如果想要自动把枚举作为表中字段，需要配置 <code>enumAsSimpleType=true</code>，<strong>这里的例子就启用了这个配置</strong>。如果不启用这个功能，也需要加  <code>@Column</code> 或者 <code>@ColumnType</code> 注解。</li>
+</ol>
+</blockquote>
+
+<p>在这个例子中，<code>address</code> 字段通过 <code>@ColumnType</code> 设置了 <code>typeHandler</code>。但是 <code>state</code> 却没这么设置，先看 <code>EnumOrdinalTypeHandler</code> 的定义：</p>
+<div class="white"><div class="highlight"><pre><span class="kd">public</span> <span class="kd">class</span> <span class="nc">EnumOrdinalTypeHandler</span><span class="o">&lt;</span><span class="n">E</span> <span class="kd">extends</span> <span class="n">Enum</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;&gt;</span> <span class="kd">extends</span> <span class="n">BaseTypeHandler</span><span class="o">&lt;</span><span class="n">E</span><span class="o">&gt;</span>
+</pre></div></div>
+<p>由于需要指定泛型，因此这里不能直接配置，除非你在创建一个针对性的 TypeHandler，例如：</p>
+<div class="white"><div class="highlight"><pre><span class="kd">public</span> <span class="kd">class</span> <span class="nc">StateEnumTypeHandler</span> <span class="kd">extends</span> <span class="n">EnumOrdinalTypeHandler</span><span class="o">&lt;</span><span class="n">StateEnum</span><span class="o">&gt;</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="nf">StateEnumTypeHandler</span><span class="o">(</span><span class="n">Class</span><span class="o">&lt;</span><span class="n">StateEnum</span><span class="o">&gt;</span> <span class="n">type</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">type</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div></div>
+<p>然后配置：</p>
+<div class="white"><div class="highlight"><pre><span class="nd">@ColumnType</span><span class="o">(</span><span class="n">typeHandler</span> <span class="o">=</span> <span class="n">StateEnumTypeHandler</span><span class="o">.</span><span class="na">class</span><span class="o">)</span>
+<span class="kd">private</span> <span class="n">StateEnum</span> <span class="n">state</span><span class="o">;</span>
+</pre></div></div>
+<p>除了用这种麻烦的方式外，还可以直接用下面的方式配置全局的 typeHandler：</p>
+<div class="white"><div class="highlight"><pre><span class="cp">&lt;!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd"&gt;</span>
+
+<span class="nt">&lt;configuration&gt;</span>
+    <span class="c">&lt;!-- 其他配置 --&gt;</span>
+    <span class="nt">&lt;typeHandlers&gt;</span>
+        <span class="nt">&lt;typeHandler</span> 
+                <span class="na">handler=</span><span class="s">"org.apache.ibatis.type.EnumOrdinalTypeHandler"</span> 
+                <span class="na">javaType=</span><span class="s">"tk.mybatis.mapper.typehandler.StateEnum"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;/typeHandlers&gt;</span>
+    <span class="c">&lt;!-- 其他配置 --&gt;</span>
+<span class="nt">&lt;/configuration&gt;</span>
+</pre></div></div>
+<p>有了这些配置后，就可以在增删改查使用了。</p>
+
+<p>这个例子对应的测试： <a href="https://github.com/abel533/Mapper/blob/master/base/src/test/java/tk/mybatis/mapper/typehandler/TypeHandlerTest.java"><code>tk.mybatis.mapper.typehandler.TypeHandlerTest</code></a>。</p>
+<h4><a class="anchor" id="7-2-2-全局配置" href="#7-2-2-全局配置"></a>7.2.2 全局配置</h4>
+<p>第二种就是全部在配置文件中使用 typeHandler 进行配置，实体只做简单的配置：</p>
+<div class="white"><div class="highlight"><pre><span class="nd">@Table</span><span class="o">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">"user"</span><span class="o">)</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">User2</span> <span class="kd">implements</span> <span class="n">Serializable</span> <span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">serialVersionUID</span> <span class="o">=</span> <span class="mi">1L</span><span class="o">;</span>
+    <span class="nd">@Id</span>
+    <span class="kd">private</span> <span class="n">Integer</span>   <span class="n">id</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">String</span>    <span class="n">name</span><span class="o">;</span>
+    <span class="nd">@Column</span>
+    <span class="kd">private</span> <span class="n">Address</span>   <span class="n">address</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">StateEnum</span> <span class="n">state</span><span class="o">;</span>
+
+    <span class="c1">//省略 setter 和 getter</span>
+<span class="o">}</span>
+</pre></div></div>
+<p>这里的 <code>Address</code> 加上 <code>@Column</code> 注解，只是为了把该字段当成表中的字段。</p>
+
+<p>typeHandler 全局配置如下：</p>
+<div class="white"><div class="highlight"><pre><span class="nt">&lt;typeHandlers&gt;</span>
+    <span class="nt">&lt;typeHandler</span> 
+                 <span class="na">handler=</span><span class="s">"org.apache.ibatis.type.EnumOrdinalTypeHandler"</span> 
+                 <span class="na">javaType=</span><span class="s">"tk.mybatis.mapper.typehandler.StateEnum"</span><span class="nt">/&gt;</span>
+
+    <span class="nt">&lt;typeHandler</span> <span class="na">handler=</span><span class="s">"tk.mybatis.mapper.typehandler.AddressTypeHandler"</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/typeHandlers&gt;</span>
+</pre></div></div>
+<p>做好这些配置后，就可以在增删改查使用了。</p>
+
+<p>这个例子对应的测试： <a href="https://github.com/abel533/Mapper/blob/master/base/src/test/java/tk/mybatis/mapper/typehandler/TypeHandlerTest2.java"><code>tk.mybatis.mapper.typehandler.TypeHandlerTest2</code></a>。</p>
+</div><div class='title'>Home</div><div class='content'><h1><a class="anchor" id="mybatis-通用-mapper4" href="#mybatis-通用-mapper4"></a>MyBatis 通用 Mapper4</h1>
+<p><a href="https://travis-ci.org/abel533/Mapper"><img alt="Build Status" src="https://travis-ci.org/abel533/Mapper.svg?branch=master" /></a>
+<a href="https://maven-badges.herokuapp.com/maven-central/tk.mybatis/mapper"><img alt="Maven central" src="https://maven-badges.herokuapp.com/maven-central/tk.mybatis/mapper/badge.svg" /></a>
+<a href="https://www.versioneye.com/user/projects/593212c722f278006540a1d1"><img alt="Dependency Status" src="https://www.versioneye.com/user/projects/593212c722f278006540a1d1/badge.svg?style=flat" /></a></p>
+
+<p>通用 Mapper4 是一个可以实现任意 MyBatis 通用方法的框架，项目提供了常规的增删改查操作以及<code>Example</code> 相关的单表操作。通用 Mapper 是为了解决 MyBatis 使用中 90% 的基本操作，使用它可以很方便的进行开发，可以节省开发人员大量的时间。</p>
+<h2><a class="anchor" id="通用-mapper-4-和-3-的区别" href="#通用-mapper-4-和-3-的区别"></a>通用 Mapper 4 和 3 的区别</h2>
+<ol class="task-list">
+<li> 最大的区别就是 mapper4 把 mapper3 拆成了 base, core, extra,generator, spring 5个项目，并且把 weekend 和 spring-boot-starter 两个项目也加入进来。</li>
+<li> Mapper 4 默认不需要任何配置，自动注册接口（不需要 <code>mappers</code> 参数），需要基类接口标记 <code>@RegisterMapper</code> 注解。</li>
+<li> 在常规用法中，还可以直接引入 <code>tk.mybatis:mapper:版本号</code>，升级版本即可。</li>
+<li> 拆分项目后，除了第 3 条的常规方法外，还可以按需配置依赖，核心只需要一个 <code>core</code>，其他的都是在此基础上进行的扩展、方法实现或者集成。</li>
+<li> 和 spring 集成的更彻底，不会出现以前的一些常见问题。</li>
+</ol>
+<h2><a class="anchor" id="使用文档" href="#使用文档"></a>使用文档</h2>
+<p>初次使用时，请按照下面的文档顺序依次阅读，使用中遇到的问题时，可以参考相应的文档来查看。</p>
+
+<ol class="task-list">
+<li> <a href="1.integration" class="md_relative_url">集成通用 Mapper</a>
+
+<ul class="task-list">
+<li> <a href="1.1-java" class="md_relative_url">1.1 Java 编码方式</a></li>
+<li> <a href="1.2-spring" class="md_relative_url">1.2 和 Spring 集成</a></li>
+<li> <a href="1.3-spring-boot" class="md_relative_url">1.3 和 Spring Boot 集成</a></li>
+</ul>
+</li>
+<li> <a href="2.orm" class="md_relative_url">对象关系映射</a>
+
+<ul class="task-list">
+<li> <a href="2.1-simple" class="md_relative_url">2.1 简单示例</a></li>
+<li> <a href="2.2-mapping" class="md_relative_url">2.2 数据库映射</a></li>
+<li> <a href="2.3-generatedvalue" class="md_relative_url">2.3 主键策略</a></li>
+<li> <a href="2.4-version" class="md_relative_url">2.4 乐观锁</a></li>
+</ul>
+</li>
+<li> <a href="3.config" class="md_relative_url">配置介绍</a></li>
+<li> <a href="4.generator" class="md_relative_url">代码生成器</a></li>
+<li> <a href="5.extend" class="md_relative_url">扩展通用接口</a></li>
+<li> <a href="6.example" class="md_relative_url">Example 用法</a></li>
+<li> 其他配置和用法
+
+<ul class="task-list">
+<li><a href="7.1.cache" class="md_relative_url">7.1 二级缓存配置</a></li>
+<li><a href="7.2.typehandler" class="md_relative_url">7.2 TypeHandler 用法</a></li>
+</ul>
+</li>
+<li> <a href="faq" class="md_relative_url">常见问题</a></li>
+<li> <a href="changelog" class="md_relative_url">更新日志</a></li>
+</ol>
+<h2><a class="anchor" id="捐赠" href="#捐赠"></a>捐赠</h2>
+<p>项目的发展离不开你的支持，请作者喝杯咖啡吧！</p>
+
+<p>支付宝</p>
+
+<p><img alt="支付宝" src="http://mybatis.tk/images/alipay.png" /></p>
+
+<p>微信</p>
+
+<p><img alt="微信" src="http://mybatis.tk/images/weixinpay.png" /></p>
+<h2><a class="anchor" id="想要获取该项目最新消息-可以关注下方公众号" href="#想要获取该项目最新消息-可以关注下方公众号"></a>想要获取该项目最新消息，可以关注下方公众号</h2>
+<p><img alt="微信公众号" src="http://mybatis.tk/images/wxgzh.jpg" /></p>
+</div><div class='title'>_Footer</div><div class='content'><p><a href="1.integration" class="md_relative_url">1. 集成通用 Mapper</a>  ||  <a href="2.orm" class="md_relative_url">2. 对象关系映射</a>  ||  <a href="3.config" class="md_relative_url">3. 配置介绍</a></p>
+</div><div class='title'>_Sidebar</div><div class='content'><ol class="task-list">
+<li> <a href="1.integration" class="md_relative_url">集成通用 Mapper</a>
+
+<ul class="task-list">
+<li> <a href="1.1-java" class="md_relative_url">1.1 Java 编码方式</a></li>
+<li> <a href="1.2-spring" class="md_relative_url">1.2 和 Spring 集成</a></li>
+<li> <a href="1.3-spring-boot" class="md_relative_url">1.3 和 Spring Boot 集成</a></li>
+</ul>
+</li>
+<li> <a href="2.orm" class="md_relative_url">对象关系映射</a>
+
+<ul class="task-list">
+<li> <a href="2.1-simple" class="md_relative_url">2.1 简单示例</a></li>
+<li> <a href="2.2-mapping" class="md_relative_url">2.2 数据库映射</a></li>
+<li> <a href="2.3-generatedvalue" class="md_relative_url">2.3 主键策略</a></li>
+<li> <a href="2.4-version" class="md_relative_url">2.4 乐观锁</a></li>
+</ul>
+</li>
+<li> <a href="3.config" class="md_relative_url">配置介绍</a></li>
+<li> <a href="4.generator" class="md_relative_url">代码生成器</a></li>
+<li> <a href="5.extend" class="md_relative_url">扩展通用接口</a></li>
+<li> <a href="6.example" class="md_relative_url">Example 用法</a></li>
+<li> 其他配置和用法
+
+<ul class="task-list">
+<li><a href="7.1.cache" class="md_relative_url">7.1 二级缓存配置</a></li>
+<li><a href="7.2.typehandler" class="md_relative_url">7.2 TypeHandler 用法</a></li>
+</ul>
+</li>
+<li> <a href="faq" class="md_relative_url">常见问题</a></li>
+<li> <a href="changelog" class="md_relative_url">更新日志</a></li>
+</ol>
+</div><div class='title'>changelog</div><div class='content'><h1><a class="anchor" id="更新日志" href="#更新日志"></a>更新日志</h1><h2><a class="anchor" id="3-5-2-2018-01-24" href="#3-5-2-2018-01-24"></a>3.5.2 - 2018-01-24</h2><h4><a class="anchor" id="1-delete-和-deletebyprimarykey-增加对乐观锁注解-version-的支持-" href="#1-delete-和-deletebyprimarykey-增加对乐观锁注解-version-的支持-"></a>1. <code>delete</code> 和 <code>deleteByPrimaryKey</code> 增加对乐观锁注解 <code>@Version</code> 的支持。</h4>
+<p>测试用例如下：</p>
+<div class="white"><div class="highlight"><pre><span class="cm">/**
+ * 乐观锁删除
+ */</span>
+<span class="nd">@Test</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">testDeleteByPrimaryKeyAndVersion</span><span class="o">()</span> <span class="o">{</span>
+    <span class="n">SqlSession</span> <span class="n">sqlSession</span> <span class="o">=</span> <span class="n">MybatisHelper</span><span class="o">.</span><span class="na">getSqlSession</span><span class="o">();</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">CountryVersionMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="n">sqlSession</span><span class="o">.</span><span class="na">getMapper</span><span class="o">(</span><span class="n">CountryVersionMapper</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+        <span class="c1">//根据主键删除，没有指定版本时删除不了</span>
+        <span class="n">Assert</span><span class="o">.</span><span class="na">assertEquals</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">mapper</span><span class="o">.</span><span class="na">deleteByPrimaryKey</span><span class="o">(</span><span class="mi">100</span><span class="o">));</span>
+
+        <span class="n">CountryVersion</span> <span class="n">countryVersion</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CountryVersion</span><span class="o">();</span>
+        <span class="n">countryVersion</span><span class="o">.</span><span class="na">setId</span><span class="o">(</span><span class="mi">100</span><span class="o">);</span>
+        <span class="n">countryVersion</span><span class="o">.</span><span class="na">setVersion</span><span class="o">(</span><span class="mi">2</span><span class="o">);</span>
+        <span class="c1">//版本不对的时候的时候删除不了</span>
+        <span class="n">Assert</span><span class="o">.</span><span class="na">assertEquals</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">mapper</span><span class="o">.</span><span class="na">deleteByPrimaryKey</span><span class="o">(</span><span class="n">countryVersion</span><span class="o">));</span>
+
+        <span class="n">countryVersion</span><span class="o">.</span><span class="na">setId</span><span class="o">(</span><span class="mi">100</span><span class="o">);</span>
+        <span class="n">countryVersion</span><span class="o">.</span><span class="na">setVersion</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+        <span class="c1">//版本正确的时候可以真正删除</span>
+        <span class="n">Assert</span><span class="o">.</span><span class="na">assertEquals</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="n">mapper</span><span class="o">.</span><span class="na">deleteByPrimaryKey</span><span class="o">(</span><span class="n">countryVersion</span><span class="o">));</span>
+    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+        <span class="n">sqlSession</span><span class="o">.</span><span class="na">rollback</span><span class="o">();</span>
+        <span class="n">sqlSession</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div></div>
+<p>日志如下：</p>
+<div class="white"><div class="highlight"><pre>DEBUG [main] - ==&gt;  Preparing: DELETE FROM country WHERE id = ? AND version = ? 
+DEBUG [main] - ==&gt; Parameters: 100(Integer), 100(Integer)
+DEBUG [main] - &lt;==    Updates: 0
+DEBUG [main] - ==&gt;  Preparing: DELETE FROM country WHERE id = ? AND version = ? 
+DEBUG [main] - ==&gt; Parameters: 100(Integer), 2(Integer)
+DEBUG [main] - &lt;==    Updates: 0
+DEBUG [main] - ==&gt;  Preparing: DELETE FROM country WHERE id = ? AND version = ? 
+DEBUG [main] - ==&gt; Parameters: 100(Integer), 1(Integer)
+DEBUG [main] - &lt;==    Updates: 1
+</pre></div></div>
+<p><strong>特别注意：</strong> 上面测试用例已经展示了增加乐观锁后的参数如何传递，当主键多个值或者使用乐观锁的时候就需要通过实体（Map也可以）传递多个参数值。和之前的 update 一样，需要自己对执行结果进行判断来判断是否执行成功。</p>
+<h4><a class="anchor" id="2-3-5-0-版本中的参数-annotationassimpletype-名字错了-现在改为-enumassimpletype-用于配置是否将枚举类型当成基本类型对待-" href="#2-3-5-0-版本中的参数-annotationassimpletype-名字错了-现在改为-enumassimpletype-用于配置是否将枚举类型当成基本类型对待-"></a>2. 3.5.0 版本中的参数 <code>annotationAsSimpleType</code> 名字错了，现在改为 <code>enumAsSimpleType</code>，用于配置是否将枚举类型当成基本类型对待。</h4><h4><a class="anchor" id="3-simpletypeutil-增加对-java8-中的日期类型的支持-" href="#3-simpletypeutil-增加对-java8-中的日期类型的支持-"></a>3. <code>SimpleTypeUtil</code> 增加对 java8 中的日期类型的支持。</h4><h4><a class="anchor" id="4-example-builder-增加类似-weekend-中-java8-方法引用的用法-该功能由-chinaerserver-提交-pr207-" href="#4-example-builder-增加类似-weekend-中-java8-方法引用的用法-该功能由-chinaerserver-提交-pr207-"></a>4. <code>Example.Builder</code> 增加类似 <code>Weekend</code> 中 Java8 方法引用的用法，该功能由 <a href="https://github.com/chinaerserver">chinaerserver</a> 提交(<a href="https://github.com/abel533/Mapper/pull/207">#pr207</a>)</h4>
+<p>示例如下：</p>
+<div class="white"><div class="highlight"><pre><span class="nd">@Test</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">testWeekend</span><span class="o">()</span> <span class="o">{</span>
+    <span class="n">SqlSession</span> <span class="n">sqlSession</span> <span class="o">=</span> <span class="n">MybatisHelper</span><span class="o">.</span><span class="na">getSqlSession</span><span class="o">();</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">CountryMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="n">sqlSession</span><span class="o">.</span><span class="na">getMapper</span><span class="o">(</span><span class="n">CountryMapper</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+        <span class="c1">//普通方式</span>
+        <span class="n">List</span><span class="o">&lt;</span><span class="n">Country</span><span class="o">&gt;</span> <span class="n">selectByExample</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="na">selectByExample</span><span class="o">(</span>
+                <span class="k">new</span> <span class="n">Example</span><span class="o">.</span><span class="na">Builder</span><span class="o">(</span><span class="n">Country</span><span class="o">.</span><span class="na">class</span><span class="o">).</span><span class="na">where</span><span class="o">(</span><span class="n">Sqls</span><span class="o">.</span><span class="na">custom</span><span class="o">().</span><span class="na">andLike</span><span class="o">(</span><span class="s">"countryname"</span><span class="o">,</span> <span class="s">"China"</span><span class="o">)).</span><span class="na">build</span><span class="o">());</span>
+        <span class="c1">//Java8 方式</span>
+        <span class="n">List</span><span class="o">&lt;</span><span class="n">Country</span><span class="o">&gt;</span> <span class="n">selectByWeekendSql</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="na">selectByExample</span><span class="o">(</span><span class="k">new</span> <span class="n">Example</span><span class="o">.</span><span class="na">Builder</span><span class="o">(</span><span class="n">Country</span><span class="o">.</span><span class="na">class</span><span class="o">)</span>
+                <span class="o">.</span><span class="na">where</span><span class="o">(</span><span class="n">WeekendSqls</span><span class="o">.&lt;</span><span class="n">Country</span><span class="o">&gt;</span><span class="n">custom</span><span class="o">().</span><span class="na">andLike</span><span class="o">(</span><span class="nl">Country:</span><span class="o">:</span><span class="n">getCountryname</span><span class="o">,</span> <span class="s">"China"</span><span class="o">)).</span><span class="na">build</span><span class="o">());</span>
+        <span class="c1">// 判断两个结果数组内容是否相同</span>
+        <span class="n">Assert</span><span class="o">.</span><span class="na">assertArrayEquals</span><span class="o">(</span><span class="n">selectByExample</span><span class="o">.</span><span class="na">toArray</span><span class="o">(),</span> <span class="n">selectByWeekendSql</span><span class="o">.</span><span class="na">toArray</span><span class="o">());</span>
+    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+        <span class="n">sqlSession</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div></div><h4><a class="anchor" id="5-当项目中使用了自定义classloader的时候-可以通过设置classloader上下文的方式来使得自己的mapper-class能够被找到-这里的修改参照了-mybatis-源码中的-classloaderwrapper-类-by-liyongjun1-pr185" href="#5-当项目中使用了自定义classloader的时候-可以通过设置classloader上下文的方式来使得自己的mapper-class能够被找到-这里的修改参照了-mybatis-源码中的-classloaderwrapper-类-by-liyongjun1-pr185"></a>5. 当项目中使用了自定义classloader的时候，可以通过设置classloader上下文的方式来使得自己的mapper class能够被找到(这里的修改参照了 mybatis 源码中的 ClassLoaderWrapper 类)，by <a href="https://github.com/liyongjun1">liyongjun1</a> <a href="https://github.com/abel533/Mapper/pull/185">#pr185</a></h4><h4><a class="anchor" id="6-重点提醒-3-5-0-中-usesimpletype-默认值改为-true-默认忽略复杂类型的字段-复杂类型不需要加-transient-注解-具体类型可以参考-simpletypeutil-类-" href="#6-重点提醒-3-5-0-中-usesimpletype-默认值改为-true-默认忽略复杂类型的字段-复杂类型不需要加-transient-注解-具体类型可以参考-simpletypeutil-类-"></a>6. 重点提醒，3.5.0 中 <code>useSimpleType</code> 默认值改为 <code>true</code>，默认忽略复杂类型的字段，复杂类型不需要加 <code>@Transient</code> 注解，具体类型可以参考 <code>SimpleTypeUtil</code> 类。</h4>
+<p>在 <code>SimpleTypeUtil</code> 类中，由于一般的 JavaBean （尤其是 MyBatis）规范中，不能使用基本类型，这主要是由于基本类型有默认值，在一些动态 SQL 情况下（如所有 Selective 方法），无法判断基本类型的值是不是 <code>null</code>。
+所以在这里的简单类型是不包含 <code>byte,short,int,long,float,double,char,boolean</code> 这八种基本类型的。</p>
+
+<p>如果你要升级通用 Mapper 但是不想修改原来的基本类型，就设置 <code>useSimpleType=false</code>。</p>
+<h2><a class="anchor" id="3-5-0-2018-01-08" href="#3-5-0-2018-01-08"></a>3.5.0 - 2018-01-08</h2>
+<ul class="task-list">
+<li>兼容 mbg 1.3.6 版本。</li>
+<li><code>EntityColumn</code> 记录 <code>EntityField</code> 信息，方便后续扩展使用。</li>
+<li><p>针对 update 两个基本方法增加乐观锁功能，在实体类对版本字段增加 <code>@Version</code> 注解即可，默认支持 <code>Integer</code> 和 <code>Long</code> 类型，其他情况可以实现 <code>NextVersion</code> 接口并在注解中指定该实现，一个实体类中最多只能有一个加 <code>@Version</code> 注解的字段。</p></li>
+<li><p>3.4.0增加的 <code>useSimpleType</code> 默认值改为 <code>true</code>，默认忽略复杂类型的字段，复杂类型不需要加 <code>@Transient</code> 注解，具体类型可以参考 <code>SimpleTypeUtil</code> 类。</p></li>
+<li><p>新增 <code>annotationAsSimpleType</code> 参数，默认 <code>false</code>，设置为 <code>true</code> 后会把枚举作为简单类型对待，需要配合 <code>useSimpleType = true</code> 使用。</p></li>
+<li><p>新增 <code>wrapKeyword</code> 参数，配置后会自动处理关键字，可以配的值和数据库有关，例如 sqlserver 可以配置为 <code>[{0}]</code>，使用 <code>{0}</code> 替代原来的列名。</p></li>
+<li><p><code>FieldHelper</code> 改为判断当前jdk版本是否为6和7，其他情况按jdk8处理，因此支持jdk9+</p></li>
+<li><p>新增 <code>selectOneByExample</code> 方法，必须保证返回值最多 1 个，否则抛出异常。</p></li>
+<li><p>增加新的 <code>tk.mybatis.mapper.additional.insert.InsertListMapper</code>，这个批量插入方法不支持主键策略，不会返回自动生成的主键</p></li>
+</ul>
+
+<p>使用 <code>@Version</code> 注解的效果如下：</p>
+<div class="white"><div class="highlight"><pre><span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">==&gt;</span>  <span class="n">Preparing</span><span class="p">:</span> <span class="k">UPDATE</span> <span class="n">country</span> <span class="k">SET</span> <span class="n">countryname</span> <span class="o">=</span> <span class="o">?</span><span class="p">,</span><span class="n">countrycode</span> <span class="o">=</span> <span class="o">?</span><span class="p">,</span><span class="k">version</span> <span class="o">=</span> <span class="mi">2</span> <span class="k">WHERE</span> <span class="n">id</span> <span class="o">=</span> <span class="o">?</span> <span class="k">AND</span> <span class="k">version</span> <span class="o">=</span> <span class="o">?</span> 
+<span class="n">DEBUG</span> <span class="p">[</span><span class="n">main</span><span class="p">]</span> <span class="o">-</span> <span class="o">==&gt;</span> <span class="k">Parameters</span><span class="p">:</span> <span class="err">美国</span><span class="mi">2</span><span class="p">(</span><span class="n">String</span><span class="p">),</span> <span class="n">US</span><span class="p">(</span><span class="n">String</span><span class="p">),</span> <span class="mi">174</span><span class="p">(</span><span class="n">Integer</span><span class="p">),</span> <span class="mi">1</span><span class="p">(</span><span class="n">Integer</span><span class="p">)</span>
+</pre></div></div>
+<p>自动处理关键字代码：</p>
+<div class="white"><div class="highlight"><pre><span class="c1">//自动处理关键字</span>
+<span class="k">if</span> <span class="o">(</span><span class="n">StringUtil</span><span class="o">.</span><span class="na">isNotEmpty</span><span class="o">(</span><span class="n">wrapKeyword</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="n">SqlReservedWords</span><span class="o">.</span><span class="na">containsWord</span><span class="o">(</span><span class="n">columnName</span><span class="o">))</span> <span class="o">{</span>
+    <span class="n">columnName</span> <span class="o">=</span> <span class="n">MessageFormat</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="n">wrapKeyword</span><span class="o">,</span> <span class="n">columnName</span><span class="o">);</span>
+<span class="o">}</span>
+</pre></div></div><h2><a class="anchor" id="3-4-6-2017-12-17" href="#3-4-6-2017-12-17"></a>3.4.6 - 2017-12-17</h2>
+<ul class="task-list">
+<li><code>Example</code> 新增 builder 模式（by <a href="https://github.com/abel533/Mapper/commits?author=Ngone51">Ngone51</a>）。</li>
+<li>设置下划线风格替换为驼峰风格的Pattern为StringUtil的静态变量（by <a href="https://github.com/abel533/Mapper/commits?author=Ngone51">Ngone51</a>）。</li>
+</ul>
+
+<p>一个简单的 builder 用法示例：</p>
+<div class="white"><div class="highlight"><pre><span class="cm">/*
+ *   @description: 多个where连接的查询语句测试
+ *
+ */</span>
+<span class="nd">@Test</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">testWhereAndWhereCompound</span><span class="o">()</span> <span class="o">{</span>
+    <span class="n">SqlSession</span> <span class="n">sqlSession</span> <span class="o">=</span> <span class="n">MybatisHelper</span><span class="o">.</span><span class="na">getSqlSession</span><span class="o">();</span>
+    <span class="k">try</span> <span class="o">{</span>
+        <span class="n">CountryMapper</span> <span class="n">mapper</span> <span class="o">=</span> <span class="n">sqlSession</span><span class="o">.</span><span class="na">getMapper</span><span class="o">(</span><span class="n">CountryMapper</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+        <span class="n">Example</span> <span class="n">example</span> <span class="o">=</span> <span class="n">Example</span><span class="o">.</span><span class="na">builder</span><span class="o">(</span><span class="n">Country</span><span class="o">.</span><span class="na">class</span><span class="o">)</span>
+                <span class="o">.</span><span class="na">where</span><span class="o">(</span><span class="n">Sqls</span><span class="o">.</span><span class="na">custom</span><span class="o">()</span>
+                    <span class="o">.</span><span class="na">andEqualTo</span><span class="o">(</span><span class="s">"countryname"</span><span class="o">,</span> <span class="s">"China"</span><span class="o">)</span>
+                    <span class="o">.</span><span class="na">andEqualTo</span><span class="o">(</span><span class="s">"id"</span><span class="o">,</span> <span class="mi">35</span><span class="o">)</span>
+                <span class="o">)</span>
+                <span class="o">.</span><span class="na">andWhere</span><span class="o">(</span><span class="n">Sqls</span><span class="o">.</span><span class="na">custom</span><span class="o">()</span>
+                    <span class="o">.</span><span class="na">andEqualTo</span><span class="o">(</span><span class="s">"id"</span><span class="o">,</span> <span class="mi">183</span><span class="o">)</span>
+                <span class="o">)</span>
+                <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+        <span class="n">List</span><span class="o">&lt;</span><span class="n">Country</span><span class="o">&gt;</span> <span class="n">countries</span> <span class="o">=</span> <span class="n">mapper</span><span class="o">.</span><span class="na">selectByExample</span><span class="o">(</span><span class="n">example</span><span class="o">);</span>
+        <span class="n">Assert</span><span class="o">.</span><span class="na">assertEquals</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">countries</span><span class="o">.</span><span class="na">size</span><span class="o">());</span>
+
+    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+        <span class="n">sqlSession</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div></div>
+<p>更多用法可以通过测试 <a href="https://github.com/abel533/Mapper/blob/master/src/test/java/tk/mybatis/mapper/test/example/TestExampleBuilder.java"><code>TestExampleBuilder</code></a> 了解。</p>
+<h2><a class="anchor" id="3-4-5-2017-11-11" href="#3-4-5-2017-11-11"></a>3.4.5 - 2017-11-11</h2>
+<ul class="task-list">
+<li>插件增加一个 <code>&lt;context&gt;</code> 属性配置，可以控制是否使用通用 Mapper 自带的 <code>MapperCommentGenerator</code>，用法如下：
+<code>xml
+&lt;generatorConfiguration&gt;
+&lt;context id=&quot;Mysql&quot; targetRuntime=&quot;MyBatis3Simple&quot; defaultModelType=&quot;flat&quot;&gt;
+&lt;!--新增的参数，默认true 使用--&gt;
+&lt;property name=&quot;useMapperCommentGenerator&quot; value=&quot;false&quot;/&gt;
+&lt;!-- 其他 --&gt;
+&lt;/context&gt;
+&lt;/generatorConfiguration&gt;
+</code></li>
+<li>增加基于 MBG 的代码生成器插件，参考<a href="https://github.com/abel533/Mapper/blob/master/wiki/mapper3/11.CodeGenerator.md">使用文档</a>。</li>
+</ul>
+<h2><a class="anchor" id="3-4-4-2017-10-19" href="#3-4-4-2017-10-19"></a>3.4.4 - 2017-10-19</h2>
+<ul class="task-list">
+<li>增加 mapper-weekend（作者 <a href="https://github.com/liuyuyu">liuyuyu</a>），支持jdk8函数式引用方法，用法如下：</li>
+</ul>
+<div class="white"><div class="highlight"><pre>  <span class="n">UserMapper</span>    <span class="n">userMapper</span> <span class="o">=</span> <span class="n">sqlSession</span><span class="o">.</span><span class="na">getMapper</span><span class="o">(</span><span class="n">UserMapper</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+  <span class="n">Weekend</span><span class="o">&lt;</span><span class="n">User</span><span class="o">&gt;</span> <span class="n">weekend</span>    <span class="o">=</span> <span class="n">Weekend</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="n">User</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+  <span class="n">weekend</span><span class="o">.</span><span class="na">weekendCriteria</span><span class="o">()</span>
+          <span class="o">.</span><span class="na">andIsNull</span><span class="o">(</span><span class="nl">User:</span><span class="o">:</span><span class="n">getId</span><span class="o">)</span>
+          <span class="o">.</span><span class="na">andBetween</span><span class="o">(</span><span class="nl">User:</span><span class="o">:</span><span class="n">getId</span><span class="o">,</span><span class="mi">0</span><span class="o">,</span><span class="mi">10</span><span class="o">)</span>
+          <span class="o">.</span><span class="na">andIn</span><span class="o">(</span><span class="nl">User:</span><span class="o">:</span><span class="n">getUserName</span><span class="o">,</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="s">"a"</span><span class="o">,</span><span class="s">"b"</span><span class="o">,</span><span class="s">"c"</span><span class="o">));</span>
+</pre></div></div>
+<blockquote>
+<p>可以在 <code>Example.Criteria</code> 的条件方法里传 lambada(再也不用担心改数据库了......)。</p>
+</blockquote>
+
+<p>后续会继续在 3.x 版本更新和维护。</p>
+
+<p>原来计划的 4.0 版本打算用 mybatis 更原生的方式实现，所以需要尽快配合官方合并一个新功能，只有等合并后才会开始 4.0 的开发。</p>
+<h2><a class="anchor" id="3-4-3-2017-08-17" href="#3-4-3-2017-08-17"></a>3.4.3 - 2017-08-17</h2>
+<ul class="task-list">
+<li><code>MapperPlugin</code> 增加 <code>forceAnnotation</code> 参数，默认 <code>false</code>，设置为 <code>true</code> 后一定会生成<code>@Table</code>和<code>@Column</code>注解。</li>
+<li>为实例化 <code>TypeHandler</code> 增加 <code>javaTypeClass</code> by <strong>junchao</strong>。</li>
+<li>更新 <code>Example</code> 类，在获取 <code>property</code> 时，判断有没有该 <code>property</code> 并抛出异常 by <strong>chengcheng.feng</strong>。</li>
+<li>所有类的属性从 <code>HashMap</code> 改为 <code>ConcurrentHashMap</code>。</li>
+</ul>
+<h2><a class="anchor" id="3-4-2-2017-07-19" href="#3-4-2-2017-07-19"></a>3.4.2 - 2017-07-19</h2>
+<ul class="task-list">
+<li>简化Example的xml逻辑，解决由于and,or位置错误导致Example使用空条件时的错误，完善测试</li>
+</ul>
+<h2><a class="anchor" id="3-4-1-2017-07-17" href="#3-4-1-2017-07-17"></a>3.4.1 - 2017-07-17</h2>
+<ul class="task-list">
+<li><code>Example</code> 增加复杂的 <code>and</code> 和 <code>or</code> 功能。</li>
+<li><code>Example</code> 增加排除查询字段的方法 <code>excludeProperties</code>(<code>selectProperties</code>优先级更高) <a href="http://git.oschina.net/free/Mapper/issues/261"></a><a href="/free/Mapper/issues/IDVJN" class="gfm gfm-issue " title="Issue: 建议新增字段反选过滤功能--徐志摩">#261:建议新增字段反选过滤功能--徐志摩</a><a href="http://git.oschina.net/free/Mapper/issues/261"></a>.</li>
+<li><code>SqlHelper</code> 中复杂的 <code>if</code> 改为 <code>choose</code> 方式。</li>
+<li>解决通过<code>@Column</code>配置关键字的分隔符时，无法得到该列值的bug。</li>
+</ul>
+<h2><a class="anchor" id="3-4-0-2017-02-19" href="#3-4-0-2017-02-19"></a>3.4.0 - 2017-02-19</h2>
+<ul class="task-list">
+<li><code>Example</code> 增加 for update 支持，仅能用于 selectByExample 和 selectCountByExample 方法 <a href="/free/Mapper/issues/IBUXY" class="gfm gfm-issue " title="Issue: 建议增加for update-----徐志摩">#210:建议增加for update-----徐志摩</a>
+</li>
+<li><code>Example.Criteria</code> 增加 <code>andAllEqualTo</code> 方法，将此对象的所有字段参数作为相等查询条件，如果字段为 null，则为 is null <a href="/free/Mapper/issues/IBL1J" class="gfm gfm-issue " title="Issue: 建议优化对Example操作类里面的Null的sql拼接。">#206:建议优化对Example操作类里面的Null的sql拼接。</a>
+</li>
+<li>增加参数 <code>checkExampleEntityClass</code>，默认 <code>false</code> 用于校验通用 Example 构造参数 entityClass 是否和当前调用的 Mapper 类型一致 <a href="/free/Mapper/issues/IBJFH" class="gfm gfm-issue " title="Issue: 校验AExample用于BMapper方法时抛出异常">#201:校验AExample用于BMapper方法时抛出异常</a>
+</li>
+<li>增加参数 <code>useSimpleType</code>，默认 <code>false</code>，启用后判断实体类属性是否为表字段时校验字段是否为简单类型，如果不是就忽略该属性，这个配置优先级高于所有注解</li>
+<li>增加参数 <code>simpleTypes</code>，默认的简单类型在 <code>SimpleTypeUtil</code> 中，使用该参数可以增加额外的简单类型，通过逗号隔开的全限定类名添加</li>
+<li>所有 <code>RuntimeException</code> 异常改为 <code>tk.mybatis.mapper.MapperException</code> 异常</li>
+<li>所有 Update 方法添加 <code>@Options(useCache = false, useGeneratedKeys = false)</code>，fix <a href="/free/Mapper/issues/IBZZA" class="gfm gfm-issue " title="Issue: update对象时，对象的主键ID变为null">#216:update对象时，对象的主键ID变为null</a>
+</li>
+<li>使用自定义的 <code>SelectKeyGenerator</code>，防止有默认值时被替换掉 fix <a href="/free/Mapper/issues/IBYHD" class="gfm gfm-issue " title="Issue: MySQL使用selectKey时，如果主动给主键设值，则insert后，原来的主键值会被selectKey冲掉">#213:MySQL使用selectKey时，如果主动给主键设值，则insert后，原来的主键值会被selectKey冲掉</a>
+</li>
+<li>将 MapperTemplate 属性改为 protected</li>
+<li>MBG 插件中 generatedKey 元素的 sqlStatement 属性可以配置为形如 select SEQ_{1} from dual 的 SQL，其中 {0} 代表小写的表名，{1} 是大写的表名
+MBG 配置示例如下,类似 Oracle 序列的配置方式：
+<code>xml
+&lt;generatedKey column=&quot;id&quot; 
+    sqlStatement=&quot;select SEQ_{1}.nextval from dual&quot; 
+    identity=&quot;false&quot; 
+    type=&quot;pre&quot;/&gt;
+</code>
+这个配置生成的代码会像下面这样：
+<code>java
+public class Author {
+   @Id
+   @GeneratedValue(strategy = GenerationType.IDENTITY,
+           generator = &quot;select SEQ_AUTHOR.nextval from dual&quot;)
+   private Integer id;
+   // 省略其他
+}
+</code></li>
+</ul>
+<h2><a class="anchor" id="3-3-9-2016-09-04" href="#3-3-9-2016-09-04"></a>3.3.9 - 2016-09-04</h2>
+<ul class="task-list">
+<li>增加<code>selectByIds</code>和<code>deleteByIds</code>，用法见通用Mapper接口大全</li>
+<li>根据<strong>李领北</strong>建议修改<code>Example</code>中的<code>propertyMap</code><a href="/free/Mapper/issues/IAB35" class="gfm gfm-issue " title="Issue: 项目里使用Example还是比较频繁的，每次创建都要创建一个属性Map（能否缓存）代价是不是有点儿高">#159:项目里使用Example还是比较频繁的，每次创建都要创建一个属性Map（能否缓存）代价是不是有点儿高</a>
+</li>
+<li><code>Example</code>中的<code>andIn</code>和<code>andNotIn</code>中的参数<code>Collection</code>改为<code>Iterable</code></li>
+<li>解决驼峰转下划线的错误，感谢 ptma, piggsoft 和 liufor 的PR</li>
+<li>增加对MBG1.3.4的支持</li>
+<li>MBG插件支持<code>beginningDelimiter</code>和<code>endingDelimiter</code></li>
+<li>MBG插件增加schema配置（catalog也可以用这个），会自动在表的注解名字前面加上<code>schema.tablename</code></li>
+<li>MBG插件支持oracle获取注释，其他数据库可以尝试<a href="/free/Mapper/issues/I8URW" class="gfm gfm-issue " title="Issue: 使用oracle自动生成po没有column注释">#114:使用oracle自动生成po没有column注释</a>
+</li>
+<li>MBG扩展，详情看<a href="http://blog.csdn.net/isea533/article/details/52430691">MyBatis Generator 1.3.4 扩展，可以设置 Mapper（Dao）后缀</a></li>
+</ul>
+<h2><a class="anchor" id="3-3-8-2016-03-23" href="#3-3-8-2016-03-23"></a>3.3.8 - 2016-03-23</h2>
+<ul class="task-list">
+<li><code>Example</code>的<code>andIn</code>和<code>andNotIn</code>方法参数改为<code>Collection</code> <a href="/free/Mapper/issues/I8Q2M" class="gfm gfm-issue " title="Issue: Example.createCriteria().andIn()/andNotIn()的参数是否可以改成 Collection&lt;?&gt;">#109:Example.createCriteria().andIn()/andNotIn()的参数是否可以改成 Collection&lt;?&gt;</a>
+</li>
+<li>解决ResultMapping.Builder3.2.6版本新增<code>lazy</code>方法导致无法兼容3.2.4~3.2.5版本的问题，仍然兼容3.2.4+</li>
+<li>解决github<a href="https://github.com/abel533/Mapper/issues/12"></a><a href="/free/Mapper/issues/I67EL" class="gfm gfm-issue " title="Issue: 配置多个mapper时 字符越界">#12:配置多个mapper时 字符越界</a><a href="https://github.com/abel533/Mapper/issues/12"></a> 问题</li>
+<li>解决<a href="/free/Mapper/issues/I8N2Z" class="gfm gfm-issue " title="Issue: @table 中 schema 设置无效的问题">#107:@table 中 schema 设置无效的问题</a>
+</li>
+<li>解决和分页插件PageHelper中orderBy默认属性名相同导致排序的错误</li>
+</ul>
+<h2><a class="anchor" id="3-3-7-2016-03-12" href="#3-3-7-2016-03-12"></a>3.3.7 - 2016-03-12</h2>
+<ul class="task-list">
+<li><code>Example</code>增加<code>orderBy</code>方法，使用属性进行排序，例如：<code>example.orderBy(&quot;id&quot;).desc().orderBy(&quot;countryname&quot;).orderBy(&quot;countrycode&quot;).asc();</code></li>
+<li>当实体类包含数组类型的字段时，在<code>resultMap</code>中不使用<code>javaType</code>，这种情况如果出错，可以通过<code>@ColumnType</code>注解设置<code>jdbcType</code> <a href="/free/Mapper/issues/I8JZO" class="gfm gfm-issue " title="Issue: 数组类型处理有问题">#103:数组类型处理有问题</a>
+</li>
+<li>实体类中忽略<code>transient</code>类型的字段<a href="/free/Mapper/issues/I8MBE" class="gfm gfm-issue " title="Issue: 拼接的SQL中不应该包含transient类型的字段">#106:拼接的SQL中不应该包含transient类型的字段</a>
+</li>
+</ul>
+<h2><a class="anchor" id="3-3-6-2016-02-20" href="#3-3-6-2016-02-20"></a>3.3.6 - 2016-02-20</h2>
+<ul class="task-list">
+<li>增加对mybatis-spring 1.2.4版本的支持，兼容之前的版本</li>
+</ul>
+<h2><a class="anchor" id="3-3-5-2016-02-16" href="#3-3-5-2016-02-16"></a>3.3.5 - 2016-02-16</h2>
+<ul class="task-list">
+<li><code>Example</code>增加对动态表名支持，通过<code>setTableName</code>设置表名</li>
+<li>在example相关的两个<code>update</code>方法中，参数为实体类和<code>Example</code>，这个方法只能通过<code>Example</code>来设置动态表名，不支持通过实体设置动态表名</li>
+<li>优化两个<code>select count</code>查询，当表只有一个主键的时候，使用<code>select count(pk)</code>，其他时候使用<code>select count(*)</code></li>
+</ul>
+<h2><a class="anchor" id="3-3-4-2016-01-05" href="#3-3-4-2016-01-05"></a>3.3.4 - 2016-01-05</h2>
+<ul class="task-list">
+<li>解决insertList的bug#86</li>
+<li><code>Example</code>构造方法增加<code>notNull</code>参数，默认<code>false</code>，允许值为<code>null</code>，值为<code>null</code>的时候不加入到条件中。</li>
+<li><code>seqFormat</code>格式化参数增加第四个可配置值<code>TableName</code></li>
+</ul>
+<h2><a class="anchor" id="3-3-3-2015-12-30" href="#3-3-3-2015-12-30"></a>3.3.3 - 2015-12-30</h2>
+<ul class="task-list">
+<li>解决OGNL中的and,or大写导致的错误</li>
+<li>解决SpecialProvider不支持insertable的bug#77</li>
+<li>解决JDK6,7无法获取字段泛型类型的问题。</li>
+<li>提供一个Spring Boot集成的示例: <a target="_blank" href="https://github.com/abel533/MyBatis-Spring-Boot">https://github.com/abel533/MyBatis-Spring-Boot</a></li>
+</ul>
+<h2><a class="anchor" id="3-3-2-2015-12-12" href="#3-3-2-2015-12-12"></a>3.3.2 - 2015-12-12</h2>
+<ul class="task-list">
+<li>解决数据越界bug#73</li>
+<li>解决and少空格问题</li>
+<li>解决order by错误<a href="/free/Mapper/issues/I80IV" class="gfm gfm-issue " title="Issue: sql.append(&quot;order by ${orderByClause}<template></template>quot;)&quot;);多个<template></template>quot;">#74:sql.append("order by ${orderByClause}\")");多个\"</a>
+</li>
+<li><code>tk.mybatis.spring.mapper.MapperScannerConfigurer</code>中的属性<code>mapperHelper</code>增加setter和getter方法，方便通过代码进行配置</li>
+</ul>
+<h2><a class="anchor" id="3-3-1-2015-12-09" href="#3-3-1-2015-12-09"></a>3.3.1 - 2015-12-09</h2>
+<ul class="task-list">
+<li>增加<code>enableMethodAnnotation</code>参数，可以控制是否支持方法上的JPA注解，默认<code>false</code>。
+设置<code>enableMethodAnnotation = true</code>的时候注意，如<code>getRealName</code>或<code>setYourName</code>都会产生<code>realName</code>属性或<code>yourName</code>属性，如果该方法对应的属性不是表中的字段，就需要给方法增加<code>@Transient</code>注解。
+同样如果你的实体是继承<code>Map</code>类型的，你不需要在实体中写<code>private String userName</code>这样的属性，你只需要写<code>setUserName</code>或<code>getUserName</code>这样的方法就可以。</li>
+<li>在处理的注解的时候，优先从<code>Field</code>获取，然后是<code>setter</code>方法，最后是<code>getter</code>方法，注解重复的情况下，只获取按顺序得到的第一个</li>
+<li>为了支持如<code>public class Country extends Entity&lt;Integer, String&gt;</code>这样的泛型类型,在生成<code>#{propertyName}</code>的时候都带上了<code>javaType</code>属性。
+产生的结果就是<code>#{propertyName, javaType=java.lang.Integer}</code>这样子的，这会导致当你调用方法时，必须保证类型一致。
+也就是假设主键是<code>Integer id</code>，调用<code>selectByPrimaryKey(Object id)</code>的时候，参数<code>id</code>必须使用<code>100</code>这样的数字，不能使用<code>&quot;100&quot;</code>字符串（以前版本可以）。
+如果不带<code>javaType</code>，那么如果<code>id</code>是个泛型，MyBatis查找的时候就会因为找不到正确的类型而抛出异常。</li>
+<li>为了让扩展更方便，将<code>tk.mybatis.mapper.provider</code>包下所有的通用接口的实现方法改为了<code>String</code>形式。
+自己扩展单表操作的方法是非常容易的事情，建议有一定通用Mapper使用基础的自行扩展，扩展可以参考<a href="http://git.oschina.net/free/Mapper/blob/master/wiki/mapper3/6.MyMapper.md">如何扩展通用接口</a></li>
+<li>新增<code>SqlHelper</code>工具类，其中包含了大量可用的现成的SQL方法</li>
+<li><code>@Column</code>注解增加对<code>insertable</code>和<code>updatable</code>属性的支持</li>
+</ul>
+<h2><a class="anchor" id="3-3-0-2015-11-01" href="#3-3-0-2015-11-01"></a>3.3.0 - 2015-11-01</h2>
+<ul class="task-list">
+<li><p>增加对动态表名的支持，需要实体类继承<code>IDynamicTableName</code>接口，用法见<a href="http://git.oschina.net/free/Mapper/blob/master/wiki/mapper3/3.2.Use330.md">详细说明</a></p></li>
+<li><p><code>Example</code>增加自定义查询条件，提供了4个方法，具体方法和用法见<a href="http://git.oschina.net/free/Mapper/blob/master/wiki/mapper3/3.2.Use330.md">详细说明</a></p></li>
+<li><p>新增<code>@ColumnType</code>注解，可以单独设置列的<code>jdbcType</code>和<code>typeHandler</code></p></li>
+<li><p><code>Example</code>的<code>in</code>和<code>not in</code>中的<code>List&lt;Object&gt;</code>参数改为<code>List&lt;?&gt;</code>，允许任意类型</p></li>
+<li><p>select查询方法返回类型不在使用<code>resultType</code>，改为<code>resultMap</code>，因此可以支持<code>typeHandler</code>的读取</p></li>
+<li><p><code>Style</code>自动转方式新增<code>camelhumpAndUppercase</code>驼峰转下划线大写形式,<code>camelhumpAndLowercase</code>驼峰转下划线小写形式</p></li>
+<li><p>MapperTemplate中的<code>getSelectReturnType</code>方法改为<code>getEntityClass</code>，<code>getBEFORE</code>改为<code>isBEFORE</code></p></li>
+<li><p>文档中增加<code>@GeneratedValue(strategy = GenerationType.IDENTITY)</code>的一种重要<a href="http://git.oschina.net/free/Mapper/blob/master/wiki/mapper3/3.2.Use330.md">用法说明</a></p></li>
+<li><p>修复selectAll不支持<code>@OrderBy</code>注解的bug</p></li>
+<li><p>解决一个驼峰转换bug，例如<code>helloWorld</code>会转换为<code>hello_world</code>（原先是<code>hello_World</code>）</p></li>
+</ul>
+<h2><a class="anchor" id="3-2-2-2015-09-19" href="#3-2-2-2015-09-19"></a>3.2.2 - 2015-09-19</h2>
+<ul class="task-list">
+<li>和Spring集成时，允许通过<code>markerInterface</code>属性配置通用接口（注意该属性的原有作用不变），想要让该接口自动注册，该接口就需要继承<code>tk.mybatis.mapper.common.Marker</code>接口，<code>Mapper&lt;T&gt;</code>默认继承该接口，所以如果自己的接口是继承<code>Mapper&lt;T&gt;</code>的，不需要再继承。</li>
+<li>解决注册默认接口时存在的bug</li>
+</ul>
+<h2><a class="anchor" id="3-2-1-2015-09-02" href="#3-2-1-2015-09-02"></a>3.2.1 - 2015-09-02</h2>
+<ul class="task-list">
+<li>解决spring集成中可能出现definition.getBeanClassName()空指针异常bug<a href="http://git.oschina.net/free/Mapper/issues/49"></a><a href="/free/Mapper/issues/I7D60" class="gfm gfm-issue " title="Issue: definition.getBeanClassName()空指针异常">#49:definition.getBeanClassName()空指针异常</a><a href="http://git.oschina.net/free/Mapper/issues/49"></a></li>
+<li>关于3.2.x版本，请仔细看3.2.0的更新日志，最新版本的文档也是针对3.2.x版本的</li>
+</ul>
+<h2><a class="anchor" id="3-2-0-2015-09-02" href="#3-2-0-2015-09-02"></a>3.2.0 - 2015-09-02</h2>
+<ul class="task-list">
+<li>移除<code>MapperInterceptor</code>拦截器，以后不能在通过拦截器配置</li>
+<li>增加mybatis-spring特殊支持，主要是根据mybatis-spring项目增加了下面两个类：
+
+<ul class="task-list">
+<li><code>tk.mybatis.spring.mapper.MapperScannerConfigurer</code></li>
+<li><code>tk.mybatis.spring.mapper.MapperFactoryBean</code></li>
+</ul>
+</li>
+<li>这两个类和MyBatis提供的区别是增加了MapperHelper属性，通过在<code>MapperScannerConfigurer</code>中使用<code>properties</code>属性注入配置</li>
+<li>这两个类，在全名上和MyBatis的区别是<code>org.mybatis.xxx</code>改为了<code>tk.mybatis.xxx</code>，名字相近，更方便修改配置</li>
+<li>和Spring集成方法：</li>
+</ul>
+<div class="white"><div class="highlight"><pre><span class="nt">&lt;bean</span> <span class="na">class=</span><span class="s">"tk.mybatis.spring.mapper.MapperScannerConfigurer"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;property</span> <span class="na">name=</span><span class="s">"basePackage"</span> <span class="na">value=</span><span class="s">"com.isea533.mybatis.mapper"</span><span class="nt">/&gt;</span>
+    <span class="nt">&lt;property</span> <span class="na">name=</span><span class="s">"properties"</span><span class="nt">&gt;</span>
+        <span class="nt">&lt;value&gt;</span>
+            mappers=tk.mybatis.mapper.common.Mapper
+        <span class="nt">&lt;/value&gt;</span>
+    <span class="nt">&lt;/property&gt;</span>
+<span class="nt">&lt;/bean&gt;</span>
+</pre></div></div>
+<ul class="task-list">
+<li>这种配置方式是不是简单的不能再简单了?</li>
+<li>增加<code>style</code>属性配置，用来配置对象名/字段和表名/字段之间的转换方式，可选值：
+
+<ul class="task-list">
+<li><code>normal</code>:使用实体类名/属性名作为表名/字段名</li>
+<li><code>camelhump</code>:<b>这是默认值</b>，驼峰转换为下划线形式</li>
+<li><code>uppercase</code>:转换为大写</li>
+<li><code>lowercase</code>:转换为小写</li>
+</ul>
+</li>
+<li>增加实体注解<code>@NameStyle</code>，该注解优先于全局配置<code>style</code></li>
+<li>解决<code>example.selectProperties</code>映射错误的bug<a href="http://git.oschina.net/free/Mapper/issues/48"></a><a href="/free/Mapper/issues/I7CG5" class="gfm gfm-issue " title="Issue: Example增加了example.selectProperties 的问题">#48:Example增加了example.selectProperties 的问题</a><a href="http://git.oschina.net/free/Mapper/issues/48"></a></li>
+</ul>
+<h2><a class="anchor" id="3-1-3-2015-08-25" href="#3-1-3-2015-08-25"></a>3.1.3 - 2015-08-25</h2>
+<ul class="task-list">
+<li>去掉了3.1.3-SNAPSHOT版本中的<code>MapperOnceInterceptor</code>拦截器，下个版本会完善<code>MapperHelper</code>的配置方式</li>
+<li><code>Example</code>增加了<code>example.selectProperties(&quot;id&quot;, &quot;countryname&quot;, ...)</code>方法，可以指定查询列，注意这里参数写的是属性名，<code>Example</code>会自动映射到列名</li>
+<li><code>Example</code>增加<code>andEqualTo(实体对象)</code>方法，可以将一个实体放进去，会自动根据属性和值拼出column=value的条件 <b>Bob - <a target="_blank" href="0haizhu0@gmail.com">0haizhu0@gmail.com</a> 提供</b>
+</li>
+<li>MyBatis在处理<code>&lt;cache/&gt;</code>和<code>@CacheNamespace</code>的时候不统一，只有一个能生效，这导致xml中配置二级缓存对通用Mapper注解形式的方法无效，该问题已解决</li>
+<li>二级缓存配置方法，如果接口有对应的xml，在xml中配置二级缓存。如果只有接口没有xml，用注解配置二级缓存即可</li>
+<li>需要注意的是，二级缓存在xml配置时，只对通用Mapper方法有效，自己用<code>@Select</code>等注解定义的这种仍然无效，这种情况只能在xml中定义</li>
+</ul>
+<h2><a class="anchor" id="3-1-2-2015-07-14" href="#3-1-2-2015-07-14"></a>3.1.2 - 2015-07-14</h2>
+<ul class="task-list">
+<li>解决别名时的一种特殊情况，例如<code>@Column(name=&quot;</code>desc<code>&quot;)</code>的时候，就不需要自动添加别名</li>
+<li>反射获取所有列名的时候，不在自动转换为大写形式，对数据库区分大小写的情况有用</li>
+</ul>
+<h2><a class="anchor" id="3-1-1-2015-07-01" href="#3-1-1-2015-07-01"></a>3.1.1 - 2015-07-01</h2>
+<ul class="task-list">
+<li>解决<code>ConditionMapper</code>中<code>selectByCondition</code>和<code>updateByCondition</code>方法错误</li>
+</ul>
+<h2><a class="anchor" id="3-1-0-2015-06-10" href="#3-1-0-2015-06-10"></a>3.1.0 - 2015-06-10</h2>
+<ul class="task-list">
+<li>基础包名从<code>com.github.abel533</code>改为<code>tk.mybatis.mapper</code></li>
+<li>Maven的groupId改为<code>tk.mybatis</code>,artifactId为<code>mapper</code></li>
+<li>增加和Example功能类似的Condition查询，仅仅名字不同</li>
+<li>更多详细变化请看<a href="http://git.oschina.net/free/Mapper/blob/master/wiki/mapper3/5.Mappers.md">Mapper3通用接口大全</a></li>
+<li>关于3.0.x版本请看<a href="http://git.oschina.net/free/Mapper/tree/Mapper3.0.x/">Mapper3.0.x</a></li>
+</ul>
+<h2><a class="anchor" id="3-0-0-2015-06-04" href="#3-0-0-2015-06-04"></a>3.0.0 - 2015-06-04</h2>
+<ul class="task-list">
+<li>将<code>EntityMapper</code>和<code>SqlMapper</code>移出，现在是独立项目<a href="http://git.oschina.net/free/EntityMapper">EntityMapper</a></li>
+<li>将<code>Mapper&lt;T&gt;</code>全部接口方法拆分为独立接口，方便选择集成</li>
+<li>增加<code>MySqlMapper&lt;T&gt;</code>包含批量插入和单个插入，批量插入可以回写全部id</li>
+<li>增加<code>RowBoundsMapper&lt;T&gt;</code>包含两个分页查询，可以配合<a href="http://git.oschina.net/free/Mybatis_PageHelper">PageHelper</a>实现物理分页</li>
+<li>详细变化请看<a href="http://git.oschina.net/free/Mapper/blob/master/wiki/mapper3/1.Changes.md">Mapper3变化</a></li>
+<li>Mapper2资深用户请看<a href="http://git.oschina.net/free/Mapper/blob/master/wiki/mapper3/4.Professional.md">Mapper3高级应用</a></li>
+<li><a href="http://git.oschina.net/free/Mapper/blob/master/wiki/mapper3/5.Mappers.md">Mapper3通用接口大全</a></li>
+<li><a href="http://git.oschina.net/free/Mapper/blob/master/wiki/mapper3/6.MyMapper.md">快速开发自己的通用接口</a></li>
+</ul>
+<h2><a class="anchor" id="2-3-4-2015-06-01" href="#2-3-4-2015-06-01"></a>2.3.4 - 2015-06-01</h2>
+<ul class="task-list">
+<li><p>高并发时selectKey会产生异常，解决<a href="http://git.oschina.net/free/Mapper/issues/32"></a><a href="/free/Mapper/issues/I6QAA" class="gfm gfm-issue " title="Issue: 一开始高并发会报错：提示Mapped Statements collection already contains value of xxxx.insert!selectKey">#32:一开始高并发会报错：提示Mapped Statements collection already contains value of xxxx.insert!selectKey</a><a href="http://git.oschina.net/free/Mapper/issues/32"></a></p></li>
+<li><p>兼容MyBatis3.3.0版本</p></li>
+<li><p><b>提前预告：下个版本3.0.0会将通用Mapper项目拆分为两个项目，会有一些大的改动</b></p></li>
+</ul>
+<h2><a class="anchor" id="2-3-3-2015-05-14" href="#2-3-3-2015-05-14"></a>2.3.3 - 2015-05-14</h2>
+<ul class="task-list">
+<li><p>解决Example查询中的<code>and</code>缺少空格的问题</p></li>
+<li><p>去掉UUID和JDBC两种主键策略类型中对字段类型的限制
+不再限制为<code>String</code>，可以是任意简单类型，需要自己保证类型匹配。例如UUID配置的策略可以返回<code>Integer</code>,那么字段类型必须是<code>Integer</code>。</p></li>
+<li><p>JDBC类型的主键策略可以配置多个，就相当于<code>keyProperties=&quot;id1,id2...&quot;</code></p></li>
+<li><p><code>EntityHelper</code>的<code>getOrderByClause</code>方法返回值从<code>StringBuilder</code>改为<code>String</code>，解决<code>@OrderBy</code>注解时的异常</p></li>
+<li><p><b>提前预告：下个版本3.0.0会将通用Mapper项目拆分为两个项目，会有一些大的改动</b></p></li>
+</ul>
+<h2><a class="anchor" id="2-3-2-2015-04-21" href="#2-3-2-2015-04-21"></a>2.3.2 - 2015-04-21</h2>
+<ul class="task-list">
+<li>解决Example查询中in,notin无效的bug<a href="http://git.oschina.net/free/Mapper/issues/24"></a><a href="/free/Mapper/issues/I6JJM" class="gfm gfm-issue " title="Issue: andIn条件无效？我发现问题所在了，大神粗心了。">#24:andIn条件无效？我发现问题所在了，大神粗心了。</a><a href="http://git.oschina.net/free/Mapper/issues/24"></a></li>
+</ul>
+<h2><a class="anchor" id="2-3-1-2015-04-13" href="#2-3-1-2015-04-13"></a>2.3.1 - 2015-04-13</h2>
+<ul class="task-list">
+<li><p>完善所有和PrimaryKey有关的通用查询</p></li>
+<li><p>修复Mapper接口中update操作会更新主键的bug</p></li>
+<li><p>修复Mapper接口中使用Example查询的时候，条件and前面缺少空格，影响美观</p></li>
+<li><p>MBG插件增加caseSensitive默认false，当数据库表名区分大小写时，可以将该属性设置为true</p></li>
+</ul>
+<h2><a class="anchor" id="2-3-0-2015-04-05" href="#2-3-0-2015-04-05"></a>2.3.0 - 2015-04-05</h2>
+<ul class="task-list">
+<li><p>Mapper接口和EntityMapper都增加了<code>selectOne</code>方法，该查询返回值最多只能有一个，存在多个时抛出异常</p></li>
+<li><p>Mapper接口和EntityMapper中，返回List的查询方法都支持JPA的<code>@Orderby</code>注解。其中<code>Example</code>查询中的<code>orderby</code>会覆盖注解的<code>@Orderby</code>设置。</p></li>
+<li><p>通过实体类获取表名的时候，不对表名进行强制的大小写转换。如果数据库大小写敏感，请通过<code>@Table</code>注解和数据库保持一致。</p></li>
+</ul>
+<h2><a class="anchor" id="2-2-0-2015-03-11" href="#2-2-0-2015-03-11"></a>2.2.0 - 2015-03-11</h2>
+<ul class="task-list">
+<li>新增<code>SqlMapper</code>，可以使用MyBatis直接执行sql，<a href="http://git.oschina.net/free/Mapper/blob/master/wiki/UseSqlMapper.md">详细文档</a></li>
+</ul>
+<h2><a class="anchor" id="v2-1-0-2015-03-07" href="#v2-1-0-2015-03-07"></a>v2.1.0 - 2015-03-07</h2>
+<ul class="task-list">
+<li>
+<p>通用Mapper接口增加Example查询方法，包括以下方法：</p>
+
+<p>int selectCountByExample(Object example);</p>
+
+<p>int deleteByExample(Object example);</p>
+
+<p>List selectByExample(Object example);</p>
+
+<p>int updateByExampleSelective(<a href="/param" class="gfm gfm-team_member ">@chancelai </a>("record") T record, <a href="/param" class="gfm gfm-team_member ">@chancelai </a>("example") Object example);</p>
+
+<p>int updateByExample(<a href="/param" class="gfm gfm-team_member ">@chancelai </a>("record") T record, <a href="/param" class="gfm gfm-team_member ">@chancelai </a>("example") Object example);</p>
+</li>
+<li><p>通用<code>Example</code>增加了一个<code>exists</code>的参数，当<code>true</code>的时候如果使用的字段不存在会抛出异常，<code>false</code>时不抛出异常，但是不使用该字段的条件。</p></li>
+</ul>
+<h2><a class="anchor" id="v2-0-1-2015-02-28" href="#v2-0-1-2015-02-28"></a>V2.0.1 - 2015-02-28</h2>
+<ul class="task-list">
+<li>增加拦截器，完善相应的文档</li>
+</ul>
+<h2><a class="anchor" id="v2-0-0-2015-02-04" href="#v2-0-0-2015-02-04"></a>V2.0.0 - 2015-02-04</h2>
+<ul class="task-list">
+<li>增加一个<code>CommonMapper</code>和包装类<code>EntityMapper</code>，建议使用<code>EntityMapper</code></li>
+<li>有关<code>EntityMapper</code>的内容请看独立文档，这个类足以独立成一个开源项目</li>
+<li>增加对JPA注解<code>OrderBy</code>的支持，仅对<code>select</code>一个方法有效</li>
+</ul>
+
+<p>简单说明，为什么版本这么快就到了2.0?，因为<code>EntityMapper</code>，这是另一种形式的通用Mapper。</p>
+
+<p>这里说说<code>EntityMapper</code>和通用Mapper的区别。</p>
+
+<p>通用Mapper需要有继承的接口，需要指定泛型类型，可以缓存，和手写的效果一样。</p>
+
+<p><code>EntityMapper</code>无需继承，可以直接使用，而且这一个对象就可以操作全部的实体对象（和通用Mapper注解要求一样，不支持主键策略）和表，是一个更接近Hibernate用法的类，这个类非常强大，支持Mybatis生成的Example查询，还支持一个通用Example查询。</p>
+
+<p><code>EntityMapper</code>功能更全面，但是不支持主键策略，由于该类足以独立成一个开源项目，简单几句不能说明用法，因此详细内容请看独立的文档。</p>
+<h2><a class="anchor" id="v1-1-0" href="#v1-1-0"></a>V1.1.0</h2>
+<ul class="task-list">
+<li>完善文档</li>
+<li>解决主键selectKey的一个bug</li>
+<li>解决@Column注解为空时的bug</li>
+<li>完善自动增长的配置，增加对JDBC的支持<code>@GeneratedValue(generator = &quot;JDBC&quot;)</code>,详细请看下面关于主键策略的详细内容</li>
+<li>增加了一个<code>notEmpty</code>参数，该参数会影响所有使用<code>getAllIfColumnNode</code>方法的地方,具体到<code>Mapper&lt;T&gt;</code>,影响3个方法：select,selectCount,delete。如果设置为<code>true</code>，那么<code>&lt;if ...</code>的条件中会包含<code>String</code>类型<code>property!=&#39;&#39;</code>的条件。</li>
+</ul>
+<h2><a class="anchor" id="v1-0-0正式发布版" href="#v1-0-0正式发布版"></a>v1.0.0正式发布版</h2>
+<ul class="task-list">
+<li><p>增加通用Mapper专用的MyBatis Generator插件，可以自动生成实体类注解以及Mapper接口和一个空的xml文件</p></li>
+<li><p>插件后续可能会增加更多的自动生成代码。</p></li>
+<li><p>有关插件的使用，后续完善文档</p></li>
+</ul>
+<h2><a class="anchor" id="v0-3-2版本说明" href="#v0-3-2版本说明"></a>v0.3.2版本说明</h2>
+<p>移除了<code>MapperInterceptor</code>类，不在提供拦截器方式的使用。如果有需要可以自己从0.3.1版本获取。</p>
+<h2><a class="anchor" id="v0-3-1版本说明" href="#v0-3-1版本说明"></a>v0.3.1版本说明</h2>
+<p>支持Spring4泛型注入，详细请看文档<a href="http://git.oschina.net/free/Mapper/blob/master/UseMapperInSpring4.md">在Spring4中使用通用Mapper</a> </p>
+<h2><a class="anchor" id="v0-3-0版本说明" href="#v0-3-0版本说明"></a>v0.3.0版本说明</h2>
+<p>这个版本的主要目的是消除拦截器，因此针对常用的情况增加了两种更方便的使用方式。</p>
+<h2><a class="anchor" id="v0-2-0版本说明" href="#v0-2-0版本说明"></a>v0.2.0版本说明</h2>
+<p>该版本做了大量的重构，在原有基础上增加了两个类，分别为<code>MapperTemplate</code>和<code>MapperProvider</code>，其他几个类都有相当大的改动。  </p>
+
+<p><strong>但是</strong>，这次重构并不影响原有的业务代码。  </p>
+
+<p>这次重构的目的是为了方便开发者自行扩展，增加自己需要的通用Mapper。这次重构后，扩展变的更容易。稍后会写一篇<strong>如何进行扩展</strong>的文档。  </p>
+
+<p>这次更新还修复Oracle序列的BUG。</p>
+</div><div class='title'>faq</div><div class='content'></div><div class='title'>faq</div><div class='content'><h2><a class="anchor" id="七-常见问题" href="#七-常见问题"></a>七、常见问题</h2></div>
+          </div>
+        </div>
+      </div>
+      </div>
+  </div>
+</body>
+</html>
