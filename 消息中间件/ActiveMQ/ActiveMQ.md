@@ -1,6 +1,14 @@
 # ActiveMQ
 
+<font color="green">*@Author:hanguixian*</font> 
+
+<font color="green">*@Email:hn_hanguixian@163.com*</font>
+
+
+
 - MQ产品：Kafka、RabbitMQ、RocketMQ、ActiveMQ ...
+
+
 
 ## 一  概述
 
@@ -101,7 +109,7 @@
 
 ![activeMQ4.png](img/activeMQ4.png)
 
-- /opt目录下面
+- 下载到/opt目录下面
 - 解压缩apache - activemq -5.15.6-bin. tar .gz
 - 在根目录下mkdir /myactiveMQ
 -  cp -r apache -activemq-5.15.6/myactiveMQ/
@@ -142,6 +150,8 @@ ps -ef |grep activemq |  grep -v grep
 - 采用61616端口人提供JMS服务
 - 采用8161端口提供管理控制台服务
 
+
+
 ## 三 JAVA编程实现ActiveMQ通讯
 
 ### 1 JMS编程总体架构
@@ -155,9 +165,23 @@ ps -ef |grep activemq |  grep -v grep
 
 ![activeMQ9.png](img/activeMQ9.png)
 
+- 比较
 
+|            | Topic                                                        | Queue                                                        |
+| ---------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| 工作模式   | 订阅发布模式，如果当前没有订阅者，消息将会被丢弃。如果有多个订阅者，那么这些订阅者都会收到消息 | 负载均衡模式，如果当前没有消费者，消息也不会丢弃如果有多个消费者，那么-条消息也只会发送给其中-个消费者, 并且要求消费者ack信息 |
+| 有无状态   | 无状态                                                       | Queue数据默认会在mq服务器上以文件形式保存，比如Active MQ一般保存在${AMQ_ HOME}\data\kr -store\data下面。也可以配置成DB存储。 |
+| 传递完整性 | 如果没有订阅者，消息会被丢弃                                 | 消息不会丢弃                                                 |
+| 处理效率   | 由于消息要按照订阅者的数量进行复制，所以处理性能会随着订阅者的增加而明显降低，并且还要结合不同消息协议自身的性能差异 | 由于条消息只发送给一个消费者， 所以就算消费者再多，性能也不会有明显降低。当然不同消息协议的具体性能也是有差异的 |
 
+负载均衡模式，如果当前没有消费者，消息也不会丢弃如果有多个消费者，那么-条消息也只会发送给其中-个消费者, 并且要求
+消费者ack信息.
 
+Queue数据默认会在mq服务器上以文件形式保存，比如Active MQ一般保存在SAMQ_ HOMEIdatakr storeldata下面。也可以配置成
+DB存储。
+
+消息不会丢弃
+由于条消息只发送给一个消费者， 所以就算消费者再多，性能也不会有明显降低。当然不同消息协议的具体性能也是有差异的
 
 ### 3 在点对点的消息传递域中，目的地被称为队列(Queue)
 
@@ -400,6 +424,103 @@ public class FirstTopicConsumer {
 
 
 ## 四 JMS规范与落地产品
+
+### 1 是什么
+
+#### 1.1 JavaEE
+
+- JavaEE是一套使用Java进行企业级应用开发的大家一致遵循的13个核心规范工业标准。JavaEE平台提供了一个基于组件的方法来加快设计、开发、装配及部署企业应用程序
+      1、JDBC(Java Database) 数据库连接
+        2、JNDI(Java Naming and Directory Interfaces) Java的命名和目录接口
+        3、EJB(Enterprise JavaBean)
+        4、RMI(Remote Method Invoke) 远程方法调用
+        5、Java IDL(Interface Description Language)/CORBA(Common Object Broker Architecture) 接口定义语言1公用对象请求代理程序体系结构
+        6、JSP(Java Server Pages)
+        7、Servlet
+        8、XML(Extensible Markup Language)可扩展白标记语言
+        9、JMS(Java Message Service) Java 消息服务
+        10、JTA(Java Transaction API) Java事务API 
+        11、JTS(Java Transaction Service) Java事务服务
+        12、JavaMail
+        13、JAF(JavaBean Activation Framework)
+  
+
+#### 1.2 Java Message Service(Java消息服务是JavaEE中的一个技术
+
+- Java消息服务指的是两个应用程序之间进行异步通信的API,它为标准消息协议和消息服务提供了一组通用接口，包括创建、发送、读取消息等，用于支持JAVA应用程序开发。在JavaEE中，当两个应用程序使用JMS进行通信时，它们之间并不是直接相连的，而是通过一个共同的消息收发服务组件关联起来以达到解耦、异步、削峰的效果。
+
+![activeMQ10.png](img/activeMQ10.png)
+
+### 2 MQ中间件的其他落地产品
+
+- Kafka、RabbitMQ、RocketMQ、ActiveMQ .....
+
+### 3 JMS的组成结构和特点
+
+#### 3.1 JMS Provider
+
+- 实现JMs接口和规范的消息中间件，也就是我们的MQ服务器
+
+#### 3.2 JMS producer
+
+- 消息生产者，创建和发送JMS消息的客户端应用
+
+#### 3.3 JMS consumer
+
+- 消息消费者，接收和处理JMS消息的客户端应用
+
+#### 3.4 JMS message
+
+##### 3.4.1 消息头
+
+- JMSDestination：消息发送的目的地，主要是指Queue和Topic
+- JMSDeliveryMode：
+  - 持久模式和非持久模式。
+  - 一条持久性的消息:应该被传送“一次仅仅一次”，这就意味者如果JMS提供者出现故障，该消息并不会丢失，它会在服务器恢复之后再次传递。
+  - 一条非持久的消息:最多会传送一次，这意味这服务器出现故障，该消息将永远丢失。
+- JMSExpiration
+  - 可以设置消息在一定时间后过期，默认是永不过期
+  - 消息过期时间，等于Destination的send方法中的timeToLive值加上发送时刻的GMT时间值。
+  - 如果timeToLive值等于零，则JMSExpiration 被设为零，表示该消息永不过期。
+  - 如果发送后，在消息过期时间之后消息还没有被发送到目的地，则该消息被清除。
+- JMSPriority
+  - 消息优先级，从0-9十个级别，0到4是普通消息,5到9是加急消息。
+  - JMS不要求MQ严格按照这十个优先级发送消息，但必须保证加急消息要先于普通消息到达。默认是4级。
+- JMSMessageID
+  - 唯一识别每个消息的标识由MQ产生
+
+##### 3.4.2 消息体
+
+- 封装具体的消息数据
+- 5种消息格式
+  - TextMessage：普通字符串消息， 包含一个string
+  - MapMessage：一个Map类型的消息，key为string类型，而值为Java的基本类型
+  - BytesMessage：二进制数组消息，包含一个byte[]
+  - StreamMessage：Java数据流消息，用标准流操作来顺序的填充和读取。
+  - ObjectMessage：对象消息，包含一个可序列化的Java对象
+- 发送和接受的消息体类型必须一致对应
+
+##### 3.4.3 消息属性
+
+- 如果需要除消息头字段以外的值，那么可以使用消息属性
+- 识别/去重/重点标注等操作非常有用的方
+- 是什么
+  - 他们是以属性名和属性值对的形式制定的。可以将属性视为消息头的扩展，属性指定一些消息头没有包括的附加信息，比如可以在属性里指定消息选择器。
+  - 消息的属性就像可以分配给一条消息的附加消息头一样。 它们允许开发者添加有关消息的不透明附加信息。它们还用于暴露消息选择器在消息过滤时使用的数据。
+
+```java
+TextMessage message = session.createTextMessage();
+message.setText(text);
+message. setStringProperty("username'","z3"); /自定义属性
+```
+
+### 4 JMS的可靠性
+
+### 5 JMS的点对点总结
+
+### 6 JMS的发布订阅总结
+
+
 
 ## 五 ActiveMQ的Broker
 
