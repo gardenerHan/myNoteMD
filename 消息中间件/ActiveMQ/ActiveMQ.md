@@ -514,6 +514,217 @@ message. setStringProperty("username'","z3"); /自定义属性
 
 ### 4 JMS的可靠性
 
+#### 4.1 持久化PERSISTENT
+
+##### 4.1.1 参数设置说明
+
+- 持久
+
+  - `messageProducer.setDeliveryMode(DeliveryMode.NON_PERSISTENT)`
+  - 当服务器宕机，消息不存在
+- 非持久
+  - `messageProducer.setDeliveryMode(DeliveryMode.PERSISTENT)`
+  - 当服务器宕机，消息依然存在
+- 默认是持久还是非持久？
+
+##### 4.1.2 持久的Queue
+
+- 持久化消息是队列的的默认传送模式，此模式保证这些消息只被传送一次和成功使用一次。对于这些消息，可靠性是优先考虑的因素。可靠性的另一个重要方面是确保持久性消息传送至目标后，消息服务在向消费者传送它们之前不会丢失这些消息。
+- 设置队列消息非持久
+
+```java
+/**
+生产者新增：messageProducer.setDeliveryMode(DeliveryMode.NON_PERSISTENT)
+消费者不变，保持queue name 一致
+*/
+import org.apache.activemq.ActiveMQConnectionFactory;
+
+import javax.jms.*;
+
+public class ReliabilityQueueProvider {
+
+    private static final String url = "tcp://xxx:61616";
+
+    public static void main(String[] args) throws JMSException {
+
+        //1.创建连接工厂，按照给定的URL地址，使用默认的用户和密码
+        ConnectionFactory connectionFactory = new ActiveMQConnectionFactory(url);
+        //2.通过连接工厂获取connection并访问
+        Connection connection = connectionFactory.createConnection();
+        connection.start();
+        //3.创建会话session
+        //两个参数，第一参数：事务，第二个参数：签收
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        //4.创建目的地，具体是队列Queue还是主题topic
+        Queue queue01 = session.createQueue("queueReliability");
+        //5.创建消息的生产者
+        MessageProducer messageProducer = session.createProducer(queue01);
+        //消息持久化PERSISTENT、非持久化NON_PERSISTENT
+        messageProducer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+        //6. 通过消息生产者生产消息到MQ
+        for (int i = 0; i < 3; i++) {
+            //6.1 创建消息
+            //文本消息
+            TextMessage textMessage = session.createTextMessage("hello activeMQ--queueReliability msg  " + i);
+            //6.2 发送到MQ
+            textMessage.acknowledge();
+            messageProducer.send(textMessage);
+        }
+
+        //7.关闭资源
+        messageProducer.close();
+        session.close();
+        connection.close();
+
+        System.out.println("消息发送成功************");
+    }
+}
+```
+
+- 非持久下控制台变化：生产消息-->服务器宕机-->重启
+
+![Reliability](img/activeMQQueueReliability02.png)
+
+![Reliability](img/activeMQQueueReliability03.png)
+
+- 设置设置队列消息持久
+
+```java
+//修该非持久代码段：messageProducer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);为-->
+messageProducer.setDeliveryMode(DeliveryMode.PERSISTENT);
+```
+
+- 持久下控制台：生产消息-->服务器宕机-->重启 控制台变化
+
+![Reliability](img/activeMQQueueReliability02.png)
+
+![Reliability](img/activeMQQueueReliability01.png)
+
+- 不写该段代码，队列默认为持久化。
+
+##### 4.1.3 持久的Topic
+
+- 类似微信公众号订阅发布
+- 持久化主题topic生产者代码
+
+```java
+import org.apache.activemq.ActiveMQConnectionFactory;
+
+import javax.jms.*;
+
+public class ReliabilityTopicProvider {
+
+    private static final String url = "tcp://xxx:61616";
+
+    public static void main(String[] args) throws JMSException {
+
+        //1.创建连接工厂，按照给定的URL地址，使用默认的用户和密码
+        ConnectionFactory connectionFactory = new ActiveMQConnectionFactory(url);
+        //2.通过连接工厂获取connection
+        Connection connection = connectionFactory.createConnection();
+        //3.创建会话session
+        //两个参数，第一参数：事务，第二个参数：签收
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        //4.创建目的地，具体是队列Queue还是主题topic
+        Topic topic01 = session.createTopic("topicReliability");
+        //5.创建消息的生产者
+        MessageProducer messageProducer = session.createProducer(topic01);
+      	//持久化
+        messageProducer.setDeliveryMode(DeliveryMode.PERSISTENT);
+
+        connection.start();
+
+        //6. 通过消息生产者生产消息到MQ
+        for (int i = 0; i < 3; i++) {
+            //6.1 创建消息
+            //文本消息
+            TextMessage textMessage = session.createTextMessage("hello activeMQ--topic Reliability  msg " + i);
+            //6.2 发送到MQ
+            messageProducer.send(textMessage);
+        }
+
+        //7.关闭资源
+        messageProducer.close();
+        session.close();
+        connection.close();
+
+        System.out.println("消息发送成功************");
+    }
+}
+
+```
+
+- 持久化主题topic消费者代码
+
+```java
+import org.apache.activemq.ActiveMQConnectionFactory;
+
+import javax.jms.*;
+import java.io.IOException;
+
+public class ReliabilityTopicConsumer {
+    private static final String url = "tcp://106.14.217.80:61616";
+
+    public static void main(String[] args) throws JMSException, IOException {
+        //1.创建连接工厂，按照给定的URL地址，使用默认的用户和密码
+        ConnectionFactory connectionFactory = new ActiveMQConnectionFactory(url);
+        //2.通过连接工厂获取connection并访问
+        Connection connection = connectionFactory.createConnection();
+        connection.setClientID("hgx_topic01");
+        //3.创建会话session
+        //两个参数，第一参数：事务，第二个参数：签收
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        //4.创建目的地，具体是队列Queue还是主题topic
+        Topic topic01 = session.createTopic("topicReliability");
+        TopicSubscriber topicSubscriber = session.createDurableSubscriber(topic01, "remark");
+
+
+        connection.start();
+
+        Message message = topicSubscriber.receive();
+        while (message instanceof TextMessage) {
+            TextMessage textMessage = (TextMessage) message;
+            System.out.println("接收到持久化topic --->" + textMessage.getText());
+            message = topicSubscriber.receive();
+        }
+
+        //关闭资源
+        session.close();
+        connection.close();
+    }
+}
+```
+
+- 控制台：启动订阅者（消费者）-->关闭订阅者-->启动生产者（发布者）-->启动订阅者-->关闭订阅者
+
+消费者启动
+
+![activeMQTopicReliability](img/activeMQTopicReliability00.png)
+
+![activeMQTopicReliability](img/activeMQTopicReliability01.png)
+
+消费者关闭
+
+![activeMQTopicReliability](img/activeMQTopicReliability02.png)
+
+生产者启动
+
+![activeMQTopicReliability](img/activeMQTopicReliability03.png)
+
+生产者启动，消费者启动-->消费成功
+
+![activeMQTopicReliability](img/activeMQTopicReliability04.png)
+
+![activeMQTopicReliability](img/activeMQTopicReliability06.png)
+
+消费者关闭
+
+![activeMQTopicReliability](img/activeMQTopicReliability05.png)
+
+#### 4.2 事务
+
+#### 4.3 签收Acknowledge
+
 ### 5 JMS的点对点总结
 
 ### 6 JMS的发布订阅总结
