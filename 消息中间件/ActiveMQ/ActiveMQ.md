@@ -723,7 +723,37 @@ public class ReliabilityTopicConsumer {
 
 #### 4.2 事务
 
+- 事务偏生产者，签收偏消费者
+
+##### 4.2.1 producer提交时的事务
+
+- false
+  - 只要执行send，消息就进入到队列中
+  - 关闭事务，那第二个签收参数需要设置有效
+- true
+  - 先执行send，再执行commit，消息才被真正的提交到队列中
+  - 消息需要批量发送，需要缓冲区处理
+
 #### 4.3 签收Acknowledge
+
+##### 4.3.1 非事务
+
+- 自动签收（默认）：`Session.AUTO_ACKNOWLEDGE`
+- 手动签收:`Session.CLIENT_ACKNOWLEDGE`,客户端调用acknowledge方法手动签收 
+- 允许重复消息:`Session.DUPS_OK_ACKNOWLEDGE`
+
+##### 4.3.2 事务
+
+- 事务开启后，只有commit后才能将消息生产或消费
+- 消息生产者
+- 消息消费者
+
+- 签收和事务关系
+  - 在事务性会话中，当一个事务成功提交则消息被自动签收。如果事务回滚，则消息会被再次传送
+  - 在非事务性会话中，消息何时被确认取决于创建会话时的应答模式（Acknowledgement mode）
+
+##### 4.3.3 签收和事务关系
+
 
 ### 5 JMS的点对点总结
 
