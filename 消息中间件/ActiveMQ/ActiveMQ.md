@@ -963,7 +963,7 @@ public class AcknowledgeNoTransactionQueueConsumer {
 
 - 生产者启动，消费者启动，消费者设置手动签收`Session.CLIENT_ACKNOWLEDGE`，写 `message.acknowledge()`,即显示签收，消息消费成功
 
-![ActiveMQAcknowledgeTransaction02](img/ActiveMQAcknowledgeTransaction02.png)
+![ActiveMQAcknowledgeTransaction02](img/activeMQAcknowledgeTransaction02.png)
 
 
 ##### 4.3.2 事务
