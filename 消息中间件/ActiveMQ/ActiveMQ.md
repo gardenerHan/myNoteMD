@@ -663,7 +663,7 @@ import javax.jms.*;
 import java.io.IOException;
 
 public class ReliabilityTopicConsumer {
-    private static final String url = "tcp://106.14.217.80:61616";
+    private static final String url = "tcp://xxx:61616";
 
     public static void main(String[] args) throws JMSException, IOException {
         //1.创建连接工厂，按照给定的URL地址，使用默认的用户和密码
@@ -677,7 +677,6 @@ public class ReliabilityTopicConsumer {
         //4.创建目的地，具体是队列Queue还是主题topic
         Topic topic01 = session.createTopic("topicReliability");
         TopicSubscriber topicSubscriber = session.createDurableSubscriber(topic01, "remark");
-
 
         connection.start();
 
@@ -734,6 +733,125 @@ public class ReliabilityTopicConsumer {
   - 先执行send，再执行commit，消息才被真正的提交到队列中
   - 消息需要批量发送，需要缓冲区处理
 
+##### 4.2.2 示例代码
+
+- 生产者
+
+```java
+import org.apache.activemq.ActiveMQConnectionFactory;
+import javax.jms.*;
+
+public class TransactionQueueProvider {
+
+    private static final String url = "tcp://xxx:61616";
+
+    public static void main(String[] args) throws JMSException {
+
+        //1.创建连接工厂，按照给定的URL地址，使用默认的用户和密码
+        ConnectionFactory connectionFactory = new ActiveMQConnectionFactory(url);
+        //2.通过连接工厂获取connection并访问
+        Connection connection = connectionFactory.createConnection();
+        connection.start();
+        //3.创建会话session
+        //两个参数，第一参数：事务，第二个参数：签收
+        //true 开启事务
+        Session session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+        //4.创建目的地，具体是队列Queue还是主题topic
+        Queue queue01 = session.createQueue("queueTransaction");
+        //5.创建消息的生产者
+        MessageProducer messageProducer = session.createProducer(queue01);
+        //6. 通过消息生产者生产消息到MQ
+        for (int i = 0; i < 3; i++) {
+            //6.1 创建消息
+            //文本消息
+            TextMessage textMessage = session.createTextMessage("hello activeMQ--transaction msg " + i);
+            //6.2 发送到MQ
+            messageProducer.send(textMessage);
+        }
+
+        //7.关闭资源
+        messageProducer.close();
+        //提交事务
+        session.commit();
+        session.close();
+        connection.close();
+
+        System.out.println("消息发送成功************");
+    }
+}
+```
+
+- 消费者
+
+```java
+import org.apache.activemq.ActiveMQConnectionFactory;
+import javax.jms.*;
+import java.io.IOException;
+
+public class TransactionQueueConsumer {
+    private static final String url = "tcp://xxx:61616";
+
+    public static void main(String[] args) throws JMSException, IOException {
+        //1.创建连接工厂，按照给定的URL地址，使用默认的用户和密码
+        ConnectionFactory connectionFactory = new ActiveMQConnectionFactory(url);
+        //2.通过连接工厂获取connection并访问
+        Connection connection = connectionFactory.createConnection();
+        connection.start();
+        //3.创建会话session
+        //两个参数，第一参数：事务，第二个参数：签收
+        //开启事务
+        Session session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+        //4.创建目的地，具体是队列Queue还是主题topic
+        Queue queue01 = session.createQueue("queueTransaction");
+        //5.创建消费者
+        MessageConsumer messageConsumer = session.createConsumer(queue01);
+
+        //消费方式1：同步阻塞方式（receive）订阅者或接收者调用MessageConsumer的receive方法来接收，receive方法在接收到消息之前或超时之前将一直阻塞
+        while (true) {
+            Message message = messageConsumer.receive(4000);
+            if (message instanceof TextMessage) {
+                TextMessage textMessage = (TextMessage) message;
+                System.out.println(textMessage.getText());
+            } else {
+                break;
+            }
+
+        }
+
+        //关闭资源
+        messageConsumer.close();
+        //提交事务
+        session.commit();
+        session.close();
+        connection.close();
+    }
+
+}
+```
+
+##### 4.2.3  控制台效果
+
+- 生产者启动，开始事务，不commit，控制台中可以看到没有任何消息进入MQ
+
+![activeMQTransaction01](img/activeMQTransaction01.png)
+
+- 生产者启动，开始事务，并commit，控制台中可以看到消息进入MQ
+
+![activeMQTransaction02](img/activeMQTransaction02.png)
+
+- 消费者启动，开始事务，不commit，可以看到消息没有出MQ，消费者端可以重复消费
+
+![activeMQTransaction03](img/activeMQTransaction03.png)
+
+- 消费者启动，开始事务，并commit，可以看到消息消费成功
+
+![activeMQTransaction04](img/activeMQTransaction04.png)
+
+- idea控制台打印如下
+
+![activeMQTransaction05](img/activeMQTransaction05.png)
+
+
 #### 4.3 签收Acknowledge
 
 ##### 4.3.1 非事务
@@ -742,17 +860,224 @@ public class ReliabilityTopicConsumer {
 - 手动签收:`Session.CLIENT_ACKNOWLEDGE`,客户端调用acknowledge方法手动签收 
 - 允许重复消息:`Session.DUPS_OK_ACKNOWLEDGE`
 
+###### 4.3.1.1 代码
+
+- 生产者
+
+```java
+import org.apache.activemq.ActiveMQConnectionFactory;
+import javax.jms.*;
+
+public class AcknowledgeNoTransactionQueueProvider {
+
+    private static final String url = "tcp://xxx:61616";
+
+    public static void main(String[] args) throws JMSException {
+
+        //1.创建连接工厂，按照给定的URL地址，使用默认的用户和密码
+        ConnectionFactory connectionFactory = new ActiveMQConnectionFactory(url);
+        //2.通过连接工厂获取connection并访问
+        Connection connection = connectionFactory.createConnection();
+        connection.start();
+        //3.创建会话session
+        //两个参数，第一参数：事务，第二个参数：签收
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        //4.创建目的地，具体是队列Queue还是主题topic
+        Queue queue01 = session.createQueue("queueAcknowledgeNoTransaction");
+        //5.创建消息的生产者
+        MessageProducer messageProducer = session.createProducer(queue01);
+        //6. 通过消息生产者生产消息到MQ
+        for (int i = 0; i < 3; i++) {
+            //6.1 创建消息
+            //文本消息
+            TextMessage textMessage = session.createTextMessage("hello activeMQ-- AcknowledgeNoTransaction msg " + i);
+            //6.2 发送到MQ
+            messageProducer.send(textMessage);
+        }
+
+        //7.关闭资源
+        messageProducer.close();
+        session.close();
+        connection.close();
+
+        System.out.println("消息发送成功************");
+    }
+}
+```
+
+- 消费者
+
+```java
+package com.hgx.activemq.acknowledge.consumers;
+
+import org.apache.activemq.ActiveMQConnectionFactory;
+
+import javax.jms.*;
+import java.io.IOException;
+
+public class AcknowledgeNoTransactionQueueConsumer {
+    private static final String url = "tcp://106.14.217.80:61616";
+
+    public static void main(String[] args) throws JMSException, IOException {
+        //1.创建连接工厂，按照给定的URL地址，使用默认的用户和密码
+        ConnectionFactory connectionFactory = new ActiveMQConnectionFactory(url);
+        //2.通过连接工厂获取connection并访问
+        Connection connection = connectionFactory.createConnection();
+        connection.start();
+        //3.创建会话session
+        //两个参数，第一参数：事务，第二个参数：签收
+        Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        //4.创建目的地，具体是队列Queue还是主题topic
+        Queue queue01 = session.createQueue("queueAcknowledgeNoTransaction");
+        //5.创建消费者
+        MessageConsumer messageConsumer = session.createConsumer(queue01);
+
+        //消费方式1：同步阻塞方式（receive）订阅者或接收者调用MessageConsumer的receive方法来接收，receive方法在接收到消息之前或超时之前将一直阻塞
+        while (true) {
+            Message message = messageConsumer.receive(2000);
+            if (message instanceof TextMessage) {
+                TextMessage textMessage = (TextMessage) message;
+                //手动签收
+                message.acknowledge();
+                System.out.println(textMessage.getText());
+            } else {
+                break;
+            }
+
+        }
+
+        //关闭资源
+        messageConsumer.close();
+        session.close();
+        connection.close();
+    }
+
+}
+```
+
+###### 4.3.1.2 控制台效果
+
+- 生产者启动，消费者启动，消费者设置手动签收`Session.CLIENT_ACKNOWLEDGE`，不写 `message.acknowledge()`,即不显示签收，消息不出MQ，消费者端存在重复消费
+
+![ActiveMQAcknowledgeTransaction01](img/ActiveMQAcknowledgeTransaction01.png)
+
+- 生产者启动，消费者启动，消费者设置手动签收`Session.CLIENT_ACKNOWLEDGE`，写 `message.acknowledge()`,即显示签收，消息消费成功
+
+![ActiveMQAcknowledgeTransaction02](img/ActiveMQAcknowledgeTransaction02.png)
+
 ##### 4.3.2 事务
 
 - 事务开启后，只有commit后才能将消息生产或消费
-- 消息生产者
-- 消息消费者
 
+###### 4.3.2.1 代码
+
+- 消息生产者
+```java
+import org.apache.activemq.ActiveMQConnectionFactory;
+import javax.jms.*;
+
+public class AcknowledgeTransactionQueueProvider {
+
+    private static final String url = "tcp://xxx:61616";
+
+    public static void main(String[] args) throws JMSException {
+
+        //1.创建连接工厂，按照给定的URL地址，使用默认的用户和密码
+        ConnectionFactory connectionFactory = new ActiveMQConnectionFactory(url);
+        //2.通过连接工厂获取connection并访问
+        Connection connection = connectionFactory.createConnection();
+        connection.start();
+        //3.创建会话session
+        //两个参数，第一参数：事务，第二个参数：签收
+        Session session = connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+        //4.创建目的地，具体是队列Queue还是主题topic
+        Queue queue01 = session.createQueue("queueAcknowledgeTransaction");
+        //5.创建消息的生产者
+        MessageProducer messageProducer = session.createProducer(queue01);
+        //6. 通过消息生产者生产消息到MQ
+        for (int i = 0; i < 3; i++) {
+            //6.1 创建消息
+            //文本消息
+            TextMessage textMessage = session.createTextMessage("hello activeMQ-- AcknowledgeTransaction msg " + i);
+            //6.2 发送到MQ
+            messageProducer.send(textMessage);
+        }
+
+        //7.关闭资源
+        messageProducer.close();
+        session.commit();
+        session.close();
+        connection.close();
+
+        System.out.println("消息发送成功************");
+    }
+}
+```
+
+- 消息消费者
+```java
+import org.apache.activemq.ActiveMQConnectionFactory;
+import javax.jms.*;
+import java.io.IOException;
+
+/**
+ * 在事务开启的情况下，签收参数无所谓，事务提交成功则默认签收，如果不commit，则签收无效，消息会被重复消费到
+ */
+public class AcknowledgeTransactionQueueConsumer {
+    private static final String url = "tcp://xxx:61616";
+
+    public static void main(String[] args) throws JMSException, IOException {
+        //1.创建连接工厂，按照给定的URL地址，使用默认的用户和密码
+        ConnectionFactory connectionFactory = new ActiveMQConnectionFactory(url);
+        //2.通过连接工厂获取connection并访问
+        Connection connection = connectionFactory.createConnection();
+        connection.start();
+        //3.创建会话session
+        //两个参数，第一参数：事务，第二个参数：签收
+        Session session = connection.createSession(true, Session.CLIENT_ACKNOWLEDGE);
+        //4.创建目的地，具体是队列Queue还是主题topic
+        Queue queue01 = session.createQueue("queueAcknowledgeTransaction");
+        //5.创建消费者
+        MessageConsumer messageConsumer = session.createConsumer(queue01);
+
+        //消费方式1：同步阻塞方式（receive）订阅者或接收者调用MessageConsumer的receive方法来接收，receive方法在接收到消息之前或超时之前将一直阻塞
+        while (true) {
+            Message message = messageConsumer.receive(1000);
+            if (message instanceof TextMessage) {
+                TextMessage textMessage = (TextMessage) message;
+                //手动签收
+                //message.acknowledge();
+                System.out.println(textMessage.getText());
+            } else {
+                break;
+            }
+
+        }
+
+        //关闭资源
+        messageConsumer.close();
+        session.commit();
+        session.close();
+        connection.close();
+    }
+
+}
+```
+
+###### 4.3.2.2 控制台效果
+
+- 生产者开启，并开启事务，生产消息，commit；消费者开启，并开启事务，不管ack参数是自动签收还是手动签收，只要没有commit提交，消息不会出MQ
+
+![ActiveMQAcknowledge01](img/ActiveMQAcknowledge01.png)
+
+- 生产者开启，并开启事务，生产消息，commit；消费者开启，并开启事务，不管ack参数是自动签收还是手动签收，commit提交，消息会被消费
+
+![ActiveMQAcknowledge02](img/ActiveMQAcknowledge02.png)
+
+##### 4.3.3 签收和事务关系
 - 签收和事务关系
   - 在事务性会话中，当一个事务成功提交则消息被自动签收。如果事务回滚，则消息会被再次传送
   - 在非事务性会话中，消息何时被确认取决于创建会话时的应答模式（Acknowledgement mode）
-
-##### 4.3.3 签收和事务关系
 
 
 ### 5 JMS的点对点总结
