@@ -965,6 +965,7 @@ public class AcknowledgeNoTransactionQueueConsumer {
 
 ![ActiveMQAcknowledgeTransaction02](img/ActiveMQAcknowledgeTransaction02.png)
 
+
 ##### 4.3.2 事务
 
 - 事务开启后，只有commit后才能将消息生产或消费
