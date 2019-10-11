@@ -1069,7 +1069,7 @@ public class AcknowledgeTransactionQueueConsumer {
 
 - 生产者开启，并开启事务，生产消息，commit；消费者开启，并开启事务，不管ack参数是自动签收还是手动签收，只要没有commit提交，消息不会出MQ
 
-![activeMQAcknowledgeTransaction01](img/activeMQAcknowledgeTransaction01.png)
+![activeMQAcknowledgeTransaction01](img/ActiveMQAcknowledgeTransaction01.png)
 
 - 生产者开启，并开启事务，生产消息，commit；消费者开启，并开启事务，不管ack参数是自动签收还是手动签收，commit提交，消息会被消费
 
