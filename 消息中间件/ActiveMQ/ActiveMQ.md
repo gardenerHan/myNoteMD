@@ -959,11 +959,11 @@ public class AcknowledgeNoTransactionQueueConsumer {
 
 - 生产者启动，消费者启动，消费者设置手动签收`Session.CLIENT_ACKNOWLEDGE`，不写 `message.acknowledge()`,即不显示签收，消息不出MQ，消费者端存在重复消费
 
-![ActiveMQAcknowledgeTransaction01](img/ActiveMQAcknowledgeTransaction01.png)
+![ActiveMQAcknowledgeTransaction01](img/ActiveMQAcknowledge01.png)
 
 - 生产者启动，消费者启动，消费者设置手动签收`Session.CLIENT_ACKNOWLEDGE`，写 `message.acknowledge()`,即显示签收，消息消费成功
 
-![ActiveMQAcknowledgeTransaction02](img/activeMQAcknowledgeTransaction02.png)
+![ActiveMQAcknowledge02](img/ActiveMQAcknowledge02.png)
 
 
 ##### 4.3.2 事务
@@ -1069,11 +1069,11 @@ public class AcknowledgeTransactionQueueConsumer {
 
 - 生产者开启，并开启事务，生产消息，commit；消费者开启，并开启事务，不管ack参数是自动签收还是手动签收，只要没有commit提交，消息不会出MQ
 
-![ActiveMQAcknowledge01](img/ActiveMQAcknowledge01.png)
+![activeMQAcknowledgeTransaction01](img/activeMQAcknowledgeTransaction01.png)
 
 - 生产者开启，并开启事务，生产消息，commit；消费者开启，并开启事务，不管ack参数是自动签收还是手动签收，commit提交，消息会被消费
 
-![ActiveMQAcknowledge02](img/ActiveMQAcknowledge02.png)
+![activeMQAcknowledgeTransaction02](img/activeMQAcknowledgeTransaction02.png)
 
 ##### 4.3.3 签收和事务关系
 - 签收和事务关系
