@@ -1080,14 +1080,81 @@ public class AcknowledgeTransactionQueueConsumer {
   - 在事务性会话中，当一个事务成功提交则消息被自动签收。如果事务回滚，则消息会被再次传送
   - 在非事务性会话中，消息何时被确认取决于创建会话时的应答模式（Acknowledgement mode）
 
-
 ### 5 JMS的点对点总结
+
+- 点对点模型是基于队列的，生产者发消息到队列，消费者从队列接收消息，队列的存在使得消息的异步传输成为可能。和我们平时给朋友发送短信类似。
+  - 1:如果在Session关闭时有部分消息已被收到但还没有被签收(acknowledged)， 那当消费者下次连接到相同的队列时，这些消息还会被再次接收
+  - 2:队列可以长久地保存消息直到消费者收到消息。消费者不需要因为担心消息会丢失而时刻和队列保持激活的连接状态，充分体现了异步传输模式的优势
 
 ### 6 JMS的发布订阅总结
 
+- JMS的Pub/Sub模型定义了如何向一个内容节点发布和订阅消息，这些节点被称作topic
+- 主题可以被认为是消息的传输中介，发布者(publisher)发布消息到主题，订阅者(subscribe)从主题订阅消息。主题使得消息订阅者和消息发布者保持互相独立，不需要接触即可保证消息的传送。
 
+##### 6.1 非持久订阅
+
+- 非持久订阅只有当客户端处于激活状态，也就是和MQ保持连接状态才能收到发送到某个主题的消息。如果消费者处于离线状态，生产者发送的主题消息将会丢失作废，消费者永远不会收到。
+- 一句话:先要订阅注册才能接受到发布，只给订阅者发布消息。
+
+##### 6.2 持久订阅
+
+- 客户端首先向MQ注册一个自己的身份ID识别号，当这个客户端处于离线时，生产者会为这个ID保存所有发送到主题的消息，当客户再次连接到MQ时会根据消费者的ID得到所有当自己处于离线时发送到主题的消息。
+- 非持久订阅状态下，不能恢复或重新派送一个未签收的消息。
+- 持久订阅才能恢复或重新派送一个未签收的消息。
+
+##### 6.3 说明
+
+- 当所有的消息必须被接受，则用持久订阅。当丢失消息能够被容忍，则可以用非持久订阅
 
 ## 五 ActiveMQ的Broker
+
+### 1 是什么
+
+- 相当于一个ActiveMQ服务器实例
+- Broker其实就是实现了用代码的形式启动ActiveMQ将MQ嵌入到Java代码中，以便随用随事启动，达到了节约资源的目的，同时也保证了可靠性。
+
+### 2 嵌入式Broker
+
+- 用ActiveMQ Broker作单独立的消息服多器来杓建JAVA应用。
+- ActiveMQ也支持在vm中通信基于嵌入式的broker,能移无缝的集成其它java应用
+
+#### 2.1 代码
+
+- pom.xml
+
+```xml
+<dependencies>
+    <dependency>
+      <groupId>org.apache.activemq</groupId>
+      <artifactId>activemq-all</artifactId>
+      <version>5.15.10</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.10.0</version>
+    </dependency>
+</dependencies>
+```
+
+- BrokerServer
+
+```java
+import org.apache.activemq.broker.Broker;
+import org.apache.activemq.broker.BrokerService;
+
+public class ActiveBrokerServer {
+
+    public static void main(String[] args) throws Exception {
+        //activeMQ也支持在VM中通信给予嵌入式的broker
+        BrokerService brokerService = new BrokerService() ;
+        brokerService.setUseJmx(true);
+        brokerService.addConnector("tcp://localhost:61616") ;
+        brokerService.start();
+    }
+}
+```
 
 ## 六 Spring整合ActiveMQ
 
