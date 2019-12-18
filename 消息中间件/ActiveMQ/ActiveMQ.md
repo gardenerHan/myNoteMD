@@ -1149,7 +1149,491 @@ public class ActiveBrokerServer {
 
 ## 六 Spring整合ActiveMQ
 
+### 1 代码
+
+- 项目结构
+
+![spring整合activeMQ项目结构](img/spring整合activeMQ01.png)
+
+- pom.xml 依赖
+
+```xml
+<dependencies>
+    <!-- https://mvnrepository.com/artifact/org.springframework/spring-context -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+      <version>5.2.0.RELEASE</version>
+    </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.springframework/spring-jms -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-jms</artifactId>
+      <version>5.2.0.RELEASE</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.apache.activemq/activemq-pool -->
+    <dependency>
+      <groupId>org.apache.activemq</groupId>
+      <artifactId>activemq-pool</artifactId>
+      <version>5.15.10</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.10.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.11</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>1.7.25</version>
+    </dependency>
+
+  </dependencies>
+```
+
+- spring配置:applicationContext.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/context
+http://www.springframework.org/schema/context/spring-context.xsd
+ http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <context:component-scan base-package="com.hgx.spring.activemq"/>
+
+      <!--配置activeMQ连接信息-->
+    <bean id="jmsFactory" class="org.apache.activemq.pool.PooledConnectionFactory" destroy-method="stop">
+        <property name="connectionFactory">
+            <bean class="org.apache.activemq.ActiveMQConnectionFactory">
+                <property name="brokerURL" value="tcp://106.14.217.80:61616"/>
+            </bean>
+        </property>
+        <property name="maxConnections" value="100"/>
+    </bean>
+
+    <!--配置队列-->
+    <bean id="destinationQueue" class="org.apache.activemq.command.ActiveMQQueue">
+        <constructor-arg index="0" value="spring-active-queue"/>
+    </bean>
+
+    <!--配置主题-->
+    <bean id="destinationTopic" class="org.apache.activemq.command.ActiveMQTopic">
+        <constructor-arg index="0" value="spring-active-topic"/>
+    </bean>
+
+ <!--配置JmsTemplate信息，jmsTemplate配置好后，使用jmsTemplate操作ActiveMQ生产及消费-->
+    <bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+        <!--配置连接工厂-->
+        <property name="connectionFactory" ref="jmsFactory"/>
+         <!--配置目的地，是主题还是队列，目前配置是队列，要配置主题，只需要修改为上面配置的主题bean的id:destinationTopic即可-->
+        <property name="defaultDestination" ref="destinationQueue"/>
+         <!--消息转换器-->
+        <property name="messageConverter">
+            <bean class="org.springframework.jms.support.converter.SimpleMessageConverter"/>
+        </property>
+    </bean>
+
+     <!--消息监听消费，手动消费，无需配置-->
+    <bean id="jmsContainer" class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+        <property name="connectionFactory" ref="jmsFactory"/>
+        <property name="destination" ref="destinationQueue"/>
+        <property name="messageListener" ref="myMessageListener"/>
+    </bean>
+
+</beans>
+```
+
+- 消息生产者:ActiveMQProduce.java
+
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.stereotype.Component;
+
+@Component
+public class ActiveMQProduce {
+
+    @Autowired
+    private JmsTemplate jmsTemplate;
+
+    public static void main(String[] args) {
+        ApplicationContext applicationContext = new ClassPathXmlApplicationContext("applicationContext.xml");
+        ActiveMQProduce activeMQProduce = (ActiveMQProduce) applicationContext.getBean("activeMQProduce");
+        activeMQProduce.jmsTemplate.send(session -> session.createTextMessage("-------spring activeMQ message--------"));
+        System.out.println("--------spring message send success-----------");
+    }
+}
+```
+
+- 消息消费者--方式一：手动消费 只需要使用`jmsTemplate.receiveAndConvert()` 即可
+
+```java
+//消费
+String content = (String)jmsTemplate.receiveAndConvert();
+```
+
+- 消息消费者--方式二：监听消费，实现MessageListener接口，重写onMessage方法，在sping配置中配置监听，如上面applicationContext.xml配置所示（jmsContainer）
+
+```java
+import org.springframework.stereotype.Component;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.TextMessage;
+
+@Component
+public class MyMessageListener implements MessageListener {
+
+    @Override
+    public void onMessage(Message message) {
+        if (message instanceof TextMessage) {
+            TextMessage textMessage = (TextMessage) message;
+            try {
+                System.out.println("消费：" + textMessage.getText());
+            } catch (JMSException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+```
+
 ## 七 SpringBoot整合ActiveMQ
+
+### 1 代码
+
+- 项目结构
+
+![springboot整合ActiveMQ](img/springboot整合ActiveMQ01.png)
+
+- pom.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.2.1.RELEASE</version>
+        <relativePath/>
+    </parent>
+    <groupId>com.hgx</groupId>
+    <artifactId>springboot-activemq</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>springboot-activemq</name>
+    <description>Demo project for Spring Boot</description>
+
+    <properties>
+        <java.version>1.8</java.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-activemq</artifactId>
+            <version>2.2.1.RELEASE</version>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.junit.vintage</groupId>
+                    <artifactId>junit-vintage-engine</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
+```
+
+- 配置：application.yml
+
+```yaml
+server:
+  port: 8888
+
+spring:
+  activemq:
+    broker-url: tcp://106.14.217.80:61616
+    user: admin
+    password: admin
+  jms:
+    pub-sub-domain: true   # false=Queue true=Topic
+
+#自定义队列名称
+myQueue: boot-active-queue
+#自定义主题名
+myTopic: boot-active-Topic
+```
+
+- 配置类:ConfigBean.java
+
+```java
+import org.apache.activemq.command.ActiveMQQueue;
+import org.apache.activemq.command.ActiveMQTopic;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.jms.annotation.EnableJms;
+import org.springframework.stereotype.Component;
+
+import javax.jms.Queue;
+import javax.jms.Topic;
+import javax.validation.Valid;
+
+@Component
+@EnableJms
+public class ConfigBean {
+
+    @Value("${myQueue}")
+    private String myQueue ;
+
+    @Value("${myTopic}")
+    private String myTopic;
+
+    @Bean
+    public Queue queue(){
+        return new ActiveMQQueue(myQueue) ;
+    }
+
+    @Bean
+    public Topic topic(){
+        return new ActiveMQTopic(myTopic) ;
+    }
+}
+```
+
+ - springboot启动类
+
+```java
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
+@SpringBootApplication
+@EnableScheduling
+public class SpringbootActivemqApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(SpringbootActivemqApplication.class, args);
+    }
+
+}
+```
+
+
+
+- 生产者-队列：QueueProduce.java
+
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jms.core.JmsMessagingTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import javax.jms.Queue;
+import java.util.UUID;
+
+@Component
+public class QueueProduce {
+
+    @Autowired
+    private JmsMessagingTemplate jmsMessagingTemplate;
+
+    @Autowired
+    private Queue queue;
+
+    public void produceMsg() {
+        jmsMessagingTemplate.convertAndSend(queue, "kkkkk" + UUID.randomUUID().toString());
+    }
+
+    /**
+     * 3秒一次
+     */
+//    @Scheduled(fixedDelay = 3000)
+    public void produceMSgScheduled() {
+
+        jmsMessagingTemplate.convertAndSend(queue, "produceMSgScheduled" + UUID.randomUUID().toString());
+
+        System.out.println("produceMSgScheduled.................");
+
+    }
+
+}
+```
+
+- 消费者-队列:QueueConsumer.java
+
+```java
+import org.springframework.jms.annotation.JmsListener;
+import org.springframework.stereotype.Component;
+
+import javax.jms.JMSException;
+import javax.jms.TextMessage;
+
+@Component
+public class QueueConsumer {
+
+    @JmsListener(destination = "${myQueue}")
+    public void receive(TextMessage textMessage) throws JMSException {
+        System.out.println(".....消费者收到消息：" + textMessage.getText());
+    }
+}
+
+```
+
+- 生产者-主题:TopicProduce.java
+
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jms.core.JmsMessagingTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import javax.jms.Queue;
+import javax.jms.Topic;
+import java.util.UUID;
+
+@Component
+public class TopicProduce {
+
+    @Autowired
+    private JmsMessagingTemplate jmsMessagingTemplate;
+
+    @Autowired
+    private Topic topic;
+
+    public void produceMsg() {
+        jmsMessagingTemplate.convertAndSend(topic, "topic" + UUID.randomUUID().toString());
+    }
+
+    /**
+     * 3秒一次
+     */
+   // @Scheduled(fixedDelay = 3000)
+    public void produceMSgScheduled() {
+
+        jmsMessagingTemplate.convertAndSend(topic, "produceMSgScheduled topic" + UUID.randomUUID().toString());
+
+        System.out.println("produceMSgScheduled topic.................");
+
+    }
+
+}
+```
+
+- 消费者-主题:TopicConsumer.java
+
+```java
+import org.springframework.jms.annotation.JmsListener;
+import org.springframework.stereotype.Component;
+
+import javax.jms.JMSException;
+import javax.jms.TextMessage;
+
+@Component
+public class TopicConsumer {
+
+    @JmsListener(destination = "${myTopic}")
+    public void receive(TextMessage textMessage) throws JMSException {
+        System.out.println(".....消费者收到消息：" + textMessage.getText());
+    }
+
+}
+```
+
+- 测试类:
+
+```java
+import com.hgx.activemq.produce.QueueProduce;
+import com.hgx.activemq.produce.TopicProduce;
+import org.junit.jupiter.api.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
+
+@SpringBootTest(classes = SpringbootActivemqApplication.class)
+@WebAppConfiguration
+@RunWith(SpringJUnit4ClassRunner.class)
+class SpringbootActivemqApplicationTests {
+
+    @Autowired
+    private QueueProduce queueProduce ;
+    @Autowired
+    private TopicProduce topicProduce ;
+
+    @Test
+    public void testSend(){
+        queueProduce.produceMsg();
+    }
+
+    @Test
+    public void testSendSch(){
+        queueProduce.produceMSgScheduled();
+    }
+
+    @Test
+    public void testTopicSend(){
+        topicProduce.produceMsg();
+    }
+
+    @Test
+    public void testTopicSendSch(){
+        topicProduce.produceMSgScheduled();
+    }
+}
+
+```
+
+- 说明：测试主题，修改配置`jms.pub-sub-domain:true`;测试队列，修改`jms.pub-sub-domain:false`。如果是使用间隔投递，方法上使用`@Scheduled(fixedDelay = xxx)`注解,不需要启动测试类，启动springboot启动类即可看到效果。
+
+
+
+
+
+
 
 ## 八 ActiveMQ的传输协议
 
