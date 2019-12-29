@@ -1629,13 +1629,27 @@ class SpringbootActivemqApplicationTests {
 
 - 说明：测试主题，修改配置`jms.pub-sub-domain:true`;测试队列，修改`jms.pub-sub-domain:false`。如果是使用间隔投递，方法上使用`@Scheduled(fixedDelay = xxx)`注解,不需要启动测试类，启动springboot启动类即可看到效果。
 
-
-
-
-
-
-
 ## 八 ActiveMQ的传输协议
+
+### 1 是什么
+
+- ActiveMQ支持的client-broker通讯协议有: TCP、NIO、UDP、Http(s)、VM。
+- 其中配置Transport Connector的文件在activeMQ安装目录的config/activemq.xml中的` <transportConnectors>`标签内。
+
+```xml
+<transportConnectors>
+            <!-- DOS protection, limit concurrent connections to 1000 and frame size to 100MB -->
+            <transportConnector name="openwire" uri="tcp://0.0.0.0:61616?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="amqp" uri="amqp://0.0.0.0:5672?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="stomp" uri="stomp://0.0.0.0:61613?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="mqtt" uri="mqtt://0.0.0.0:1883?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="ws" uri="ws://0.0.0.0:61614?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+        </transportConnectors>
+```
+
+### 2 有哪些
+
+
 
 ## 九 ActiveMQ的消息存储与持久化
 
