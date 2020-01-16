@@ -1647,7 +1647,58 @@ class SpringbootActivemqApplicationTests {
         </transportConnectors>
 ```
 
+- 在上文给出的配置信息中，URI描述的头部文件都是采用协议名称，例如：
+  - 描述maqp协议的监听端口时，采用的URI描述格式为“amqp://.....” ;
+  - 描述stomp协议的监听端口时，采用的URI描述格式为“stomp://....” ;
+  - 但是在进行openwire协议描述时，URI采用的是“tcp://...”。这是因为ActiveMQ中默认的消息协议就是openwire。
+
 ### 2 有哪些
+
+- Transmission Control Protocol（TCP） 默认
+- New I/O API Protocol (NIO)
+- AMQP协议
+- stomp
+- Secure Sockets Layer Protocol（SSL）
+- mqtt协议
+- ws协议
+
+#### 2.1 Transmission Control Protocol（TCP）
+
+- 默认的Broker配置，TCP的Client监听端口61616
+- 在网络传输数据前，必须要序列化数据，消息是通过一个加wire protocol来序列化字节流。默认情况下activeMQ吧wire protocol叫做openWire，它的目的是促使网络上的效率和数据快速交互。
+- TCP连接的URI形式如：tcp://hostname:port?key=value&key=value,后面的参数是可选
+- TCP传输的有点：
+  - TCP协议传输可靠性高，稳定性强。
+  - 高效性：字节流方式传递，效率很高
+  - 有效性、可用性：应用广泛，支持任何平台
+
+#### 2.2 New I/O API Protocol(NIO)
+
+- NIO协议和TCP协议类似，但NIO更侧重于底层的访问操作。它允许开发 员对同一资源可有更多的client调用和服务端有更多的负 
+  栽。
+- 适合使用NIO协议的场景：
+  -  可能有大量的Client去连接到Broker上，一般情况下，大量的Clienti去连接Broker是被操作系统的线程所限制的。因此，NIO的实现比TCP需要更少的线程区运行，所以建议使用NIO协议
+  - 可能对于Broker有—个很迟钝的网络传输，NIO比TCP提供更好的性能。
+- NI0连接的 URI 形式：nio//hostname:port?key=value
+- Transport Connector配置示例，参考宵网：http://activemq.apache.org/configuring-version-5-transports.html 
+
+#### 2.3 AMQP协议
+
+- 即Advanced Message Queuing Protocol，一个提供统一消息服务的应用层标准高级消息队列协议，是应用层协议的一个开放标准，为面向消息的中间件设计。基于此协议的客户端与消息中间件可传递消息，并不受客服端/中间件不同产品、不同开发语言等条件的限制。
+- 官方文档链接：http://activemq.apache.org/amqp
+
+```xml
+ActiveMQ supports the AMQP 1.0 protocol which is an OASIS standard.
+Availability
+ - Available from ActiveMQ version 5.8 onward.
+
+Enabling the ActiveMQ Broker for AMQP
+ - To enable AMQP protocol support on the broker add the following transport connector configuration referencing the amqp scheme in its URI:
+
+<transportConnectors>
+   <transportConnector name="amqp" uri="amqp://0.0.0.0:5672"/>
+</transportConnectors>
+```
 
 
 
