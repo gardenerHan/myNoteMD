@@ -10,7 +10,9 @@
   - chrome吧置顶贴链接，实时更新各版本chrome：https://api.shuax.com/tools/getchrome
 
 - 移动版chrome浏览器:
-  - （1）先获取地址:https://www.google.cn/chrome/browser/mobile/index.html。（2）然后选择相应的设备。（3）再复制地址到https://apps.evozi.com/apk-downloader/ 下载。
+  - （1）先获取地址:https://www.google.cn/chrome/browser/mobile/index.html。
+  - （2）然后选择相应的设备。
+  - （3）再复制地址到https://apps.evozi.com/apk-downloader/ 下载。
 
 ### 2 chrome插件
 - 推荐:https://www.crx4chrome.com/
