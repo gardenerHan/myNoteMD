@@ -1662,47 +1662,224 @@ class SpringbootActivemqApplicationTests {
 - mqtt协议
 - ws协议
 
-#### 2.1 Transmission Control Protocol（TCP）
+#### 2.1 Transmission Control Protocol（TCP）【默认】
 
 - 默认的Broker配置，TCP的Client监听端口61616
-- 在网络传输数据前，必须要序列化数据，消息是通过一个加wire protocol来序列化字节流。默认情况下activeMQ吧wire protocol叫做openWire，它的目的是促使网络上的效率和数据快速交互。
+- 在网络传输数据前，必须要序列化数据，消息是通过一个叫wire protocol来序列化字节流。默认情况下activeMQ把wire protocol叫做openWire，它的目的是促使网络上的效率和数据快速交互。
 - TCP连接的URI形式如：tcp://hostname:port?key=value&key=value,后面的参数是可选
 - TCP传输的有点：
   - TCP协议传输可靠性高，稳定性强。
   - 高效性：字节流方式传递，效率很高
   - 有效性、可用性：应用广泛，支持任何平台
+- 配置参数可参考:http://activemq.apache.org/configuring-version-5-transports.html ，选择TCP Transport Reference，即可看到参数配置详情文档
+  - 直接地址:http://activemq.apache.org/tcp-transport-reference
+
+| 参数名称                | 默认值            | 描述                                                         |
+| ----------------------- | ----------------- | ------------------------------------------------------------ |
+| backlog                 | 5000              | 指定等待传输服务器套接字接受的最大连接数。                   |
+| closeAsync              | true              | 如果**`true`**套接字关闭调用异步发生。**`false`**对于诸如STOMP之类的协议，应将此参数设置为常用于为每个读取或写入创建新连接的情况下。这样做可以确保套接字关闭调用同步发生。同步关闭可防止代理由于连接的快速循环而耗尽可用的套接字。 |
+| connectionTimeout       | 30000             | 如果**`>=1`**该值设置连接超时（以毫秒为单位）。值**`0`**表示没有超时。负值将被忽略。 |
+| daemon                  | false             | 如果**`true`**运输线将在守护模式下运行。将**`true`**代理嵌入Spring容器或Web容器时，请将此参数设置为，以允许该容器正确关闭。 |
+| dynamicManagement       | false             | 如果**`true`**在**`TransportLogger`**可以通过JMX进行管理。   |
+| ioBufferSize            | 8 * 1024          | 指定在**`wireFormat`**发生基于基础封送处理的TCP层和OpenWire层之间使用的缓冲区大小。 |
+| jmxPort                 | 1099              | （仅客户端）指定JMX服务器将用于管理的端口**`TransportLoggers`**。当代理创建自己的JMX服务器时，仅应由客户端生产者或消费者通过URI进行设置。指定备用JMX端口对于在同一台计算机上测试代理和客户端并且需要通过JMX进行控制的开发人员很有用。 |
+| keepAlive               | false             | 如果为**`true`，则**在代理连接上启用[TCP KeepAlive](http://tldp.org/HOWTO/TCP-Keepalive-HOWTOoverview)，以防止连接在TCP级别超时。这应该*不会*有混淆**`KeepAliveInfo`**的消息13759的**`InactivityMonitor`。** |
+| logWriterName           | default           | 设置**`org.apache.activemq.transport.LogWriter`**要使用的实现的名称。名称被映射到**`resources/META-INF/services/org/apache/activemq/transport/logwriters`**目录中的类。 |
+| maximumConnections      | Integer.MAX_VALUE | 此代理允许的最大套接字数。                                   |
+| minmumWireFormatVersion | 0                 | **`wireFormat`**可接受的最低远程版本（请注意拼写错误）。注意：当远程**`wireFormat`**版本低于配置的最低可接受版本时，将引发异常并拒绝连接尝试。值**`0`**表示不检查远程**`wireFormat`**版本。 |
+| socketBufferSize        | 64 * 1024         | 设置接受套接字的读写缓冲区的大小（以字节为单位）。           |
+| soLinger                | Integer.MIN_VALUE | **`soLinger`**值为时设置套接字的选项**`> -1`**。当设置**`-1`**的**`soLinger`**套接字选项被禁用。 |
+| soTimeout               | 0                 | 设置套接字的读取超时（以毫秒为单位）。值**`0`**表示没有超时。 |
+| soWriteTimeout          | 0                 | 设置套接字的写超时（以毫秒为单位）。如果套接字写操作在指定的超时之前未完成，则套接字将被关闭。值为**0**表示没有超时。 |
+| stackSize               | 0                 | 设置传输的背景读取线程的堆栈大小。必须以的倍数指定**`128K`**。值**`0`**表示此参数被忽略。 |
+| startLogging            | true              | 如果传输堆栈**`true`**的**`TransportLogger`**对象最初会将消息写入日志。除非，否则将忽略此参数**`trace=true`**。 |
+| tcpNoDelay              | false             | 如果设置**`true`**了套接字的选项 **`TCP_NODELAY`**。这将禁用Nagle的小数据包传输算法。 |
+| threadName              | N/A               | 指定此参数后，将在调用传输期间修改线程的名称。附加了远程地址，以便停留在传输方法中的调用将在线程名称中包含目标信息。当使用线程转储进行脱胶时，这非常有用。 |
+| trace                   | false             | 导致记录通过传输发送的所有命令。要查看记录的输出，请定义**`Log4j`**记录器：**`log4j.logger.org.apache.activemq.transport.TransportLogger=DEBUG`**。 |
+| trafficClass            | 0                 | 要在套接字上设置的流量类别。                                 |
+| diffServ                | 0                 | （仅限客户端）将在传出数据包上设置首选的区分服务流量类，如RFC 2475中所述。有效整数值：**`[0,64]`**。有效的字符串值：**`EF`，`AF[1-3][1-4]`**或**`CS[0-7]`**。对于JDK 6，仅在JVM使用IPv4堆栈时有效。要使用IPv4堆栈，请设置系统属性**`java.net.preferIPv4Stack=true`**。注意：同时指定' **diffServ**和**typeOfService** ' 是无效的，因为它们在TCP / IP数据包头中共享相同的位置 |
+| typeOfService           | 0                 | （仅客户端）要在传出数据包上设置的首选服务类型值。有效整数值：**`[0,256]`**。对于JDK 6，仅在将JVM配置为使用IPv4堆栈时有效。要使用IPv4堆栈，请设置系统属性**`java.net.preferIPv4Stack=true`**。注意：同时指定' **diffServ**和**typeOfService** ' 是无效的，因为它们在TCP / IP数据包头中共享相同的位置。 |
+| useInactivityMonitor    | true              | 当**`false`**该**`InactivityMonitor`**被禁用，连接永不超时。 |
+| useKeepAlive            | true              | 在**`true` `KeepAliveInfo`**空闲连接上发送消息时，以防止其超时。如果此参数为，**`false`**如果在指定的时间内没有在连接上接收到任何数据，连接仍将超时。 |
+| useLocalHost            | false             | 当**`true`**使用值**`localhost`**代替实际的本地主机名进行本地连接时。在某些操作系统（例如）上**`OS X`**，无法使用本地主机名进行连接，因此**`localhost`**更好。 |
+| useQueueForAccept       | true              | 将**`true`**接受的套接字放置到队列中以使用单独的线程进行异步处理时。 |
+| wireFormat              | default           | **`wireFormat`**要使用的工厂名称。                           |
+| wireFormat。*           | N/A               | 具有此前缀的属性用于配置**`wireFormat`**。                   |
+
+
 
 #### 2.2 New I/O API Protocol(NIO)
 
 - NIO协议和TCP协议类似，但NIO更侧重于底层的访问操作。它允许开发 员对同一资源可有更多的client调用和服务端有更多的负 
   栽。
 - 适合使用NIO协议的场景：
-  -  可能有大量的Client去连接到Broker上，一般情况下，大量的Clienti去连接Broker是被操作系统的线程所限制的。因此，NIO的实现比TCP需要更少的线程区运行，所以建议使用NIO协议
+  -  可能有大量的Client去连接到Broker上，一般情况下，大量的Client去连接Broker是被操作系统的线程所限制的。因此，NIO的实现比TCP需要更少的线程区运行，所以建议使用NIO协议
   - 可能对于Broker有—个很迟钝的网络传输，NIO比TCP提供更好的性能。
 - NI0连接的 URI 形式：nio//hostname:port?key=value
-- Transport Connector配置示例，参考宵网：http://activemq.apache.org/configuring-version-5-transports.html 
+- Transport Connector配置示例，参考官网：http://activemq.apache.org/configuring-version-5-transports.html 
+
+```xml
+<broker>
+  ...
+  <transportConnectors>
+    <transportConnector name="nio" uri="nio://0.0.0.0:61616"/>  
+  </<transportConnectors>
+  ...
+</broker>
+```
+
+
 
 #### 2.3 AMQP协议
 
-- 即Advanced Message Queuing Protocol，一个提供统一消息服务的应用层标准高级消息队列协议，是应用层协议的一个开放标准，为面向消息的中间件设计。基于此协议的客户端与消息中间件可传递消息，并不受客服端/中间件不同产品、不同开发语言等条件的限制。
+- 即Advanced Message Queuing Protocol，一个提供统一消息服务的应用层标准高级消息队列协议，是应用层协议的一个开放标准，为面向消息的中间件设计。基于此协议的客户端与消息中间件可传递消息，并不受客服端/中间件不同产品,不同开发语言等条件的限制。
 - 官方文档链接：http://activemq.apache.org/amqp
 
 ```xml
-ActiveMQ supports the AMQP 1.0 protocol which is an OASIS standard.
+<!-- ActiveMQ supports the AMQP 1.0 protocol which is an OASIS standard.
 Availability
  - Available from ActiveMQ version 5.8 onward.
 
 Enabling the ActiveMQ Broker for AMQP
- - To enable AMQP protocol support on the broker add the following transport connector configuration referencing the amqp scheme in its URI:
+ - To enable AMQP protocol support on the broker add the following transport connector configuration referencing the amqp scheme in its URI: -->
 
 <transportConnectors>
    <transportConnector name="amqp" uri="amqp://0.0.0.0:5672"/>
 </transportConnectors>
 ```
 
+####  2.4 stomp协议
+
+- STOMP,Streaming Text Orientated Message Protocol,是流文本定向消息协议，是一种MOM(Message Oriented Middleware，面向消息的中间件）设计的简单文本协议。
+
+#### 2.5 MQTT协议
+
+- MQTT（Message Queuing Telemetry Transport,消息队列遥测传输）IBM开发的一个即时通讯议，有可能成为物联网的重要组成部分。该协议支持所有平台，几乎可以把所有联网物品和外部连起来，被用来当做传感器和致动器（比如通过Twitter让房屋联网）的通信协议。
+- MQTT编码代码参考：https://github.com/fusesource/mqtt-client
+
+#### 2.6 ws协议
+
+- webSocket：此传输使用新的HTML5 WebSocket与代理交换消息。有关更多信息，请参见[WebSockets](http://activemq.apache.org/websockets) Transport Reference。
+
+#### 2.7 小总结
+
+| 协议    | 描述                                                         |
+| ------- | ------------------------------------------------------------ |
+| TCP     | 默认的协议，性能相对可以                                     |
+| NIO     | 基于TCP协议之上的，进行了扩展和优化，具有更好的扩晨性        |
+| UDP     | 性能比TCP更好但是不具有可靠性                                |
+| SSL     | 安全链接                                                     |
+| HTTP(S) | 基于HTTP或SHTTPS                                             |
+| VM      | VM本身不是协议，当客户端和代理在同一个Java虚拟机（VM）中运行时，他们之间需要通信，但不想占用网络通信，而是直接通信，可以使用该方式 |
+
+### 3 NIO协议
+
+#### 3.1 修改配置文件:activemq.xml
+
+- (1)停止activeMQ服务: bin目录下执行
+
+```shell
+./activemq stop
+```
+
+- (2)修改配置文件：进入conf目录下执行
+
+  - ①备份：修改配置前最好先备份，改坏了还可以恢复`cp activemq.xml activemq-backups.xml`
+  - ②修改：执行vim后，在这个节点中修改 `<transportConnectors> </transportConnectors>`,修改后保存退出
+```xml
+<transportConnectors>
+            <!-- DOS protection, limit concurrent connections to 1000 and frame size to 100MB -->
+            <transportConnector name="openwire" uri="tcp://0.0.0.0:61616?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="amqp" uri="amqp://0.0.0.0:5672?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="stomp" uri="stomp://0.0.0.0:61613?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="mqtt" uri="mqtt://0.0.0.0:1883?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="ws" uri="ws://0.0.0.0:61614?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+     		<!-- 默认没有NIO协议，参照官网开启nio协议支持，端口61618 -->
+            <transportConnector name="nio" uri="nio://0.0.0.0:61618?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/> 
+        </transportConnectors>
+```
+
+- (3)重启服务:`./active start`
+
+- (4)控制台效果
+
+![activeMQ协议-NIO-1](img/activeMQ协议-NIO-1.png)
+
+#### 3.2 NIO协议编码示例
+
+- 只需要将TCP协议代码中activeMQ路径修改为NIO协议对应的路径和端口即可.
+
+```java
+public class FirstQueueConsumer {
+//    private static final String url = "tcp://localhost:61616";
+    private static final String url = "nio://localhost:61618";
+
+// ....
+}
+
+
+public class FirstQueueProvider {
+
+//    private static final String url = "tcp://localhost:61616";
+    private static final String url = "nio://localhost:61618";
+
+// ....
+}
+```
+
+### 4 NIO增强
+
+- 上述NIO性能不错了，URL格式头以"nio"开头，表示这个端口使用以TCP协议为基础的NIO网IO模型。但是这样的设置方式，只能使这个端口支持Openwire协议。那么我们怎么既让这个端口支持NIO网IO模型，又让它支持多个协议呢？
+- 从5.13.0版开始，ActiveMQ支持有线格式协议检测。可以自动检测OpenWire，STOMP，AMQP和MQTT。这样一来，所有4种类型的客户端都可以共享一种传输方式。(Starting with version 5.13.0, ActiveMQ supports wire format protocol detection.  OpenWire, STOMP, AMQP, and MQTT can be automatically detected.  This allows one transport to be shared for all 4 types of clients.)[原谅我，使用的Google翻译]
+  - 官网http://activemq.apache.org/auto
+  - 使用auto关键字
+  -  使用“+"符号来为端口设置多种特性 
+  -  为某一个端口支持NIO网络IO模型,又让它支持多个协议
+
+```xml
+        <transportConnectors>
+            <!-- DOS protection, limit concurrent connections to 1000 and frame size to 100MB -->
+           <!-- <transportConnector name="openwire" uri="tcp://0.0.0.0:61616?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="amqp" uri="amqp://0.0.0.0:5672?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="stomp" uri="stomp://0.0.0.0:61613?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="mqtt" uri="mqtt://0.0.0.0:1883?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="ws" uri="ws://0.0.0.0:61614?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/>
+            <transportConnector name="nio" uri="nio://0.0.0.0:61618?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600"/> -->
+            <!-- auto+nio 端口支持NIO网络IO模型,支持多个协议 -->
+            <transportConnector name="auto+nio" uri="auto+nio://0.0.0.0:61608?maximumConnections=1000&amp;wireFormat.maxFrameSize=104857600&amp;org.apache.activemq.transport.nio.SeIectorManager.corePoolSize=20&amp;org.apache.activemq.transpot.nio.SeIectorManager.maximumPoolSize=50"/>
+        </transportConnectors>
+<!-- 注意：你可以选择保留默认的配置，也是比较推荐的；这里为了显示效果明显，注释掉了默认的配置，只保留了auto+nio -->
+```
+
+- 测试代码
+
+```java
+public class FirstQueueConsumer {
+//    private static final String url = "tcp://localhost:61616";
+    private static final String url = "nio://localhost:61608";
+
+// ....
+}
+
+
+public class FirstQueueProvider {
+
+//    private static final String url = "tcp://localhost:61616";
+    private static final String url = "nio://localhost:61608";
+
+// ....
+}
+```
+
+- 控制台显示效果
+
+![activeMQ协议-NIO-2.png](img/activeMQ协议-NIO-2.png)
+
 
 
 ## 九 ActiveMQ的消息存储与持久化
+
+
 
 ## 十 ActiveMQ多节点集群
 
