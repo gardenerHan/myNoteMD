@@ -1677,34 +1677,35 @@ class SpringbootActivemqApplicationTests {
 | 参数名称                | 默认值            | 描述                                                         |
 | ----------------------- | ----------------- | ------------------------------------------------------------ |
 | backlog                 | 5000              | 指定等待传输服务器套接字接受的最大连接数。                   |
-| closeAsync              | true              | 如果**`true`**套接字关闭调用异步发生。**`false`**对于诸如STOMP之类的协议，应将此参数设置为常用于为每个读取或写入创建新连接的情况下。这样做可以确保套接字关闭调用同步发生。同步关闭可防止代理由于连接的快速循环而耗尽可用的套接字。 |
-| connectionTimeout       | 30000             | 如果**`>=1`**该值设置连接超时（以毫秒为单位）。值**`0`**表示没有超时。负值将被忽略。 |
-| daemon                  | false             | 如果**`true`**运输线将在守护模式下运行。将**`true`**代理嵌入Spring容器或Web容器时，请将此参数设置为，以允许该容器正确关闭。 |
-| dynamicManagement       | false             | 如果**`true`**在**`TransportLogger`**可以通过JMX进行管理。   |
-| ioBufferSize            | 8 * 1024          | 指定在**`wireFormat`**发生基于基础封送处理的TCP层和OpenWire层之间使用的缓冲区大小。 |
-| jmxPort                 | 1099              | （仅客户端）指定JMX服务器将用于管理的端口**`TransportLoggers`**。当代理创建自己的JMX服务器时，仅应由客户端生产者或消费者通过URI进行设置。指定备用JMX端口对于在同一台计算机上测试代理和客户端并且需要通过JMX进行控制的开发人员很有用。 |
-| keepAlive               | false             | 如果为**`true`，则**在代理连接上启用[TCP KeepAlive](http://tldp.org/HOWTO/TCP-Keepalive-HOWTOoverview)，以防止连接在TCP级别超时。这应该*不会*有混淆**`KeepAliveInfo`**的消息13759的**`InactivityMonitor`。** |
-| logWriterName           | default           | 设置**`org.apache.activemq.transport.LogWriter`**要使用的实现的名称。名称被映射到**`resources/META-INF/services/org/apache/activemq/transport/logwriters`**目录中的类。 |
+| closeAsync              | true              | 如果`true`套接字关闭调用异步发生。`false`对于诸如STOMP之类的协议，应将此参数设置为常用于为每个读取或写入创建新连接的情况下。这样做可以确保套接字关闭调用同步发生。同步关闭可防止代理由于连接的快速循环而耗尽可用的套接字。 |
+| connectionTimeout       | 30000             | 如果`>=1`该值设置连接超时（以毫秒为单位）。值`0`表示没有超时。负值将被忽略。 |
+| daemon                  | false             | 如果`true`运输线将在守护模式下运行。将`true`代理嵌入Spring容器或Web容器时，请将此参数设置为，以允许该容器正确关闭。 |
+| dynamicManagement       | false             | 如果`true`在`TransportLogger`可以通过JMX进行管理。   |
+| ioBufferSize            | 8 * 1024          | 指定在`wireFormat`发生基于基础封送处理的TCP层和OpenWire层之间使用的缓冲区大小。 |
+| jmxPort                 | 1099              | （仅客户端）指定JMX服务器将用于管理的端口`TransportLoggers`。当代理创建自己的JMX服务器时，仅应由客户端生产者或消费者通过URI进行设置。指定备用JMX端口对于在同一台计算机上测试代理和客户端并且需要通过JMX进行控制的开发人员很有用。 |
+| keepAlive               | false             | 如果为`true`，则在代理连接上启用[TCP KeepAlive](http://tldp.org/HOWTO/TCP-Keepalive-HOWTOoverview)，以防止连接在TCP级别超时。这应该*不会*有混淆`KeepAliveInfo`的消息13759的`InactivityMonitor`。|
+| logWriterName           | default           | 设置`org.apache.activemq.transport.LogWriter`要使用的实现的名称。名称被映射到`resources/META-INF/services/org/apache/activemq/transport/logwriters`目录中的类。 |
 | maximumConnections      | Integer.MAX_VALUE | 此代理允许的最大套接字数。                                   |
-| minmumWireFormatVersion | 0                 | **`wireFormat`**可接受的最低远程版本（请注意拼写错误）。注意：当远程**`wireFormat`**版本低于配置的最低可接受版本时，将引发异常并拒绝连接尝试。值**`0`**表示不检查远程**`wireFormat`**版本。 |
+| minmumWireFormatVersion | 0                 | `wireFormat`可接受的最低远程版本（请注意拼写错误）。注意：当远程`wireFormat`版本低于配置的最低可接受版本时，将引发异常并拒绝连接尝试。值`0`表示不检查远程`wireFormat`版本。 |
 | socketBufferSize        | 64 * 1024         | 设置接受套接字的读写缓冲区的大小（以字节为单位）。           |
-| soLinger                | Integer.MIN_VALUE | **`soLinger`**值为时设置套接字的选项**`> -1`**。当设置**`-1`**的**`soLinger`**套接字选项被禁用。 |
-| soTimeout               | 0                 | 设置套接字的读取超时（以毫秒为单位）。值**`0`**表示没有超时。 |
-| soWriteTimeout          | 0                 | 设置套接字的写超时（以毫秒为单位）。如果套接字写操作在指定的超时之前未完成，则套接字将被关闭。值为**0**表示没有超时。 |
-| stackSize               | 0                 | 设置传输的背景读取线程的堆栈大小。必须以的倍数指定**`128K`**。值**`0`**表示此参数被忽略。 |
-| startLogging            | true              | 如果传输堆栈**`true`**的**`TransportLogger`**对象最初会将消息写入日志。除非，否则将忽略此参数**`trace=true`**。 |
-| tcpNoDelay              | false             | 如果设置**`true`**了套接字的选项 **`TCP_NODELAY`**。这将禁用Nagle的小数据包传输算法。 |
+| soLinger                | Integer.MIN_VALUE | `soLinger`值为时设置套接字的选项`> -1`。当设置`-1`的`soLinger`套接字选项被禁用。 |
+| soTimeout               | 0                 | 设置套接字的读取超时（以毫秒为单位）。值`0`表示没有超时。 |
+| soWriteTimeout          | 0                 | 设置套接字的写超时（以毫秒为单位）。如果套接字写操作在指定的超时之前未完成，则套接字将被关闭。值为0表示没有超时。 |
+| stackSize               | 0                 | 设置传输的背景读取线程的堆栈大小。必须以的倍数指定`128K`。值`0`表示此参数被忽略。 |
+| startLogging            | true              | 如果传输堆栈`true`的`TransportLogger`对象最初会将消息写入日志。除非，否则将忽略此参数`trace=true`。 |
+| tcpNoDelay              | false             | 如果设置`true`了套接字的选项 `TCP_NODELAY`。这将禁用Nagle的小数据包传输算法。 |
 | threadName              | N/A               | 指定此参数后，将在调用传输期间修改线程的名称。附加了远程地址，以便停留在传输方法中的调用将在线程名称中包含目标信息。当使用线程转储进行脱胶时，这非常有用。 |
-| trace                   | false             | 导致记录通过传输发送的所有命令。要查看记录的输出，请定义**`Log4j`**记录器：**`log4j.logger.org.apache.activemq.transport.TransportLogger=DEBUG`**。 |
+| trace                   | false             | 导致记录通过传输发送的所有命令。要查看记录的输出，请定义`Log4j`记录器：`log4j.logger.org.apache.activemq.transport.TransportLogger=DEBUG`。 |
 | trafficClass            | 0                 | 要在套接字上设置的流量类别。                                 |
-| diffServ                | 0                 | （仅限客户端）将在传出数据包上设置首选的区分服务流量类，如RFC 2475中所述。有效整数值：**`[0,64]`**。有效的字符串值：**`EF`，`AF[1-3][1-4]`**或**`CS[0-7]`**。对于JDK 6，仅在JVM使用IPv4堆栈时有效。要使用IPv4堆栈，请设置系统属性**`java.net.preferIPv4Stack=true`**。注意：同时指定' **diffServ**和**typeOfService** ' 是无效的，因为它们在TCP / IP数据包头中共享相同的位置 |
-| typeOfService           | 0                 | （仅客户端）要在传出数据包上设置的首选服务类型值。有效整数值：**`[0,256]`**。对于JDK 6，仅在将JVM配置为使用IPv4堆栈时有效。要使用IPv4堆栈，请设置系统属性**`java.net.preferIPv4Stack=true`**。注意：同时指定' **diffServ**和**typeOfService** ' 是无效的，因为它们在TCP / IP数据包头中共享相同的位置。 |
-| useInactivityMonitor    | true              | 当**`false`**该**`InactivityMonitor`**被禁用，连接永不超时。 |
-| useKeepAlive            | true              | 在**`true` `KeepAliveInfo`**空闲连接上发送消息时，以防止其超时。如果此参数为，**`false`**如果在指定的时间内没有在连接上接收到任何数据，连接仍将超时。 |
-| useLocalHost            | false             | 当**`true`**使用值**`localhost`**代替实际的本地主机名进行本地连接时。在某些操作系统（例如）上**`OS X`**，无法使用本地主机名进行连接，因此**`localhost`**更好。 |
-| useQueueForAccept       | true              | 将**`true`**接受的套接字放置到队列中以使用单独的线程进行异步处理时。 |
-| wireFormat              | default           | **`wireFormat`**要使用的工厂名称。                           |
-| wireFormat。*           | N/A               | 具有此前缀的属性用于配置**`wireFormat`**。                   |
+| diffServ                | 0                 | （仅限客户端）将在传出数据包上设置首选的区分服务流量类，如RFC 2475中所述。有效整数值：`[0,64]`。有效的字符串值：`EF`，`AF[1-3][1-4]`或`CS[0-7]`。对于JDK 6，仅在JVM使用IPv4堆栈时有效。要使用IPv4堆栈，请设置系统属性`java.net.preferIPv4Stack=true`。注意：同时指定' diffServ和typeOfService ' 是无效的，因为它们在TCP / IP数据包头中共享相同的位置 |
+| typeOfService           | 0                 | （仅客户端）要在传出数据包上设置的首选服务类型值。有效整数值：`[0,256]`。对于JDK 6，仅在将JVM配置为使用IPv4堆栈时有效。要使用IPv4堆栈，请设置系统属性`java.net.preferIPv4Stack=true`。注意：同时指定' diffServ和typeOfService ' 是无效的，因为它们在TCP / IP数据包头中共享相同的位置。 |
+| useInactivityMonitor    | true              | 当`false`该`InactivityMonitor`被禁用，连接永不超时。 |
+| useKeepAlive            | true              | 在`true` `KeepAliveInfo`空闲连接上发送消息时，以防止其超时。如果此参数为，`false`如果在指定的时间内没有在连接上接收到任何数据，连接仍将超时。 |
+| useLocalHost            | false             | 当`true`使用值`localhost`代替实际的本地主机名进行本地连接时。在某些操作系统（例如）上`OS X`，无法使用本地主机名进行连接，因此`localhost`更好。 |
+| useQueueForAccept       | true              | 将`true`接受的套接字放置到队列中以使用单独的线程进行异步处理时。 |
+| wireFormat              | default           | `wireFormat`要使用的工厂名称。                           |
+| wireFormat。          | N/A               | 具有此前缀的属性用于配置`wireFormat`。                   |
+
 
 
 
