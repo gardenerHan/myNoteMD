@@ -1,4 +1,4 @@
-# ActiveMQ
+ActiveMQ
 
 <font color="green">*@Author:hanguixian*</font> 
 
@@ -1880,7 +1880,191 @@ public class FirstQueueProvider {
 
 ## 九 ActiveMQ的消息存储与持久化
 
+- 官网: http://activemq.apache.org/persistence
 
+### 1 是什么
+
+- 为了避免意外宕机以后丢失信息，需要做到重启后可以恢复消息队列，消息系统一般都会采用持久化机制。
+- ActiveMQ的消息持久化机制有JDBC，AMQ，KahaDB和LevelDB，无论使用哪种持久化方式，消息的存储逻辑都是一致的。
+- 在发送者将消息发送出去后，消息中心首先将消息存储到本地数据文件、内存数据库或者远程数据库等，再试图将消息发送给接收者，成功则将消息从存储中删除，失败则继续尝试发送。
+- 消息中心启动以后首先要检查指定的存储位置，如果有未发送成勘的消息，则需要把消息发送出去。
+
+### 2 有哪些
+
+#### 2.1 AMQ Message Store 
+
+- 基于文件的存储方式，是以前的默认消息存储，现在不用了
+
+- AMQ是一种文件存储形式，它具有写入速度快和容易恢复的特点。消息存储在一个个文件中，文件的默认大小为32M，当一个存储文件中的消息己经全部被消费，那么这个文件将被标识为可删除，在下一个清除阶段，这个文件被删除。AMQ适用于ActiveMQ5.3之前的版本
+
+#### 2.2 KahaDB消息存储（默认）
+
+- 基于日志文件，从ActiveMQ 5.4开始默认的持久化插件 
+
+- 官网: http://activemq.apache.org/kahadb
+  - KahaDB is a file based persistence database that is local to the message broker that is using it. It has been optimized for fast persistence. It is the the default storage mechanism since **ActiveMQ 5.4**. KahaDB uses less file descriptors and provides faster recovery than its predecessor, the [AMQ Message Store](http://activemq.apache.org/amq-message-store)[KahaDB 是一个基于文件的持久性数据库，它是使用它的消息代理的本地数据库。它针对快速持久性进行了优化。它是自**ActiveMQ 5.4**以来的默认存储机制。KahaDB使用的文件描述符较少，并且比其前身[AMQ 消息存储](http://activemq.apache.org/amq-message-store)提供更快的恢复]
+
+- 验证: 在 activeMQ.xml 配置文件中可以看到 默认的持久化插件是KahaDB
+
+```xml
+ <!--
+            Configure message persistence for the broker. The default persistence
+            mechanism is the KahaDB store (identified by the kahaDB tag).
+            For more information, see:
+
+            http://activemq.apache.org/persistence.html
+ -->
+<persistenceAdapter>
+            <kahaDB directory="${activemq.data}/kahadb"/>
+</persistenceAdapter>
+```
+
+- 说明
+
+  - KahaDB是目前默认的存储方式，可用于任何场景，提高了性能和恢复能力。
+  - 消息存储使用一个事务日志和仅仅用一个索引文件来存储它所有的地址。
+  - KahaDB是一个专门针对消息持久化的解决方案，它对典型的消息使用模式进行了优化。
+  - 数据被追加到data logs中。当不再需要log文件中的数据时,log文件会被丢弃
+  - 存在位置:activeMQ安装目录data下的kahadb
+
+- KahaDB 的 存 储 原 理
+
+  - kahadb在消息保存目录中只有四类文件和一个lock，跟activeMQ的其他文件存储引擎相比这就非常简洁了。
+    - db-1.log(可能会有多个 db-number.log)
+    - db.data
+    - db.free
+    - db.redo
+    - lock
+
+  - `db-<Number>.log` KahaDB存储消息到预定义大小的数据记录文件中，文件命名为`db-<Number>.log` 当数据文件己满时，一个新的文件会随之创建，number数值也会随之递增，它随着消息数量的增多，如每32M一个文件，文件名按照数字进行编号，如db-1.log、db-2.log、…。当不再有引用到数据文件中的任何消息时，文件会被删除或归档。
+  
+    ![kahaDB-1.png](img/kahaDB-1.png)
+  
+  - db.data该文件包含了持久化的BTree索引，索引了消息数据记录中的消息，它是消息的索引文件，本质上是B-Tree（B树），使用B-Tree作为索引指向db-<Number>.log里面存储的消息。
+  
+  - db.free当前db.data文件里哪些页面是空闲的，文件具体内容是所有空闲页的ID
+  
+  - db.redo用来进行消息恢复，如果KahaDB消息存储在强制退出后启动，用于恢复BTree索引。
+  
+  - lock文件锁，表示当前获得kahadb读写权限的broker。
+
+#### 2.3 JDBC消息存储
+
+- 消息基于JDBC存储
+
+#### 2.4 LevelDB消息存储
+
+- 这种文件系统是从ActiveMQ5.8之后引进的，它和KahaDB非常相似，也是基于文件的本地数据库储存形式，但是它提供比KahaDB更快的持久性。但它不使用自定义B-Tree实现来索引预写日志，而是使用基于LevelDB的索引
+- 默认配置如下:
+
+```xml
+<persistenceAdapter> 
+	<levelDBdirectory="activemq-data"/> 
+</persistenceAdapter> 
+```
+
+#### 2.5 JDBC Message store with ActiveMQ Journal
+
+- For long term persistence we recommend using JDBC coupled with our high performance journal. You can use just JDBC if you wish but its quite slow.[对于长期持久性，我们建议使用 JDBC 和高性能日志。你可以只使用JDBC，如果你想，但它相当缓慢。]
+
+### 3 JDBC消息存储
+
+1. 准备mysql数据库
+
+2. 添加mysql数据库的驱动包到lib文件夹中（我使用的是mysql-connector-java-5.1.37.jar）
+
+3. persistenceAdapter配置:在conf路径下修改activemq.xml配置文件
+
+```xml
+<!--  <persistenceAdapter>
+            <kahaDB directory="${activemq.data}/kahadb"/>
+        </persistenceAdapter> -->
+
+<persistenceAdapter>
+    <jdbcPersistenceAdapter dataSource="#mysql-ds" createTablesOnStartup="true"/>
+</persistenceAdapter>
+
+<!-- dataSource指定将要引用的持久化数据库bean名称，createTablesOnStartup是否在启动的时候创建数据表，默认值是true，这样每次启动都会去创建数据表了，一般是第一次启动的时候设置为true，之后改成false.  -->
+```
+
+4. 数据库连接池配置
+
+```xml
+<bean id="mysql-ds" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close"> 
+        <property name="driverClassName" value="com.mysql.jdbc.Driver"/> 
+        <property name="url" value="jdbc:mysql://127.0.0.1:3306/activemq_persistence?relaxAutoCommit=true"/> 
+        <property name="username" value="root"/> 
+        <property name="password" value="123456"/> 
+        <property name="poolPreparedStatements" value="true"/> 
+</bean>
+
+<!-- 注意：添加位置在 </broker> 之后 ，在  <import resource="jetty.xml"/> 之前-->
+```
+
+5. 建立数据库和数据表
+   1. 建一个和上面url中配置的数据库名相同的数据库，这里就建一个名为activemq_persistence的数据库
+   2. 在第一启动，正常的情况下会建立三张表ACTIVEMQ_MSGS，ACTIVEMQ_LOCK，ACTIVEMQ_MSGS。
+   3. ACTIVEMQ_MSGS（消息表，queue和topic都存在里面），字段说明
+      1. ID：自增的数据库主键
+      2. CONTAINER：消息的Destination
+      3. MSGID_PROD：消息发送者的主键
+      4. MSG_SEQ：是发送消息的顺序，MSGID_PROD+MSG_SEQ可以组成JMS的MessageID
+      5. EXPIRATION：消息的过期时间，存储的是从1970-01-01到现在的亳秒数
+      6. MSG：消息本体的Java序列化对象的二进制数据
+      7. PRIORITY：优先级，从0-9，数值越大优先级越高
+   4. ACTIVEMQ_ACKS 用于存储订阅关系，存储持久订阅的信息和最后一个持久订阅接收的消息ID。如果是持久化Topic，订阅者和服务器的订阅关系在这个表保存。数据库字段如下：
+      1. CONTAINER：消息的Destination
+      2. SUB_DEST：如果是使用Static集群，这个字段会有集群其他系统的信息
+      3. CLIENT_ID：每个订阅者都必须有一个唯一的客户端ID用以区分
+      4. SUBNAME: 订阅者名称
+      5. SELECTOR：选择器，可以选择只消费满足条件的消息。条件可以用自定义属性实现，可支持多属性AND和OR操作
+      6. LAST_ACKED_ID：记录消费过的消息的ID
+   5. ACTIVEMQ_LOCK 在集群环境中才有用，只有一个Broker可以获得消息，称为Master Broker，其他的只能作为备份等待Master Broker不可用，才可能成为下一个Master Broker.这个表用于记录哪个Broker是当前的Master Broker.
+6. 代码运行检验
+   1. 一定要开启持久化`messageProducer.setDeliveryMode(DeliveryMode.PERSISTENT);`
+   2. 运行队列代码检验
+   3. 运行发布/订阅代码检验
+7. 数据库情况
+   1. 在点对点类型，当DeliveryMode设置为NON_PERSISTENT时，消息被保存在内存中；当DeliveryMode设置为PERSISTENT时，消息保存在broker的相应文件或数据库中；而且点对点类型中消息一旦被Consumer小就从broker中删除，数据库中的数据会被立即清除。
+   2. 发布/订阅类型:消息消费后数据库中依然会有消费历史记录
+
+### 4 JDBC Message store with ActiveMQ Journal
+
+- Journal介绍
+  - 这种方式克服了JDBC Store的不足，JDBC每次消息过来，都需要去写库和读库。
+  - ActiveMQ Journal，使用高速缓存写入技术，大大提高了性能。
+  - 当消费者的消费速度能够及时跟上生产者消息的生产速度时，journal文件能够大大减少需要写入到DB中的消息。
+  - 举个例子，生产者生产了1000条消息，这1000条消息会保存到Journal文件，如果消费者的消费速度很快的情况下，在Journal文件还没有同步到DB之前，消费者己经消费了90％的以上的消息，那么这个时候只需要同步剩余的10%的消息到DB；如果消费者的消费速度很慢，这个时候Journal文件可以使消息以批量方式写到DB
+
+- 配置
+
+```xml
+      <!--  <persistenceAdapter>
+            <kahaDB directory="${activemq.data}/kahadb"/>
+        </persistenceAdapter> -->
+      <!--  <persistenceAdapter>
+             <jdbcPersistenceAdapter dataSource="#mysql-ds" createTablesOnStartup="true"/>
+        </persistenceAdapter> -->
+
+    <persistenceFactory>
+      <journalPersistenceAdapterFactory journalLogFiles="4" journalLogFileSize="32789" 
+        useJournal="true" 
+        useQuickJournal="true"
+        dataSource="#mysql-ds"
+        dataDirectory="activemq-data" /> 
+    </persistenceFactory> 
+```
+
+- 使用Journal后，消息首先会被保存到缓存中，一段时候后才会放到数据库中，提升了性能。
+
+### 5 小总结
+
+1. 如果是queue：在没有消费者消费的情况下会将消息保存到activemq_msgs表中，只要有任意一个消费者已经消费过了，消费之后这些消息将会立即被删除。
+2. 如果是topic：一般是先启动消费订阅然后再生产的情况下会将消息保存到activemq_acks。
+3. 开发遇到的坑（在配置关系型数据库作为ActiveMQ的持久化存储方案时，有坑）
+   1. 数据jar包：记得需要使用到的相关jar文件放置到ActiveMQ安装路径下的lib目录。mysq-jdbc驱动ar包和对应的数据库连接池jar包
+   2. createTablesOnStaltup属性：在jdbcPersistenceAdapter标签中设置了createTablesOnStartup属性为true时在第一次启动ActiveMQ时，ActiveMQ服务节点会自动创建所需要的数据表。启动完成后可以去掉这个属性，或者更改为false
+   3. 下滑线：`java.lang.IllegalStateException:BeanFactory not initialized or already closed`这是因为您的操作系统的机器名中有“_”符号。请更改机器名并且重启后即可解决问题。
 
 ## 十 ActiveMQ多节点集群
 
