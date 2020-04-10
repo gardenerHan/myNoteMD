@@ -1,15 +1,16 @@
 # myNoteMD
 
-### 项目介绍
-我的笔记
+## 一 项目介绍
+- 一个丰富笔记，一个热爱生活、热爱工作的故事
 
-### 阅读说明
-因为很多软件和阅读器不支持markdown画的图,推荐使用Typora打开
+## 二 阅读说明
+- 因为很多软件和阅读器不支持markdown画的图,md文件推荐使用Typora打开。
 
-### 博客地址
+## 三 整理相关博客地址
 
-#### java8新特性:https://blog.csdn.net/hgx_suiyuesusu/article/details/81322494
- 
+### java8新特性
+- 地址:https://blog.csdn.net/hgx_suiyuesusu/article/details/81322494
+
 #### docker
 
  - 1.Docker简介:https://blog.csdn.net/hgx_suiyuesusu/article/details/81748971
